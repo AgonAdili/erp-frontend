@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api, API_BASE } from "@/api/client";
 import type { ResourceMeta, Row } from "@/api/types";
-import { Alert, Badge, EmptyState, Spinner } from "@/components/ui";
+import { Kpi, Kpis } from "@/components/dashboard";
+import { Alert, Badge, EmptyState, Panel, SkeletonPanel } from "@/components/ui";
 import { formatDate, formatMoney, formatNumber } from "@/lib/format";
 import { useInvalidateResource, useMeta } from "@/meta/hooks";
 
@@ -49,7 +50,7 @@ export function QuotationCompare({ meta, row }: { meta: ResourceMeta; row: Row }
   const quoteMeta = useMeta(QUOTATIONS);
   const invalidateQuotes = useInvalidateResource(QUOTATIONS);
   const invalidateRfq = useInvalidateResource(meta.endpoint);
-  if (q.isLoading) return <Spinner />;
+  if (q.isLoading) return <SkeletonPanel />;
   if (!q.data) return null;
   const { quotations: quotes, matrix } = q.data;
   const select = quoteMeta.data?.actions.find((a) => a.url_path === "select");
@@ -65,27 +66,22 @@ export function QuotationCompare({ meta, row }: { meta: ResourceMeta; row: Row }
   );
 
   return (
-    <div className="card stack">
-      <h2 style={{ margin: 0 }}>Споредба на понуди</h2>
+    <Panel title="Споредба на понуди" sub={`${quotes.length} понуди, од најевтина`}>
+     <div className="stack">
       {q.data.below_minimum ? (
-        <Alert tone="warning">
+        <Alert tone="warning" title="Недоволно понуди">
           Потребни се најмалку {q.data.minimum_quotations} понуди за оваа вредност; евидентирани: {quotes.length}.
         </Alert>
       ) : null}
-      {!quotes.length ? <EmptyState>Сè уште нема евидентирани понуди.</EmptyState> : (
+      {!quotes.length ? <EmptyState title="Сè уште нема понуди">Додајте ги понудите од добавувачите во табот „Понуди“.</EmptyState> : (
         <>
-          <div className="kpis">
+          <Kpis>
             {quotes.map((quote, i) => (
-              <div key={quote.id} className={`kpi${quote.is_selected ? " good" : ""}`}>
-                <div className="label">{i + 1}. {quote.supplier}</div>
-                <div className="value">{formatMoney(quote.total)} {quote.currency}</div>
-                <div className="small muted">
-                  {quote.is_selected ? "избрана · " : ""}
-                  {i === 0 && quotes.length > 1 ? "најниска цена" : i > 0 ? `+${formatMoney(quote.gap)}` : ""}
-                </div>
-              </div>
+              <Kpi key={quote.id} label={`${i + 1}. ${quote.supplier}`} value={formatMoney(quote.total)} unit={quote.currency}
+                tone={quote.is_selected ? "good" : undefined}
+                sub={`${quote.is_selected ? "избрана · " : ""}${i === 0 && quotes.length > 1 ? "најниска цена" : i > 0 ? `+${formatMoney(quote.gap)} од најниската` : ""}`} />
             ))}
-          </div>
+          </Kpis>
           <div className="table-wrap">
             <table className="table compare">
               <thead>
@@ -136,9 +132,10 @@ export function QuotationCompare({ meta, row }: { meta: ResourceMeta; row: Row }
               </tbody>
             </table>
           </div>
-          <p className="small muted" style={{ margin: 0 }}>Зелено: најниска единечна цена по ставка.</p>
+          <p className="small muted">Зелено: најниска единечна цена по ставка.</p>
         </>
       )}
-    </div>
+     </div>
+    </Panel>
   );
 }

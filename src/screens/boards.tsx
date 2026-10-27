@@ -2,17 +2,20 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { api, API_BASE } from "@/api/client";
+import { Kpi, Kpis } from "@/components/dashboard";
 import { RelatedSelect } from "@/components/inputs";
-import { Alert, Badge, Button, EmptyState, Field, Spinner } from "@/components/ui";
-import { formatDate, formatMoney } from "@/lib/format";
+import { Badge, Button, EmptyState, ErrorState, Field, IconButton, LinkButton, PageHeader, Panel, Segmented, SkeletonRows, Switch } from "@/components/ui";
+import { t } from "@/i18n/mk";
+import { Page } from "@/layout/Page";
+import { formatCompact, formatDate, formatMoney, todayISO } from "@/lib/format";
 import { useInvalidateResource, useMeta } from "@/meta/hooks";
 
 import { ActionButton } from "./actions";
 
 type Data = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 // ── offer approvals ────────────────────────────────────────────────────────
 
@@ -24,43 +27,53 @@ export function OfferApprovals() {
   const meta = useMeta(OFFERS);
   const invalidate = useInvalidateResource(OFFERS);
   const decide = (meta.data?.actions ?? []).filter((a) => ["approve", "reject", "return"].includes(a.url_path));
+  const rows = (q.data?.rows ?? []) as Data[];
+  const total = rows.reduce((s, r) => s + Number(r.total || 0), 0);
   return (
-    <div className="stack">
-      <div className="page-head">
-        <h1>Одобрувања на понуди</h1>
-        <span className="spacer" />
-        <label className="row small" style={{ gap: 6 }}>
-          <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} /> Само мои ({q.data?.count_mine ?? 0})
-        </label>
-      </div>
-      {q.isLoading ? <Spinner /> : !q.data?.rows.length ? <EmptyState>Нема понуди што чекаат одобрување.</EmptyState> : (
-        <div className="card flush">
+    <Page title="Одобрување понуди">
+      <PageHeader title="Одобрување понуди" subtitle="Понуди што чекаат одобрување пред да се испратат до клиентот"
+        actions={<Switch checked={mine} onChange={setMine} label={`Само тие што јас ги одобрувам (${q.data?.count_mine ?? 0})`} />} />
+      {q.data ? (
+        <Kpis>
+          <Kpi label="Чекаат одобрување" value={q.data.count_total} />
+          <Kpi label="Чекаат мене" value={q.data.count_mine} tone={q.data.count_mine ? "attention" : undefined} />
+          <Kpi label="Вкупна вредност" value={formatCompact(total)} unit="ден." />
+        </Kpis>
+      ) : null}
+      <Panel flush>
+        {q.isLoading ? <SkeletonRows rows={6} cols={6} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : !rows.length ? (
+          <EmptyState title="Нема понуди што чекаат одобрување">{mine ? "Исклучете „Само тие што јас ги одобрувам“ за да ги видите сите." : undefined}</EmptyState>
+        ) : (
           <div className="table-wrap">
             <table className="table">
-              <thead><tr><th>Понуда</th><th>Клиент</th><th>Статус</th><th>Ниво</th><th>Причини</th><th className="num">Вкупно</th><th /></tr></thead>
+              <thead><tr><th>Понуда</th><th>Клиент</th><th>Ниво</th><th>Зошто треба одобрување</th><th className="num">Вкупно</th><th aria-label={t.actions} /></tr></thead>
               <tbody>
-                {q.data.rows.map((r: Data) => (
+                {rows.map((r) => (
                   <tr key={r.id}>
-                    <td><Link to={`/offers/offers/${r.id}`}>{r.offer_number || `#${r.id}`}</Link>{r.special ? <> <Badge tone="warning">посебно</Badge></> : null}</td>
+                    <td className="nowrap"><Link to={`/offers/offers/${r.id}`}>{r.offer_number || `#${r.id}`}</Link>{r.special ? <> <Badge tone="warning">посебно</Badge></> : null}
+                      {r.prepared_by ? <div className="xs muted">{r.prepared_by}</div> : null}</td>
                     <td>{r.client}</td>
-                    <td>{r.status_label}</td>
-                    <td>{r.level_label || r.level}</td>
-                    <td className="small">{(r.reasons as string[]).join("; ")}</td>
+                    <td><Badge tone="info" plain>{r.level_label || r.level}</Badge></td>
+                    <td className="small wrap">{(r.reasons as string[]).length ? (r.reasons as string[]).join("; ") : <span className="muted">според износот</span>}</td>
                     <td className="num">{formatMoney(r.total)}</td>
-                    <td className="nowrap">
-                      {r.can_approve && meta.data ? decide.map((a) => (
-                        <ActionButton key={a.name} meta={meta.data!} action={a} row={{ id: r.id, status: r.status, version: r.version }}
-                          onDone={() => { void q.refetch(); invalidate(); }} />
-                      )) : <span className="small muted">друго ниво</span>}
+                    <td className="right nowrap">
+                      {r.can_approve && meta.data ? (
+                        <div className="row-tight" style={{ justifyContent: "flex-end" }}>
+                          {decide.map((a) => (
+                            <ActionButton key={a.name} meta={meta.data!} action={a} row={{ id: r.id, status: r.status, version: r.version }}
+                              variant={a.url_path === "approve" ? "primary" : "default"} onDone={() => { void q.refetch(); invalidate(); }} />
+                          ))}
+                        </div>
+                      ) : <span className="small muted">одобрува друго ниво</span>}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </Panel>
+    </Page>
   );
 }
 
@@ -69,11 +82,11 @@ export function OfferApprovals() {
 function Cell({ day }: { day: Data }) {
   if (!day.work_orders.length) return <td className="board-cell" />;
   return (
-    <td className={`board-cell${day.conflict ? " conflict" : " busy"}`} title={day.conflict ? "Двојно резервирано" : undefined}>
+    <td className={`board-cell${day.conflict ? " conflict" : " busy"}`} title={day.conflict ? "Ист ресурс на два налози во ист ден" : undefined}>
       {day.work_orders.map((w: Data) => (
         <Link key={w.id} to={`/workorders/work-orders/${w.id}`} className="board-item">
-          <span className="mono">{w.wo_number || `#${w.id}`}</span>
-          <div className="small muted">{w.project}</div>
+          <span className="strong small">{w.wo_number || `#${w.id}`}</span>
+          <span className="xs muted truncate" style={{ display: "block" }}>{w.project}</span>
         </Link>
       ))}
     </td>
@@ -82,49 +95,51 @@ function Cell({ day }: { day: Data }) {
 
 export function ResourceBoard() {
   const [week, setWeek] = useState("");
-  const q = useQuery({ queryKey: ["resource-board", week], queryFn: () => api.get<Data>("/workorders/work-orders/resource-board/", { week: week || undefined }) });
+  const q = useQuery({ queryKey: ["resource-board", week], queryFn: () => api.get<Data>("/workorders/work-orders/resource-board/", { week: week || undefined }), placeholderData: (p) => p });
   const d = q.data;
+  const conflicts = d ? [...d.vehicles, ...d.workers].reduce((s: number, r: Data) => s + r.days.filter((x: Data) => x.conflict).length, 0) : 0;
   const grid = (title: string, list: Data[]) => (
-    <div className="card flush">
+    <Panel title={title} sub={`${list.length} распоредени`} flush>
       <div className="table-wrap">
-        <table className="table board">
-          <thead><tr><th>{title}</th>{d!.days.map((day: Data) => <th key={day.date} className={day.is_today ? "today" : undefined}>{day.label} {formatDate(day.date).slice(0, 5)}</th>)}</tr></thead>
+        <table className="table board lined">
+          <thead><tr><th className="sticky-col">{title}</th>{d!.days.map((day: Data) => (
+            <th key={day.date} className={day.is_today ? "today" : undefined}>{day.label} <span className="muted">{formatDate(day.date).slice(0, 5)}</span></th>
+          ))}</tr></thead>
           <tbody>
             {list.length ? list.map((r) => (
-              <tr key={r.id}><th scope="row">{r.name}</th>{r.days.map((day: Data) => <Cell key={day.date} day={day} />)}</tr>
-            )) : <tr><td colSpan={8} className="muted" style={{ textAlign: "center" }}>Нема распоредени.</td></tr>}
+              <tr key={r.id}><th scope="row" className="sticky-col">{r.name}</th>{r.days.map((day: Data) => <Cell key={day.date} day={day} />)}</tr>
+            )) : <tr><td colSpan={8}><EmptyState compact title="Нема распоредени оваа недела" /></td></tr>}
           </tbody>
         </table>
       </div>
-    </div>
+    </Panel>
   );
   return (
-    <div className="stack">
-      <div className="page-head">
-        <h1>Распоред на ресурси</h1>
-        <span className="spacer" />
-        {d ? <>
-          <Button size="sm" onClick={() => setWeek(d.prev_week)}>← Претходна</Button>
-          <strong>{d.label}</strong>
-          <Button size="sm" onClick={() => setWeek(d.next_week)}>Следна →</Button>
-          <Button size="sm" onClick={() => setWeek("")}>Оваа недела</Button>
-        </> : null}
-      </div>
-      {q.isLoading ? <Spinner /> : q.error ? <Alert tone="danger">{(q.error as Error).message}</Alert> : d ? <>
-        <p className="small muted" style={{ margin: 0 }}>Црвено: ист ресурс на два налози во ист ден.</p>
-        {grid("Возила / машини", d.vehicles)}
+    <Page title="Распоред на ресурси">
+      <PageHeader title="Распоред на ресурси" subtitle={d ? d.label : "Возила, машини и работници по ден"}
+        actions={d ? <>
+          <IconButton label="Претходна недела" icon={ChevronLeft} variant="default" onClick={() => setWeek(d.prev_week)} />
+          <Button onClick={() => setWeek("")}>Оваа недела</Button>
+          <IconButton label="Следна недела" icon={ChevronRight} variant="default" onClick={() => setWeek(d.next_week)} />
+        </> : null} />
+      {q.isLoading ? <SkeletonRows rows={8} cols={8} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : d ? <>
+        <div className="legend">
+          <span><span className="swatch" style={{ background: "var(--success-soft)", border: "1px solid var(--success)" }} />распореден</span>
+          <span><span className="swatch" style={{ background: "var(--danger-soft)", border: "1px solid var(--danger)" }} />двојно резервиран{conflicts ? <strong className="tone-danger"> ({conflicts})</strong> : null}</span>
+        </div>
+        {grid("Возила и машини", d.vehicles)}
         {grid("Работници", d.workers)}
       </> : null}
-    </div>
+    </Page>
   );
 }
 
 // ── leave timeline ─────────────────────────────────────────────────────────
 
-const SCALES: [string, string][] = [["month", "Месец"], ["quarter", "Квартал (по недели)"], ["year", "Година"], ["range", "Период"]];
+const SCALES = [{ value: "month", label: "Месец" }, { value: "quarter", label: "Квартал" }, { value: "year", label: "Година" }, { value: "range", label: "Период" }];
 
 export function LeaveTimeline() {
-  const today = iso(new Date());
+  const today = todayISO();
   const [scale, setScale] = useState("month");
   const [anchor, setAnchor] = useState(today);
   const [range, setRange] = useState({ from: "", to: "" });
@@ -136,7 +151,7 @@ export function LeaveTimeline() {
     department: department ?? undefined, all_employees: everyone ? 1 : undefined,
   };
   const q = useQuery({ queryKey: ["leave-timeline", query], queryFn: () => api.get<Data>("/hr/leaves/timeline/", query),
-    enabled: scale !== "range" || Boolean(range.from && range.to) });
+    enabled: scale !== "range" || Boolean(range.from && range.to), placeholderData: (p) => p });
   const d = q.data;
   const move = (dir: 1 | -1) => {
     if (!d) return;
@@ -144,48 +159,55 @@ export function LeaveTimeline() {
     else setAnchor(dir > 0 ? d.next_anchor : d.prev_anchor);
   };
   return (
-    <div className="stack">
-      <div className="page-head">
-        <h1>Отсуства — распоред</h1>
-        <span className="spacer" />
-        <Field label="Приказ" htmlFor="lt-scale">
-          <select id="lt-scale" className="input" value={scale} onChange={(e) => setScale(e.target.value)}>
-            {SCALES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-          </select>
-        </Field>
-        {scale === "range" ? <>
-          <Field label="Од" htmlFor="lt-from"><input id="lt-from" type="date" className="input" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} /></Field>
-          <Field label="До" htmlFor="lt-to"><input id="lt-to" type="date" className="input" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} /></Field>
-        </> : null}
-        <Field label="Одделение" htmlFor="lt-dept">
-          <RelatedSelect id="lt-dept" related={{ endpoint: `${API_BASE}/org/departments/` }} value={department} onChange={(v) => setDepartment(v)} placeholder="Сите" />
-        </Field>
-        <label className="row small" style={{ gap: 6 }}><input type="checkbox" checked={everyone} onChange={(e) => setEveryone(e.target.checked)} /> Сите вработени</label>
-      </div>
-      {scale === "range" && !(range.from && range.to) ? <p className="muted">Изберете период (најмногу 186 дена).</p> : null}
-      {q.isLoading ? <Spinner /> : d ? <>
-        <div className="row">
-          <Button size="sm" onClick={() => move(-1)}>←</Button>
-          <strong>{d.period_label}</strong>
-          <Button size="sm" onClick={() => move(1)}>→</Button>
-          {d.scale !== "range" ? <Button size="sm" onClick={() => setAnchor(today)}>Денес</Button> : null}
-          <span style={{ flex: 1 }} />
-          {d.legend.map((l: Data) => <span key={l.category} className={`leave-chip leave-${String(l.category).toLowerCase()}`}>{l.label}</span>)}
+    <Page title="Распоред на отсуства">
+      <PageHeader title="Распоред на отсуства" subtitle={d?.period_label ?? "Кој е отсутен и кога"}
+        actions={<LinkButton to="/hr/leaves/new" variant="primary">Ново отсуство</LinkButton>} />
+      <Panel>
+        <div className="toolbar">
+          <div className="field"><span className="label">Приказ</span><Segmented label="Приказ" value={scale} onChange={setScale} options={SCALES} /></div>
+          {scale === "range" ? <>
+            <Field label={t.from} htmlFor="lt-from"><input id="lt-from" type="date" className="input" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} /></Field>
+            <Field label={t.to} htmlFor="lt-to"><input id="lt-to" type="date" className="input" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} /></Field>
+          </> : (
+            <div className="field"><span className="label">{t.period}</span>
+              <div className="row-tight">
+                <IconButton label="Претходен период" icon={ChevronLeft} variant="default" disabled={!d} onClick={() => move(-1)} />
+                <Button onClick={() => setAnchor(today)}>{t.today}</Button>
+                <IconButton label="Следен период" icon={ChevronRight} variant="default" disabled={!d} onClick={() => move(1)} />
+              </div>
+            </div>
+          )}
+          <div style={{ minWidth: 220 }}>
+            <Field label="Оддел" htmlFor="lt-dept">
+              <RelatedSelect id="lt-dept" related={{ endpoint: `${API_BASE}/org/departments/` }} value={department} onChange={(v) => setDepartment(v)} placeholder="Сите оддели" />
+            </Field>
+          </div>
+          <div className="field" style={{ justifyContent: "flex-end", paddingBottom: 6 }}>
+            <Switch checked={everyone} onChange={setEveryone} label="И вработените без отсуство" />
+          </div>
         </div>
-        {!d.rows.length ? <EmptyState>Нема отсуства во периодот.</EmptyState> : (
-          <div className="card flush">
+      </Panel>
+      {scale === "range" && !(range.from && range.to) ? <Panel><EmptyState title="Изберете период">Најмногу 186 дена.</EmptyState></Panel> : null}
+      {q.isLoading ? <SkeletonRows rows={8} cols={10} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : d ? <>
+        <div className="legend">
+          {d.legend.map((l: Data) => <span key={l.category}><span className={`swatch leave-${String(l.category).toLowerCase()}`} />{l.label}</span>)}
+        </div>
+        {!d.rows.length ? <Panel><EmptyState title="Нема отсуства во периодот" /></Panel> : (
+          <Panel flush>
             <div className="table-wrap">
               <table className="table timeline">
                 <thead>
-                  {d.month_groups.length ? <tr><th />{d.month_groups.map((g: Data, i: number) => <th key={i} colSpan={g.span} className="small">{g.label}</th>)}</tr> : null}
-                  <tr><th>Вработен</th>{d.columns.map((c: Data, i: number) => <th key={i} className={`${c.is_weekend ? "weekend" : ""}${c.is_current ? " today" : ""}`}>{c.label}</th>)}</tr>
+                  {d.month_groups.length ? <tr><th className="sticky-col" />{d.month_groups.map((g: Data, i: number) => <th key={i} colSpan={g.span} className="month-group">{g.label}</th>)}</tr> : null}
+                  <tr><th className="sticky-col">Вработен</th>{d.columns.map((c: Data, i: number) => (
+                    <th key={i} className={`${c.is_weekend ? "weekend" : ""}${c.is_current ? " today" : ""}`}>{c.label}</th>
+                  ))}</tr>
                 </thead>
                 <tbody>
                   {d.rows.map((r: Data) => (
                     <tr key={r.employee}>
-                      <th scope="row" className="nowrap">{r.employee_name}</th>
+                      <th scope="row" className="sticky-col nowrap">{r.employee_name}</th>
                       {r.cells.map((c: Data, i: number) => (
-                        <td key={i} className={`${c.is_weekend ? "weekend" : ""}${c.category ? ` leave-${String(c.category).toLowerCase()}` : ""}`}
+                        <td key={i} className={`${c.is_weekend ? "weekend" : ""}${c.is_current ? " today" : ""}${c.category ? ` leave-${String(c.category).toLowerCase()}` : ""}`}
                           title={c.category ? `${c.category_label} ${c.range}` : undefined} />
                       ))}
                     </tr>
@@ -193,10 +215,9 @@ export function LeaveTimeline() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Panel>
         )}
       </> : null}
-    </div>
+    </Page>
   );
 }
-

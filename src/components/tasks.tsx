@@ -1,10 +1,10 @@
-/** Background jobs started from the UI (large exports, payroll generation, PDF lists): progress and result. */
+/** Background jobs started from the UI (large exports, payroll generation, PDF lists): progress lives in a
+ * toast that turns into the result (with the file to download) or the failure reason. */
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 import { api } from "@/api/client";
 import { t } from "@/i18n/mk";
-
-import { Button } from "./ui";
 
 interface TaskRun {
   id: string;
@@ -20,58 +20,49 @@ interface TaskRun {
 interface Tracked {
   id: string;
   label: string;
-  run?: TaskRun;
 }
 
 const TasksContext = createContext<(taskId: string, label: string) => void>(() => undefined);
 
 export function TasksProvider({ children }: { children: ReactNode }) {
-  const [tasks, setTasks] = useState<Tracked[]>([]);
+  const [open, setOpen] = useState<Tracked[]>([]);
   const track = useCallback((id: string, label: string) => {
-    setTasks((list) => (list.some((x) => x.id === id) ? list : [...list, { id, label }]));
+    toast.loading(label, { id, description: t.taskRunning, duration: Infinity });
+    setOpen((list) => (list.some((x) => x.id === id) ? list : [...list, { id, label }]));
   }, []);
 
   useEffect(() => {
-    const open = tasks.filter((x) => !x.run?.finished);
     if (!open.length) return;
     const timer = window.setTimeout(async () => {
-      const updates = await Promise.all(open.map((x) => api.get<TaskRun>(`/tasks/${x.id}/`).catch(() => null)));
-      setTasks((list) => list.map((x) => {
-        const u = updates.find((r) => r?.id === x.id);
-        return u ? { ...x, run: u } : x;
-      }));
+      const runs = await Promise.all(open.map((x) => api.get<TaskRun>(`/tasks/${x.id}/`).catch(() => null)));
+      const finished = new Set<string>();
+      runs.forEach((run, i) => {
+        const x = open[i];
+        if (!run) return;
+        if (!run.finished) {
+          toast.loading(x.label, { id: x.id, duration: Infinity,
+            description: `${t.taskRunning} ${Math.round(run.progress)}%${run.message ? ` · ${run.message}` : ""}` });
+          return;
+        }
+        finished.add(x.id);
+        if (run.status === "SUCCEEDED") {
+          const url = run.file?.url;
+          toast.success(x.label, {
+            id: x.id, duration: url ? 20_000 : 6000,
+            description: String(run.result?.message ?? (url ? run.file?.name : t.taskDone)),
+            action: url ? { label: t.download, onClick: () => window.open(url, "_blank", "noopener") } : undefined,
+          });
+        } else {
+          toast.error(x.label, { id: x.id, duration: 10_000, description: run.message || t.taskFailed });
+        }
+      });
+      if (finished.size) setOpen((list) => list.filter((x) => !finished.has(x.id)));
+      else setOpen((list) => [...list]);   // poll again
     }, 1500);
     return () => window.clearTimeout(timer);
-  }, [tasks]);
+  }, [open]);
 
-  return (
-    <TasksContext.Provider value={track}>
-      {children}
-      {tasks.length ? (
-        <div className="toasts" style={{ bottom: 80 }} aria-live="polite">
-          {tasks.map((x) => (
-            <div key={x.id} className="card" style={{ minWidth: 300, padding: 12 }}>
-              <div className="row" style={{ justifyContent: "space-between" }}>
-                <strong className="small">{x.label}</strong>
-                <Button size="sm" variant="ghost" aria-label={t.close}
-                  onClick={() => setTasks((list) => list.filter((y) => y.id !== x.id))}>✕</Button>
-              </div>
-              {!x.run || !x.run.finished ? (
-                <div className="small muted">{t.taskRunning} {x.run ? `${Math.round(x.run.progress)}%` : ""} {x.run?.message}</div>
-              ) : x.run.status === "SUCCEEDED" ? (
-                <div className="small">
-                  {String(x.run.result?.message ?? t.taskDone)}{" "}
-                  {x.run.file?.url ? <a href={x.run.file.url}>{x.run.file.name}</a> : null}
-                </div>
-              ) : (
-                <div className="small" style={{ color: "var(--danger)" }}>{x.run.message || t.taskFailed}</div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </TasksContext.Provider>
-  );
+  return <TasksContext.Provider value={track}>{children}</TasksContext.Provider>;
 }
 
 export function useTrackTask() {

@@ -7,7 +7,7 @@ import type { ActionInput, ActionMeta, ResourceMeta, Row } from "@/api/types";
 import { FileInput, RelatedMulti, RelatedSelect, type StoredFileRef } from "@/components/inputs";
 import { JsonView } from "@/components/JsonView";
 import { useTrackTask } from "@/components/tasks";
-import { Alert, Button, Field, Modal, Spinner, useConfirm, useToast } from "@/components/ui";
+import { Alert, Button, Field, Modal, Spinner, Switch, useConfirm, useToast } from "@/components/ui";
 import { t } from "@/i18n/mk";
 
 export function actionApplies(action: ActionMeta, row?: Row): boolean {
@@ -41,9 +41,9 @@ function InputControl({ input, value, onChange }: { input: ActionInput; value: u
       return <input id={id} className="input" type="date" value={str} onChange={(e) => onChange(e.target.value)} />;
     case "number":
     case "decimal":
-      return <input id={id} className="input" inputMode="decimal" value={str} onChange={(e) => onChange(e.target.value.replace(",", "."))} />;
+      return <input id={id} className="input num" inputMode="decimal" value={str} onChange={(e) => onChange(e.target.value.replace(",", "."))} />;
     case "boolean":
-      return <input id={id} type="checkbox" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} />;
+      return <Switch id={id} checked={Boolean(value)} onChange={onChange} label={input.label ?? INPUT_LABELS[input.name] ?? input.name} />;
     case "file":
       return <FileInput value={(value as StoredFileRef) ?? null} onChange={onChange} />;
     case "choice":
@@ -84,17 +84,16 @@ function toQuery(values: Record<string, unknown>): Query {
 }
 
 export function ActionButton({
-  meta,
-  action,
-  row,
-  onDone,
-  size = "sm",
+  meta, action, row, onDone, size = "sm", domId, variant,
 }: {
   meta: ResourceMeta;
   action: ActionMeta;
   row?: Row;
   onDone?: (result: unknown) => void;
-  size?: "sm";
+  size?: "sm" | "md";
+  /** id of the trigger button, so a menu item can open this action. */
+  domId?: string;
+  variant?: "primary" | "default";
 }) {
   const inputs = action.input ?? [];
   const [open, setOpen] = useState(false);
@@ -117,6 +116,7 @@ export function ActionButton({
       setResult(await api.get(url, toQuery(values)));
     } catch (err) {
       if (err instanceof ApiError) setError(err);
+      else toast(String(err), "danger");
     } finally {
       setBusy(false);
     }
@@ -138,10 +138,11 @@ export function ActionButton({
         setOpen(false);
       } else if (res && typeof res === "object" && !("id" in res && "version" in res) && inputs.length) {
         setResult(res);   // an operation's own summary (created, skipped …): keep the dialog open to show it
+        toast(`${action.label}: ${t.done.toLowerCase()}`, "success");
       } else {
         setOpen(false);
+        toast(`${action.label}: ${t.done.toLowerCase()}`, "success");
       }
-      toast(`${action.label}: ${t.done}`);
       onDone?.(res);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -162,68 +163,82 @@ export function ActionButton({
     }
     if (kind === "report") {
       setResult(undefined);
+      setError(null);
       setOpen(true);
       if (!inputs.some((i) => i.required)) void runReport();
       return;
     }
     if (inputs.length) {
       setResult(undefined);
+      setError(null);
       setOpen(true);
       return;
     }
-    if (action.confirm && !(await confirm(action.confirm, action.danger))) return;
+    if (action.confirm || action.danger) {
+      const ok = await confirm({ title: action.label, text: action.confirm || "Дали сте сигурни?", confirmLabel: action.label, danger: action.danger });
+      if (!ok) return;
+    }
     await runAction({});
   };
 
   const missing = inputs.filter((i) => i.required && (values[i.name] === undefined || values[i.name] === "" ||
     (Array.isArray(values[i.name]) && !(values[i.name] as unknown[]).length)));
   const generalError = error && !inputs.some((i) => error.fieldError(i.name)) ? error.message : "";
+  const v = action.danger ? "danger" : (variant ?? (action.variant === "primary" ? "primary" : "default"));
   return (
     <>
       {dialog}
-      <Button size={size} variant={action.danger ? "danger" : action.variant === "primary" ? "primary" : "default"}
-        busy={busy && !open} onClick={start}>
+      <Button id={domId} size={size === "md" ? undefined : "sm"} variant={v} busy={busy && !open} onClick={start}>
         {action.label}
       </Button>
       {open ? (
         <Modal
           title={action.label}
+          size={kind === "report" ? "lg" : undefined}
+          description={kind !== "report" && action.confirm && result === undefined ? action.confirm : undefined}
           onClose={() => setOpen(false)}
           footer={
             kind === "report" ? (
               <>
-                {inputs.length ? <Button variant="primary" busy={busy} disabled={missing.length > 0} onClick={runReport}>Прикажи</Button> : null}
+                {inputs.length ? <Button variant="primary" busy={busy} disabled={missing.length > 0} onClick={runReport}>Прикажи извештај</Button> : null}
                 <Button onClick={() => setOpen(false)}>{t.close}</Button>
               </>
             ) : result !== undefined ? (
-              <Button onClick={() => setOpen(false)}>{t.close}</Button>
+              <Button variant="primary" onClick={() => setOpen(false)}>{t.close}</Button>
             ) : (
               <>
                 <Button onClick={() => setOpen(false)}>{t.cancel}</Button>
-                <Button variant={action.danger ? "danger" : "primary"} busy={busy} disabled={missing.length > 0}
+                <Button variant={action.danger ? "danger-solid" : "primary"} busy={busy} disabled={missing.length > 0}
                   onClick={() => runAction(values)}>
-                  {t.confirm}
+                  {action.label}
                 </Button>
               </>
             )
           }
         >
           <div className="stack">
-            {action.confirm && kind !== "report" && result === undefined ? <p style={{ margin: 0 }}>{action.confirm}</p> : null}
             {generalError ? <Alert tone="danger">{generalError}</Alert> : null}
-            {result === undefined || kind === "report" ? (
-              <div className="grid-2">
-                {inputs.map((input) => (
+            {(result === undefined || kind === "report") && inputs.length ? (
+              <div className="grid-2" style={{ gap: 14 }}>
+                {inputs.map((input) => input.type === "boolean" ? (
+                  <div key={input.name} className="field" style={{ justifyContent: "flex-end" }}>
+                    <InputControl input={input} value={values[input.name]} onChange={(val) => setValues((s) => ({ ...s, [input.name]: val }))} />
+                  </div>
+                ) : (
                   <Field key={input.name} label={input.label ?? INPUT_LABELS[input.name] ?? input.name} required={input.required}
-                    htmlFor={`action-${input.name}`} error={error?.fieldError(input.name)}>
+                    htmlFor={`action-${input.name}`} error={error?.fieldError(input.name)}
+                    className={input.type === "text" || input.type === "refs" ? "span-all" : undefined}>
                     <InputControl input={input} value={values[input.name]}
-                      onChange={(v) => setValues((s) => ({ ...s, [input.name]: v }))} />
+                      onChange={(val) => setValues((s) => ({ ...s, [input.name]: val }))} />
                   </Field>
                 ))}
               </div>
             ) : null}
             {kind === "report" && busy ? <Spinner /> : null}
-            {result !== undefined ? <JsonView data={result} /> : null}
+            {result !== undefined ? (
+              kind !== "report" ? <Alert tone="success" title={`${action.label}: ${t.done.toLowerCase()}`}><JsonView data={result} /></Alert>
+                : <JsonView data={result} title={action.label} />
+            ) : null}
           </div>
         </Modal>
       ) : null}

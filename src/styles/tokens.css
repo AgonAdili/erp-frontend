@@ -1,0 +1,186 @@
+/* EA Core "Site ledger" tokens. Concrete-grey planes, bitumen ink, the EACOM pine as the brand, road-marking
+   amber reserved for things that need someone's attention. Layers keep component rules from fighting. */
+@layer reset, tokens, base, components, screens, utilities;
+
+@layer tokens {
+  :root {
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", "Noto Sans", sans-serif;
+
+    /* type scale (px): 12 / 13 / 14 / 16 / 20 / 28 / 40 */
+    --fs-xs: 12px;
+    --fs-sm: 13px;
+    --fs-md: 14px;
+    --fs-lg: 16px;
+    --fs-xl: 20px;
+    --fs-2xl: 28px;
+    --fs-3xl: 40px;
+
+    /* space (4-based) */
+    --s1: 4px;
+    --s2: 8px;
+    --s3: 12px;
+    --s4: 16px;
+    --s5: 20px;
+    --s6: 24px;
+    --s8: 32px;
+
+    /* radius by hierarchy: controls, panels, floating layers, pills */
+    --r-sm: 4px;
+    --r: 6px;
+    --r-lg: 10px;
+    --r-pill: 999px;
+
+    /* planes */
+    --bg: #edefed;
+    --surface: #ffffff;
+    --surface-2: #f5f7f6;
+    --surface-3: #e6eae8;
+    --rule: #d6dbd8;
+    --rule-strong: #bcc4c0;
+
+    /* ink */
+    --ink: #1e2422;
+    --ink-soft: #46504c;
+    --ink-mute: #5f6965;
+    --ink-faint: #8a938f;
+    --ink-inverse: #ffffff;
+
+    /* brand */
+    --pine: #0b3d2e;
+    --pine-2: #0f4c39;
+    --accent: #13684e;
+    --accent-hover: #0f573f;
+    --accent-soft: #e1efe8;
+    --accent-ink: #0b3d2e;
+
+    /* attention, state */
+    --amber: #e3a21a;
+    --amber-soft: #fcf1d8;
+    --amber-ink: #7a5300;
+    --danger: #b42318;
+    --danger-hover: #971c13;
+    --danger-soft: #fbe9e7;
+    --success: #1a7f45;
+    --success-soft: #e3f3e8;
+    --info: #2f5d8a;
+    --info-soft: #e6eef6;
+
+    /* the status band: an asphalt lane */
+    --lane: #232b28;
+    --lane-2: #2d3733;
+    --lane-ink: #f2f4f3;
+    --lane-mute: #a9b3ae;
+    --lane-mark: #f2f4f3;
+
+    /* chart series (validated: adjacent CVD ΔE ≥ 13, normal ≥ 18) */
+    --series-1: #1b8a66;
+    --series-2: #2a78d6;
+    --series-3: #eb6834;
+    --series-4: #7a5cc4;
+    --series-5: #e87ba4;
+    --series-6: #c98a00;
+    --series-muted: #b8c1bd;
+    --chart-grid: #e3e7e5;
+    --chart-axis: #bcc4c0;
+
+    --shadow-pop: 0 1px 2px rgb(16 24 20 / 8%), 0 10px 28px rgb(16 24 20 / 16%);
+    --shadow-drawer: -12px 0 32px rgb(16 24 20 / 14%);
+    --focus: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+
+    --row-h: 40px;
+    --ease: cubic-bezier(.2, .7, .2, 1);
+    color-scheme: light;
+  }
+
+  :root[data-density="compact"] { --row-h: 32px; }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101513;
+      --surface: #18201d;
+      --surface-2: #1e2723;
+      --surface-3: #26302c;
+      --rule: #2a3430;
+      --rule-strong: #3a4641;
+      --ink: #e4e9e6;
+      --ink-soft: #c2cbc7;
+      --ink-mute: #9aa5a0;
+      --ink-faint: #6f7a75;
+      --ink-inverse: #0f1714;
+      --pine: #0c1a15;
+      --pine-2: #12241d;
+      --accent: #5fbf98;
+      --accent-hover: #7dd0ae;
+      --accent-soft: #19362b;
+      --accent-ink: #a8e3cb;
+      --amber: #f0b43c;
+      --amber-soft: #3a2e12;
+      --amber-ink: #f5cd7a;
+      --danger: #ff8a7a;
+      --danger-hover: #ffa597;
+      --danger-soft: #3d1c18;
+      --success: #6fd38a;
+      --success-soft: #16301e;
+      --info: #8db8ef;
+      --info-soft: #172a40;
+      --lane: #0a0f0d;
+      --lane-2: #141b18;
+      --series-1: #2fa37c;
+      --series-2: #3987e5;
+      --series-3: #d95926;
+      --series-4: #9085e9;
+      --series-5: #d55181;
+      --series-6: #c98500;
+      --series-muted: #4a5651;
+      --chart-grid: #26302c;
+      --chart-axis: #3a4641;
+      --shadow-pop: 0 1px 2px rgb(0 0 0 / 40%), 0 12px 32px rgb(0 0 0 / 45%);
+      --shadow-drawer: -12px 0 32px rgb(0 0 0 / 45%);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #101513;
+    --surface: #18201d;
+    --surface-2: #1e2723;
+    --surface-3: #26302c;
+    --rule: #2a3430;
+    --rule-strong: #3a4641;
+    --ink: #e4e9e6;
+    --ink-soft: #c2cbc7;
+    --ink-mute: #9aa5a0;
+    --ink-faint: #6f7a75;
+    --ink-inverse: #0f1714;
+    --pine: #0c1a15;
+    --pine-2: #12241d;
+    --accent: #5fbf98;
+    --accent-hover: #7dd0ae;
+    --accent-soft: #19362b;
+    --accent-ink: #a8e3cb;
+    --amber: #f0b43c;
+    --amber-soft: #3a2e12;
+    --amber-ink: #f5cd7a;
+    --danger: #ff8a7a;
+    --danger-hover: #ffa597;
+    --danger-soft: #3d1c18;
+    --success: #6fd38a;
+    --success-soft: #16301e;
+    --info: #8db8ef;
+    --info-soft: #172a40;
+    --lane: #0a0f0d;
+    --lane-2: #141b18;
+    --series-1: #2fa37c;
+    --series-2: #3987e5;
+    --series-3: #d95926;
+    --series-4: #9085e9;
+    --series-5: #d55181;
+    --series-6: #c98500;
+    --series-muted: #4a5651;
+    --chart-grid: #26302c;
+    --chart-axis: #3a4641;
+    --shadow-pop: 0 1px 2px rgb(0 0 0 / 40%), 0 12px 32px rgb(0 0 0 / 45%);
+    --shadow-drawer: -12px 0 32px rgb(0 0 0 / 45%);
+    color-scheme: dark;
+  }
+}

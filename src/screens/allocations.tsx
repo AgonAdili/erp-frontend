@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/api/client";
 import type { Page } from "@/api/types";
-import { Alert, Button, EmptyState, Spinner } from "@/components/ui";
+import { Meter } from "@/components/dashboard";
+import { Alert, Button, EmptyState, Skeleton } from "@/components/ui";
 import { formatDate, formatMoney } from "@/lib/format";
 
 export interface AllocationSpec {
@@ -80,7 +81,7 @@ export function AllocationEditor({
     enabled: Boolean(party),
   });
   if (!party) return <p className="muted small" style={{ margin: 0 }}>Изберете го {spec.partyLabel} за да се прикажат отворените ставки.</p>;
-  if (q.isLoading) return <Spinner />;
+  if (q.isLoading) return <Skeleton height={120} />;
   const items = q.data?.results ?? [];
   const byItem = new Map(value.map((a) => [Number(a[spec.item]), a]));
   const allocated = value.reduce((s, a) => s + cents(a.amount), 0);
@@ -97,18 +98,19 @@ export function AllocationEditor({
   return (
     <div className="stack">
       <div className="row">
-        <span className="small">Отворено: <strong>{formatMoney(amount(openTotal))}</strong></span>
-        <span className="small">Распоредено: <strong>{formatMoney(amount(allocated))}</strong></span>
-        <span className={`small${left < 0 ? " error" : ""}`}>Нераспоредено: <strong>{formatMoney(amount(left))}</strong></span>
-        <span style={{ flex: 1 }} />
-        <Button size="sm" disabled={!total || !items.length} onClick={() => onChange(distribute(items, total / 100, spec.item))}>
-          Распореди автоматски
+        <span className="small muted">Отворено <strong className="num" style={{ color: "var(--ink)" }}>{formatMoney(amount(openTotal))}</strong></span>
+        <span className="small muted">Распоредено <strong className="num" style={{ color: "var(--ink)" }}>{formatMoney(amount(allocated))}</strong></span>
+        <span className={`small ${left < 0 ? "tone-danger" : "muted"}`}>Нераспоредено <strong className="num">{formatMoney(amount(left))}</strong></span>
+        <span className="spacer" />
+        <Button size="sm" variant="primary" disabled={!total || !items.length} onClick={() => onChange(distribute(items, total / 100, spec.item))}>
+          Распореди по најстар рок
         </Button>
-        <Button size="sm" disabled={!value.length} onClick={() => onChange([])}>Исчисти</Button>
+        <Button size="sm" disabled={!value.length} onClick={() => onChange([])}>Исчисти распоред</Button>
       </div>
+      {total ? <Meter value={allocated} max={total} badAt={100.01} label="Распоредено од износот" /> : null}
       {left < 0 ? <Alert tone="danger">Распоредениот износ е поголем од износот на плаќањето.</Alert> : null}
       {errors ? <Alert tone="danger">{Array.isArray(errors) ? errors.map((e) => (typeof e === "string" ? e : JSON.stringify(e))).join(" ") : String(errors)}</Alert> : null}
-      {!items.length ? <EmptyState>Нема отворени ставки.</EmptyState> : (
+      {!items.length ? <EmptyState compact title="Нема отворени ставки" /> : (
         <div className="table-wrap">
           <table className="table">
             <thead>

@@ -1,11 +1,12 @@
 /** Route `/:module/:path[/new|/:id]` → the generic list, form or detail of that API resource. */
 import { useParams } from "react-router-dom";
-
-import { Alert, Spinner } from "@/components/ui";
+import { ApiError } from "@/api/client";
+import { ErrorState, PageHeader, Panel, Skeleton, SkeletonRows } from "@/components/ui";
 import { t } from "@/i18n/mk";
-import { endpointFor, useMeta } from "@/meta/hooks";
+import { Page } from "@/layout/Page";
+import { endpointFor, routeFor, useMeta } from "@/meta/hooks";
+import { Forbidden, NotFound } from "@/layout/NotFound";
 
-import { DETAIL_EXTENSIONS } from "./extensions";
 import { ResourceDetail } from "./ResourceDetail";
 import { ResourceForm } from "./ResourceForm";
 import { ResourceList } from "./ResourceList";
@@ -14,24 +15,30 @@ export function ResourceScreen({ mode }: { mode: "list" | "new" | "detail" }) {
   const { module = "", path = "", id } = useParams();
   const endpoint = endpointFor(module, path);
   const meta = useMeta(endpoint);
-  if (meta.isLoading) return <Spinner />;
-  if (meta.error || !meta.data) return <Alert tone="danger">{(meta.error as Error)?.message ?? t.noResults}</Alert>;
-  if (!meta.data.permissions.view) return <Alert tone="warning">Немате дозвола за преглед.</Alert>;
-  if (mode === "new") {
+  if (meta.isLoading) {
     return (
-      <div className="stack">
-        <div className="page-head"><h1>{meta.data.title_singular} — {t.add}</h1></div>
-        <div className="card"><ResourceForm meta={meta.data} /></div>
+      <div className="page">
+        <Skeleton width={260} height={30} />
+        <div className="panel"><SkeletonRows rows={8} /></div>
       </div>
     );
   }
-  if (mode === "detail" && id) {
-    const Extension = DETAIL_EXTENSIONS[meta.data.key];
+  if (meta.error instanceof ApiError && meta.error.status === 404) return <NotFound />;
+  if (meta.error instanceof ApiError && meta.error.status === 403) return <Forbidden />;
+  if (meta.error || !meta.data) return <Page><ErrorState error={meta.error} onRetry={() => void meta.refetch()} /></Page>;
+  const m = meta.data;
+  if (!m.permissions.view) return <Forbidden />;
+  if (mode === "new") {
+    if (!m.permissions.add) return <Forbidden />;
     return (
-      <ResourceDetail meta={meta.data} id={id}>
-        {Extension ? (row) => <Extension meta={meta.data!} row={row} /> : undefined}
-      </ResourceDetail>
+      <Page title={`${m.title_singular || m.title}: ${t.addNew.toLowerCase()}`} narrow>
+        <PageHeader back={{ to: routeFor(m.endpoint), label: m.title }} title={`${m.title_singular || m.title}`} subtitle={t.addNew} />
+        <Panel><ResourceForm meta={m} /></Panel>
+      </Page>
     );
   }
-  return <ResourceList meta={meta.data} />;
+  if (mode === "detail" && id) {
+    return <div className="page" key={id}><ResourceDetail meta={m} id={id} /></div>;
+  }
+  return <Page title={m.title}><ResourceList meta={m} /></Page>;
 }

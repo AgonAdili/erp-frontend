@@ -72,7 +72,7 @@ describe("ResourceForm", () => {
     await userEvent.selectOptions(screen.getByLabelText(/Категорија/), "PAID");
     await userEvent.type(screen.getByLabelText(/Почетен датум/), "2026-03-06");
     await userEvent.click(screen.getByRole("button", { name: "Зачувај" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("годишната квота");
+    expect(await screen.findByText(/годишната квота/, { selector: ".error" })).toHaveTextContent("годишната квота");
     const [url, init] = fetchMock.mock.calls[0];
     expect(String(url)).toBe("/api/v1/hr/leaves/");
     expect(JSON.parse(String(init!.body))).toEqual({ category: "PAID", start_date: "2026-03-06" });
