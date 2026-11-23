@@ -1,186 +1,243 @@
-/* EA Core "Site ledger" tokens. Concrete-grey planes, bitumen ink, the EACOM pine as the brand, road-marking
-   amber reserved for things that need someone's attention. Layers keep component rules from fighting. */
-@layer reset, tokens, base, components, screens, utilities;
+/* EACore tokens (guidelines CORE v6.9 · FE v3.8, branding_rules/02-foundations.md §9).
+   The only place raw values live. Light = ink on warm paper; dark = bone on warm graphite.
+
+   Size tokens: the §9 table lists the phone / touch values for --ea-fs-32, --ea-fs-40, --ea-page-pad,
+   --ea-section-gap, --ea-panel-pad, --ea-control and --ea-control-sm; the text of 02 §3–5 gives the desktop
+   ones (display 32 / 40, page 32px, sections 40px, panels 24px, controls 32 / 26px). Both are kept: desktop
+   below, the §9 values in the media queries at the end. Raised with the guideline owner. */
+@layer reset, tokens, base, components, shell, pages, utilities;
 
 @layer tokens {
-  :root {
-    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", "Noto Sans", sans-serif;
-
-    /* type scale (px): 12 / 13 / 14 / 16 / 20 / 28 / 40 */
-    --fs-xs: 12px;
-    --fs-sm: 13px;
-    --fs-md: 14px;
-    --fs-lg: 16px;
-    --fs-xl: 20px;
-    --fs-2xl: 28px;
-    --fs-3xl: 40px;
-
-    /* space (4-based) */
-    --s1: 4px;
-    --s2: 8px;
-    --s3: 12px;
-    --s4: 16px;
-    --s5: 20px;
-    --s6: 24px;
-    --s8: 32px;
-
-    /* radius by hierarchy: controls, panels, floating layers, pills */
-    --r-sm: 4px;
-    --r: 6px;
-    --r-lg: 10px;
-    --r-pill: 999px;
-
-    /* planes */
-    --bg: #edefed;
-    --surface: #ffffff;
-    --surface-2: #f5f7f6;
-    --surface-3: #e6eae8;
-    --rule: #d6dbd8;
-    --rule-strong: #bcc4c0;
-
-    /* ink */
-    --ink: #1e2422;
-    --ink-soft: #46504c;
-    --ink-mute: #5f6965;
-    --ink-faint: #8a938f;
-    --ink-inverse: #ffffff;
-
-    /* brand */
-    --pine: #0b3d2e;
-    --pine-2: #0f4c39;
-    --accent: #13684e;
-    --accent-hover: #0f573f;
-    --accent-soft: #e1efe8;
-    --accent-ink: #0b3d2e;
-
-    /* attention, state */
-    --amber: #e3a21a;
-    --amber-soft: #fcf1d8;
-    --amber-ink: #7a5300;
-    --danger: #b42318;
-    --danger-hover: #971c13;
-    --danger-soft: #fbe9e7;
-    --success: #1a7f45;
-    --success-soft: #e3f3e8;
-    --info: #2f5d8a;
-    --info-soft: #e6eef6;
-
-    /* the status band: an asphalt lane */
-    --lane: #232b28;
-    --lane-2: #2d3733;
-    --lane-ink: #f2f4f3;
-    --lane-mute: #a9b3ae;
-    --lane-mark: #f2f4f3;
-
-    /* chart series (validated: adjacent CVD ΔE ≥ 13, normal ≥ 18) */
-    --series-1: #1b8a66;
-    --series-2: #2a78d6;
-    --series-3: #eb6834;
-    --series-4: #7a5cc4;
-    --series-5: #e87ba4;
-    --series-6: #c98a00;
-    --series-muted: #b8c1bd;
-    --chart-grid: #e3e7e5;
-    --chart-axis: #bcc4c0;
-
-    --shadow-pop: 0 1px 2px rgb(16 24 20 / 8%), 0 10px 28px rgb(16 24 20 / 16%);
-    --shadow-drawer: -12px 0 32px rgb(16 24 20 / 14%);
-    --focus: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
-
-    --row-h: 40px;
-    --ease: cubic-bezier(.2, .7, .2, 1);
+  :root, :root[data-theme="light"] {
+    --ea-bg: #F7F6F2;
+    --ea-surface: #FFFFFF;
+    --ea-subtle: #EFEDE7;
+    --ea-chrome: #F2F0EA;
+    --ea-line: #E2DED3;
+    --ea-line-strong: #CBC5B6;
+    --ea-control-border: #8C877A;
+    --ea-text: #11131A;
+    --ea-text-2: #4A4D57;
+    --ea-text-3: #61646E;
+    --ea-brand: #11131A;
+    --ea-brand-hover: #2B2E38;
+    --ea-brand-strong: #11131A;
+    --ea-on-brand: #FFFFFF;
+    --ea-accent: #11131A;
+    --ea-go: #188038;
+    --ea-info: #1967D2;
+    --ea-caution: #A35800;
+    --ea-stop: #C5221F;
+    --ea-neutral: #5F6368;
+    --ea-group-ops-ink: #B45300;
+    --ea-group-fin-ink: #188038;
+    --ea-group-data-ink: #1967D2;
+    --ea-heat-0: #EBEDF0;
+    --ea-heat-1: #9BE9A8;
+    --ea-heat-2: #40C463;
+    --ea-heat-3: #30A14E;
+    --ea-heat-4: #216E39;
+    --ea-chart-1: #11131A;
+    --ea-chart-2: #8C877A;
+    --ea-chart-3: #1967D2;
+    --ea-chart-4: #CFCABD;
+    --ea-scrim: rgba(13, 13, 13, .55);
     color-scheme: light;
   }
 
-  :root[data-density="compact"] { --row-h: 32px; }
+  :root {
+    /* the same in both themes */
+    --ea-yellow: #F9AB00;
+    --ea-on-yellow: #202124;
+    --ea-stop-fill: #C5221F;
+    --ea-fill-neutral: #5F6368;
+    --ea-stop-fill-hover: #A50E0E;
+    --ea-group-ops: #E8710A;
+    --ea-group-fin: #188038;
+    --ea-group-data: #1967D2;
+    --ea-signal-good: #188038;
+    --ea-signal-mid: #F9AB00;
+    --ea-signal-poor: #C5221F;
+    --ea-fill-go: #188038;
+    --ea-fill-info: #1967D2;
+    --ea-fill-caution: #F9AB00;
+    --ea-fill-stop: #C5221F;
+    --ea-fill-go-hover: #0D652D;
+    --ea-fill-info-hover: #185ABC;
+    --ea-fill-caution-hover: #E8A000;
+    --ea-fill-stop-hover: #A50E0E;
+    --ea-on-fill: #FFFFFF;
+
+    --ea-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --ea-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --ea-fs-12: 0.75rem;
+    --ea-fs-14: 0.875rem;
+    --ea-fs-18: 1.125rem;
+    --ea-fs-20: 1.25rem;
+    --ea-fs-26: 1.625rem;
+    --ea-fs-32: 2rem;
+    --ea-fs-40: 2.5rem;
+    --ea-fw-regular: 400;
+    --ea-fw-medium: 500;
+    --ea-fw-semibold: 600;
+    --ea-lh-tight: 1.25;
+    --ea-lh: 1.5;
+    --ea-ls-display: -0.025em;
+    --ea-ls-title: -0.01em;
+    --ea-ls-label: 0.08em;
+
+    --ea-sp-1: 4px;
+    --ea-sp-2: 8px;
+    --ea-sp-3: 12px;
+    --ea-sp-4: 16px;
+    --ea-sp-5: 20px;
+    --ea-sp-6: 24px;
+    --ea-sp-8: 32px;
+    --ea-sp-10: 40px;
+    --ea-sp-12: 48px;
+    --ea-sp-16: 64px;
+    --ea-page-pad: 32px;
+    --ea-section-gap: 40px;
+    --ea-panel-pad: 24px;
+    --ea-gutter: 16px;
+    --ea-control: 32px;
+    --ea-control-sm: 26px;
+    --ea-row-h: 44px;
+    --ea-hairline: 1px;
+    --ea-rule: 2px;
+
+    --ea-r-control: 6px;
+    --ea-r-card: 10px;
+    --ea-r-round: 999px;
+    --ea-r-button: 999px;
+
+    --ea-focus: 2px solid var(--ea-brand);
+    --ea-focus-color: var(--ea-brand);
+    --ea-focus-offset: 2px;
+
+    --ea-icon-16: 16px;
+    --ea-icon-14: 14px;
+    --ea-icon-20: 20px;
+    --ea-icon-24: 24px;
+
+    --ea-sidebar-w: 248px;
+    --ea-sidebar-w-collapsed: 64px;
+    --ea-header-h: 56px;
+    --ea-content-max: 1440px;
+    --ea-form-max: 640px;
+    --ea-aside-w: 360px;
+
+    --ea-dur-1: 120ms;
+    --ea-dur-2: 200ms;
+    --ea-dur-3: 280ms;
+    --ea-dur-icon: 520ms;
+    --ea-dur-fill: 600ms;
+    --ea-ease: cubic-bezier(.2, 0, 0, 1);
+    --ea-ease-in: cubic-bezier(0, 0, .2, 1);
+    --ea-ease-out: cubic-bezier(.4, 0, 1, 1);
+
+    --ea-z-sticky: 10;
+    --ea-z-sidebar: 20;
+    --ea-z-menu: 30;
+    --ea-z-dialog: 50;
+    --ea-z-toast: 60;
+
+    /* the module group of the current page (data-module sets it) */
+    --ea-mod: var(--ea-brand);
+    --ea-mod-ink: var(--ea-text);
+  }
+
+  :root[data-theme="dark"] {
+    --ea-bg: #0D0D0D;
+    --ea-surface: #141414;
+    --ea-subtle: #1C1C1C;
+    --ea-chrome: #0A0A0A;
+    --ea-line: #262626;
+    --ea-line-strong: #3A3A3A;
+    --ea-control-border: #6E6A60;
+    --ea-text: #E3DCC8;
+    --ea-text-2: #A79F8C;
+    --ea-text-3: #8F8875;
+    --ea-brand: #E3DCC8;
+    --ea-brand-hover: #F1ECDF;
+    --ea-brand-strong: #E3DCC8;
+    --ea-on-brand: #0D0D0D;
+    --ea-accent: #E3DCC8;
+    --ea-go: #6FD39B;
+    --ea-info: #8AB4F8;
+    --ea-caution: #FDD663;
+    --ea-stop: #F28B82;
+    --ea-neutral: #9AA0A6;
+    --ea-group-ops-ink: #FCAD70;
+    --ea-group-fin-ink: #81C995;
+    --ea-group-data-ink: #8AB4F8;
+    --ea-heat-0: #1C1C1C;
+    --ea-heat-1: #0E4429;
+    --ea-heat-2: #006D32;
+    --ea-heat-3: #26A641;
+    --ea-heat-4: #39D353;
+    --ea-chart-1: #E3DCC8;
+    --ea-chart-2: #8F8875;
+    --ea-chart-3: #8AB4F8;
+    --ea-chart-4: #3A3A3A;
+    --ea-scrim: rgba(0, 0, 0, .7);
+    color-scheme: dark;
+  }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #101513;
-      --surface: #18201d;
-      --surface-2: #1e2723;
-      --surface-3: #26302c;
-      --rule: #2a3430;
-      --rule-strong: #3a4641;
-      --ink: #e4e9e6;
-      --ink-soft: #c2cbc7;
-      --ink-mute: #9aa5a0;
-      --ink-faint: #6f7a75;
-      --ink-inverse: #0f1714;
-      --pine: #0c1a15;
-      --pine-2: #12241d;
-      --accent: #5fbf98;
-      --accent-hover: #7dd0ae;
-      --accent-soft: #19362b;
-      --accent-ink: #a8e3cb;
-      --amber: #f0b43c;
-      --amber-soft: #3a2e12;
-      --amber-ink: #f5cd7a;
-      --danger: #ff8a7a;
-      --danger-hover: #ffa597;
-      --danger-soft: #3d1c18;
-      --success: #6fd38a;
-      --success-soft: #16301e;
-      --info: #8db8ef;
-      --info-soft: #172a40;
-      --lane: #0a0f0d;
-      --lane-2: #141b18;
-      --series-1: #2fa37c;
-      --series-2: #3987e5;
-      --series-3: #d95926;
-      --series-4: #9085e9;
-      --series-5: #d55181;
-      --series-6: #c98500;
-      --series-muted: #4a5651;
-      --chart-grid: #26302c;
-      --chart-axis: #3a4641;
-      --shadow-pop: 0 1px 2px rgb(0 0 0 / 40%), 0 12px 32px rgb(0 0 0 / 45%);
-      --shadow-drawer: -12px 0 32px rgb(0 0 0 / 45%);
+    :root[data-theme="system"] {
+      --ea-bg: #0D0D0D;
+      --ea-surface: #141414;
+      --ea-subtle: #1C1C1C;
+      --ea-chrome: #0A0A0A;
+      --ea-line: #262626;
+      --ea-line-strong: #3A3A3A;
+      --ea-control-border: #6E6A60;
+      --ea-text: #E3DCC8;
+      --ea-text-2: #A79F8C;
+      --ea-text-3: #8F8875;
+      --ea-brand: #E3DCC8;
+      --ea-brand-hover: #F1ECDF;
+      --ea-brand-strong: #E3DCC8;
+      --ea-on-brand: #0D0D0D;
+      --ea-accent: #E3DCC8;
+      --ea-go: #6FD39B;
+      --ea-info: #8AB4F8;
+      --ea-caution: #FDD663;
+      --ea-stop: #F28B82;
+      --ea-neutral: #9AA0A6;
+      --ea-group-ops-ink: #FCAD70;
+      --ea-group-fin-ink: #81C995;
+      --ea-group-data-ink: #8AB4F8;
+      --ea-heat-0: #1C1C1C;
+      --ea-heat-1: #0E4429;
+      --ea-heat-2: #006D32;
+      --ea-heat-3: #26A641;
+      --ea-heat-4: #39D353;
+      --ea-chart-1: #E3DCC8;
+      --ea-chart-2: #8F8875;
+      --ea-chart-3: #8AB4F8;
+      --ea-chart-4: #3A3A3A;
+      --ea-scrim: rgba(0, 0, 0, .7);
       color-scheme: dark;
     }
   }
 
-  :root[data-theme="dark"] {
-    --bg: #101513;
-    --surface: #18201d;
-    --surface-2: #1e2723;
-    --surface-3: #26302c;
-    --rule: #2a3430;
-    --rule-strong: #3a4641;
-    --ink: #e4e9e6;
-    --ink-soft: #c2cbc7;
-    --ink-mute: #9aa5a0;
-    --ink-faint: #6f7a75;
-    --ink-inverse: #0f1714;
-    --pine: #0c1a15;
-    --pine-2: #12241d;
-    --accent: #5fbf98;
-    --accent-hover: #7dd0ae;
-    --accent-soft: #19362b;
-    --accent-ink: #a8e3cb;
-    --amber: #f0b43c;
-    --amber-soft: #3a2e12;
-    --amber-ink: #f5cd7a;
-    --danger: #ff8a7a;
-    --danger-hover: #ffa597;
-    --danger-soft: #3d1c18;
-    --success: #6fd38a;
-    --success-soft: #16301e;
-    --info: #8db8ef;
-    --info-soft: #172a40;
-    --lane: #0a0f0d;
-    --lane-2: #141b18;
-    --series-1: #2fa37c;
-    --series-2: #3987e5;
-    --series-3: #d95926;
-    --series-4: #9085e9;
-    --series-5: #d55181;
-    --series-6: #c98500;
-    --series-muted: #4a5651;
-    --chart-grid: #26302c;
-    --chart-axis: #3a4641;
-    --shadow-pop: 0 1px 2px rgb(0 0 0 / 40%), 0 12px 32px rgb(0 0 0 / 45%);
-    --shadow-drawer: -12px 0 32px rgb(0 0 0 / 45%);
-    color-scheme: dark;
+  [data-module="ops"] { --ea-mod: var(--ea-group-ops); --ea-mod-ink: var(--ea-group-ops-ink); }
+  [data-module="fin"] { --ea-mod: var(--ea-group-fin); --ea-mod-ink: var(--ea-group-fin-ink); }
+  [data-module="data"] { --ea-mod: var(--ea-group-data); --ea-mod-ink: var(--ea-group-data-ink); }
+
+  /* phone and touch values (the §9 table) */
+  @media (max-width: 767px) {
+    :root { --ea-fs-32: 1.625rem; --ea-fs-40: 2rem; }
+  }
+  @media (max-width: 640px) {
+    :root { --ea-page-pad: 16px; --ea-section-gap: 32px; --ea-panel-pad: 16px; }
+  }
+  @media (min-width: 1440px) {
+    :root { --ea-gutter: 20px; }
+  }
+  @media (pointer: coarse) {
+    :root { --ea-control: 40px; --ea-control-sm: 32px; }
   }
 }

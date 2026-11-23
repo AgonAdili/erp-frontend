@@ -3,15 +3,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ShoppingCart } from "lucide-react";
+import { Search, ShoppingCart } from "@/components/icons";
 
 import { api, API_BASE, ApiError } from "@/api/client";
 import { useEntity } from "@/app/prefs";
 import { useSession } from "@/auth/session";
-import { RelatedSelect } from "@/components/inputs";
+import { DateInput, RelatedSelect } from "@/components/inputs";
 import { Alert, Badge, Button, EmptyState, ErrorState, Field, PageHeader, Panel, SkeletonRows, Tabs, useToast } from "@/components/ui";
 import { Page } from "@/layout/Page";
-import { formatDate, formatMoney, formatNumber } from "@/lib/format";
+import { formatAmount, formatDate, formatMoney, formatNumber } from "@/lib/format";
 
 const MOVEMENTS = `${API_BASE}/inventory/movements/`;
 
@@ -75,7 +75,7 @@ function Levels({ entity, warehouse }: { entity: number | null; warehouse: numbe
   return (
     <div className="stack">
       <div className="row">
-        <div className="input-icon" style={{ flex: "1 1 240px", maxWidth: 340 }}>
+        <div className="input-icon grow-search">
           <Search aria-hidden />
           <input className="input" type="search" placeholder="Шифра или назив…" aria-label="Пребарај артикл"
             value={text} onChange={(e) => setText(e.target.value)} />
@@ -94,7 +94,7 @@ function Levels({ entity, warehouse }: { entity: number | null; warehouse: numbe
       {lowOnly && warehouse ? <p className="small muted">Минимумот се проверува за сите магацини заедно.</p> : null}
       {q.isLoading ? <SkeletonRows rows={8} cols={5} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} />
         : !rows.length ? <EmptyState title={needle ? "Ниеден артикл не одговара" : "Нема залиха"} /> : (
-        <div className="table-wrap" style={{ maxHeight: "calc(100vh - 330px)" }}>
+        <div className="table-wrap tall">
           <table className="table">
             <thead>
               <tr><th>Шифра</th><th>Артикл</th><th>Ед.</th><th className="num">Залиха</th><th className="num">Минимум</th><th /></tr>
@@ -129,13 +129,13 @@ function Valuation({ entity, warehouse }: { entity: number | null; warehouse: nu
   const unreliable = (q.data?.rows ?? []).filter((r) => !r.reliable);
   return (
     <div className="stack">
-      <div className="row" style={{ alignItems: "flex-end" }}>
+      <div className="row items-end">
         <Field label="Состојба на ден" htmlFor="as-of" help={asOf ? undefined : "Празно = денес"}>
-          <input id="as-of" type="date" className="input" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
+          <DateInput id="as-of" value={asOf} onChange={(v) => setAsOf(v ?? "")} />
         </Field>
         <span className="spacer" />
         {q.data ? <div className="right"><div className="small muted">Вкупна вредност</div>
-          <div className="num" style={{ fontSize: 24, fontWeight: 600 }}>{formatMoney(q.data.total)} <span className="small muted">ден.</span></div></div> : null}
+          <div className="figure-lg">{formatAmount(q.data.total)}</div></div> : null}
       </div>
       {unreliable.length ? (
         <Alert tone="warning" title={`Несигурна цена кај ${unreliable.length} артикли`}>
@@ -144,7 +144,7 @@ function Valuation({ entity, warehouse }: { entity: number | null; warehouse: nu
       ) : null}
       {q.isLoading ? <SkeletonRows rows={8} cols={6} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} />
         : !q.data?.rows.length ? <EmptyState title="Нема залиха на тој датум" /> : (
-        <div className="table-wrap" style={{ maxHeight: "calc(100vh - 380px)" }}>
+        <div className="table-wrap tall">
           <table className="table">
             <thead>
               <tr><th>Шифра</th><th>Артикл</th><th>Ед.</th><th className="num">Количина</th>
@@ -180,7 +180,7 @@ export function StockOverview() {
   return (
     <Page title="Залиха и вреднување">
       <PageHeader title="Залиха и вреднување" subtitle="Количина по артикл, минимална залиха и вредност по просечна набавна цена"
-        actions={<div style={{ minWidth: 240 }}>
+        controls={<div className="min-field">
           <Field label="Магацин" htmlFor="stock-warehouse">
             <RelatedSelect id="stock-warehouse" related={{ endpoint: `${API_BASE}/catalog/warehouses/` }} value={warehouse}
               onChange={(v) => setWarehouse(v)} placeholder="Сите магацини" />

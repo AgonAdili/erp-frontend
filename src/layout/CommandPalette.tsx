@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Command } from "cmdk";
 import { Dialog } from "radix-ui";
-import { Clock, FileText, LayoutGrid, LogOut, Moon, Plus, Search, Sun, Bell, Inbox, Monitor } from "lucide-react";
+import { Clock, FileText, LayoutGrid, LogOut, Moon, Plus, Search, Sun, Bell, Inbox, Monitor } from "@/components/icons";
 
 import { api } from "@/api/client";
 import { useSession } from "@/auth/session";
@@ -62,7 +62,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             <div className="cmdk-input-wrap">
               <Search aria-hidden />
               <Command.Input value={text} onValueChange={setText} placeholder={t.searchEverywhere} autoFocus />
-              {search.isFetching ? <span className="spinner" aria-hidden style={{ color: "var(--ink-faint)" }} /> : <Kbd>Esc</Kbd>}
+              {search.isFetching ? <span className="spinner ico-muted" aria-hidden /> : <Kbd>Esc</Kbd>}
             </div>
             <Command.List>
               <Command.Empty>{query.length >= 2 && search.isFetching ? t.loading : t.noResults}</Command.Empty>

@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import { StatusBand, change } from "@/components/dashboard";
-import { addDays, displayValue, formatCompact, formatLongDate, formatMoney, formatNumber, isoLocal } from "@/lib/format";
+import { addDays, displayValue, formatAmount, formatAmountWhole, formatCompact, formatLongDate, formatMoney, formatNumber, isoLocal } from "@/lib/format";
 import { groupForPath } from "@/nav/modules";
 import { listUrl } from "@/screens/overviews/common";
 
@@ -16,11 +16,18 @@ describe("Macedonian formatting (independent of the browser's locale data)", () 
     expect(formatNumber(16.666, 1)).toBe("16,7");
   });
 
-  it("compacts large figures with Macedonian units", () => {
+  it("shortens only from one million up (млн / млрд)", () => {
     expect(formatCompact(9999)).toBe("9.999");
-    expect(formatCompact(42_500)).toBe("42,5 илј.");
-    expect(formatCompact(4_200_000)).toBe("4,2 мил.");
-    expect(formatCompact(3_100_000_000)).toBe("3,1 млрд.");
+    expect(formatCompact(42_500)).toBe("42.500");
+    expect(formatCompact(1_211_574)).toBe("1,21 млн");
+    expect(formatCompact(3_100_000_000)).toBe("3,1 млрд");
+  });
+
+  it("puts the ISO code after the amount", () => {
+    expect(formatAmount(1234567)).toBe("1.234.567,00 MKD");
+    expect(formatAmount(-1500.5, "EUR")).toBe("−1.500,50 EUR");
+    expect(formatAmountWhole(4323263.4)).toBe("4.323.263 MKD");
+    expect(formatAmount(null)).toBe("—");
   });
 
   it("leaves years and codes ungrouped", () => {

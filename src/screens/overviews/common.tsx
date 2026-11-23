@@ -1,14 +1,15 @@
-/** The frame every module overview shares: title, which legal entity it covers, when it was loaded, refresh,
- * and the quick links to the module's lists. */
+/** The board frame every module opens on (branding_rules/04 §3 "Board"): the board bar (company, "Ажурирано
+ * пред …", refresh, the one create action), the greeting (date and the module title), then the board's own
+ * figures and numbered sections. The module's lists are the module tabs above. */
 import type { ReactNode } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@/components/icons";
 
 import { useEntity } from "@/app/prefs";
 import { useSession } from "@/auth/session";
 import { ErrorState, IconButton, PageHeader, SkeletonPanel } from "@/components/ui";
 import { t } from "@/i18n/mk";
 import { Page } from "@/layout/Page";
-import { formatRelative } from "@/lib/format";
+import { formatLongDate, formatRelative } from "@/lib/format";
 import { useMeta } from "@/meta/hooks";
 
 export function useEntityName(): string {
@@ -37,19 +38,20 @@ export function Overview<T>({ title, subtitle, actions, q, children, entityScope
   entityScoped?: boolean;
 }) {
   const entity = useEntityName();
-  const sub = subtitle ?? (entityScoped && entity ? entity : undefined);
+  const sub = subtitle ?? (entityScoped ? entity : "Сите друштва");
   return (
     <Page title={title}>
-      <PageHeader title={title}
-        subtitle={<span className="row-tight" style={{ flexWrap: "wrap" }}>
+      <div className="page-block">
+        <div className="board-bar">
           {sub ? <span>{sub}</span> : null}
-          {q.dataUpdatedAt ? <span className="xs muted">· {t.updated.toLowerCase()} {formatRelative(new Date(q.dataUpdatedAt).toISOString())}</span> : null}
-        </span>}
-        actions={<>
-          {actions}
-          <IconButton label={t.refresh} icon={RefreshCw} variant="default" onClick={() => void q.refetch()}
+          {q.dataUpdatedAt ? <span className="muted">{t.updated} {formatRelative(new Date(q.dataUpdatedAt).toISOString())}</span> : null}
+          <IconButton label={t.refresh} icon={RefreshCw} size="sm" onClick={() => void q.refetch()}
             className={q.isFetching ? "spinning" : undefined} disabled={q.isFetching} />
-        </>} />
+          <span className="spacer" />
+          {actions}
+        </div>
+        <PageHeader display title={title} eyebrow={formatLongDate(new Date())} />
+      </div>
       {q.isLoading ? <OverviewSkeleton /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : q.data !== undefined ? children(q.data) : null}
     </Page>
   );

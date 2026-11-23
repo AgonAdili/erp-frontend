@@ -1,14 +1,14 @@
 /** Fuel consumption against the norm, per vehicle or driver, for a period. */
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download } from "lucide-react";
+import { Download } from "@/components/icons";
 
 import { api, API_BASE, download } from "@/api/client";
 import { HBars, Kpi, Kpis } from "@/components/dashboard";
-import { RelatedSelect } from "@/components/inputs";
+import { DateInput, RelatedSelect } from "@/components/inputs";
 import { Button, EmptyState, ErrorState, Field, PageHeader, Panel, Segmented, SkeletonRows, useToast } from "@/components/ui";
 import { Page } from "@/layout/Page";
-import { formatCompact, formatMoney, formatNumber, monthStartISO, num } from "@/lib/format";
+import { formatCompact, formatMoney, formatNumber, formatPercent, monthStartISO, num } from "@/lib/format";
 
 const REPORTS = `${API_BASE}/fleet/daily-reports/`;
 
@@ -43,27 +43,25 @@ export function FuelEfficiency() {
     <Page title="Потрошувачка наспроти норма">
       <PageHeader title="Потрошувачка на гориво наспроти норма"
         subtitle="Механизација: работни часови × L/час. Останати возила: km / 100 × L/100 km. Трошокот е по цената од извештајот."
-        actions={<Button icon={Download} onClick={() => void download(`${REPORTS}efficiency/`, { ...query, export: "csv" }).catch((e: Error) => toast(e.message, "danger"))}>Извези CSV</Button>} />
-      <Panel>
-        <div className="toolbar">
-          <Field label="Од" htmlFor="fe-start"><input id="fe-start" type="date" className="input" value={filters.start} onChange={(e) => set({ start: e.target.value })} /></Field>
-          <Field label="До" htmlFor="fe-end"><input id="fe-end" type="date" className="input" value={filters.end} onChange={(e) => set({ end: e.target.value })} /></Field>
+        actions={<Button icon={Download} onClick={() => void download(`${REPORTS}efficiency/`, { ...query, export: "csv" }).catch((e: Error) => toast(e.message, "danger"))}>Извези CSV</Button>}
+        controls={<>
+          <Field label="Од" htmlFor="fe-start"><DateInput id="fe-start" value={filters.start} onChange={(v) => set({ start: v ?? "" })} /></Field>
+          <Field label="До" htmlFor="fe-end"><DateInput id="fe-end" value={filters.end} onChange={(v) => set({ end: v ?? "" })} /></Field>
           <div className="field"><span className="label">Групирај по</span>
             <Segmented label="Групирај по" value={filters.group_by} onChange={(v) => set({ group_by: v })} options={[{ value: "vehicle", label: "Возило" }, { value: "driver", label: "Возач" }]} />
           </div>
           <Field label="Возило" htmlFor="fe-vehicle"><RelatedSelect id="fe-vehicle" related={{ endpoint: `${API_BASE}/assets/vehicles/` }} value={filters.vehicle} placeholder="Сите" onChange={(v) => set({ vehicle: v })} /></Field>
           <Field label="Возач" htmlFor="fe-driver"><RelatedSelect id="fe-driver" related={{ endpoint: `${API_BASE}/fleet/drivers/` }} value={filters.driver} placeholder="Сите" onChange={(v) => set({ driver: v })} /></Field>
           <Field label="Проект" htmlFor="fe-project"><RelatedSelect id="fe-project" related={{ endpoint: `${API_BASE}/projects/projects/` }} value={filters.project} placeholder="Сите" onChange={(v) => set({ project: v })} /></Field>
-        </div>
-      </Panel>
+        </>} />
       {q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : null}
       {q.data ? (
         <Kpis>
           <Kpi label="Потрошено" value={formatNumber(t.actual_l, 0)} unit="L" sub={`норма ${formatNumber(t.expected_l, 0)} L`} />
-          <Kpi label="Отстапување" value={formatNumber(t.variance_l, 0)} unit="L" sub={num(t.expected_l) ? `${num(t.variance_l) > 0 ? "+" : ""}${formatNumber((num(t.variance_l) / num(t.expected_l)) * 100, 1)}% наспроти нормата` : undefined}
+          <Kpi label="Отстапување" value={formatNumber(t.variance_l, 0)} unit="L" sub={num(t.expected_l) ? `${num(t.variance_l) > 0 ? "+" : ""}${formatPercent((num(t.variance_l) / num(t.expected_l)) * 100, 1)} наспроти нормата` : undefined}
             tone={num(t.variance_l) > 0 ? "attention" : undefined} />
-          <Kpi label="Трошок за гориво" value={formatCompact(t.actual_cost_mkd)} unit="ден." />
-          <Kpi label="Разлика во трошок" value={formatCompact(t.cost_impact_mkd)} unit="ден." tone={num(t.cost_impact_mkd) > 0 ? "alarm" : undefined} />
+          <Kpi label="Трошок за гориво" value={formatCompact(t.actual_cost_mkd)} unit="MKD" />
+          <Kpi label="Разлика во трошок" value={formatCompact(t.cost_impact_mkd)} unit="MKD" tone={num(t.cost_impact_mkd) > 0 ? "alarm" : undefined} />
         </Kpis>
       ) : null}
       {worst.length ? (
@@ -73,7 +71,7 @@ export function FuelEfficiency() {
       ) : null}
       <Panel flush title="Детали">
         {q.isLoading ? <SkeletonRows rows={6} cols={6} /> : !rows.length ? <EmptyState title="Нема извештаи за периодот">Променете го периодот или филтрите.</EmptyState> : (
-          <div className="table-wrap" style={{ maxHeight: "calc(100vh - 260px)" }}>
+          <div className="table-wrap tall">
             <table className="table">
               <thead><tr><th className="sticky-col">{who}</th>{cols.map(([k, label]) => <th key={k} className="num">{label}</th>)}</tr></thead>
               <tbody>

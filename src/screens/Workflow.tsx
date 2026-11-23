@@ -2,14 +2,14 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, CheckCheck, ChevronLeft, ChevronRight, CornerUpLeft, ExternalLink, Inbox, X } from "lucide-react";
+import { Bell, Check, CheckCheck, ChevronLeft, ChevronRight, CornerUpLeft, ExternalLink, Inbox } from "@/components/icons";
 
 import { api, ApiError } from "@/api/client";
 import type { Page as ApiPage, Row } from "@/api/types";
-import { Alert, Badge, Button, EmptyState, ErrorState, Field, IconButton, LinkButton, Modal, PageHeader, Panel, Segmented, SkeletonRows, useToast } from "@/components/ui";
+import { Alert, Button, EmptyState, ErrorState, Field, IconButton, LinkButton, Modal, PageHeader, Panel, Segmented, SkeletonRows, Status, useToast } from "@/components/ui";
 import { t } from "@/i18n/mk";
 import { Page } from "@/layout/Page";
-import { formatDateTime, formatMoney, formatNumber, formatRelative } from "@/lib/format";
+import { formatAmount, formatDateTime, formatNumber, formatRelative } from "@/lib/format";
 
 type Decision = "APPROVE" | "ACCEPT" | "REJECT" | "RETURN";
 
@@ -78,45 +78,45 @@ export function InboxScreen() {
         <Panel><EmptyState icon={Inbox} title="Сè е решено">Кога некој ќе побара ваше одобрување, ќе се појави тука и во известувањата.</EmptyState></Panel>
       ) : groups.map(([flow, list]) => (
         <Panel key={flow} title={flow} sub={`${list.length} ${list.length === 1 ? "барање" : "барања"}`} flush>
-          <div className="table-wrap">
-            <table className="table">
-              <thead><tr><th>Барање</th><th>Фаза</th><th className="num">Износ</th><th>Поднесено</th><th aria-label={t.actions} /></tr></thead>
-              <tbody>
-                {list.map((r) => (
-                  <tr key={r.id}>
-                    <td className="wrap">{r.target_route ? <Link to={String(r.target_route)}>{String(r.title)}</Link> : <span className="strong">{String(r.title)}</span>}</td>
-                    <td><Badge tone="warning">{String(r.stage_name ?? "")}</Badge></td>
-                    <td className="num">{r.amount ? formatMoney(r.amount) : <span className="muted-cell">—</span>}</td>
-                    <td className="small nowrap"><span title={formatDateTime(r.created_at)}>{formatRelative(r.created_at)}</span><div className="xs muted">{String(r.initiated_by_label ?? "")}</div></td>
-                    <td className="right nowrap">
-                      {r.requires_external_action ? (
-                        r.target_route ? <LinkButton size="sm" icon={ExternalLink} to={String(r.target_route)}>Одлучи во записот</LinkButton> : null
-                      ) : (
-                        <div className="row-tight" style={{ justifyContent: "flex-end" }}>
-                          <Button size="sm" variant="primary" icon={Check} onClick={() => { setError(""); setActing({ row: r, decision: "APPROVE" }); }}>
-                            {String(r.approve_label || "Одобри")}
-                          </Button>
-                          <Button size="sm" icon={CornerUpLeft} onClick={() => { setError(""); setActing({ row: r, decision: "RETURN" }); }}>Врати</Button>
-                          <Button size="sm" variant="danger" icon={X} onClick={() => { setError(""); setActing({ row: r, decision: "REJECT" }); }}>Одбиј</Button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ol className="approval-list">
+            {list.map((r) => (
+              <li key={r.id}>
+                <div className="grow">
+                  {r.target_route ? <Link to={String(r.target_route)} className="ap-title">{String(r.title)}</Link> : <span className="ap-title">{String(r.title)}</span>}
+                  <div className="ap-meta">
+                    <Status tone="caution">{String(r.stage_name ?? "")}</Status>
+                    {r.amount ? <span className="num">{formatAmount(r.amount)}</span> : null}
+                    <time dateTime={String(r.created_at)} title={formatDateTime(r.created_at)}>{formatRelative(r.created_at)}</time>
+                    {r.initiated_by_label ? <span>од {String(r.initiated_by_label)}</span> : null}
+                  </div>
+                </div>
+                <div className="ap-actions">
+                  {r.requires_external_action ? (
+                    r.target_route ? <LinkButton icon={ExternalLink} to={String(r.target_route)}>Одлучи во записот</LinkButton> : null
+                  ) : (
+                    <>
+                      <Button onClick={() => { setError(""); setActing({ row: r, decision: "REJECT" }); }}>Одбиј</Button>
+                      <Button icon={CornerUpLeft} onClick={() => { setError(""); setActing({ row: r, decision: "RETURN" }); }}>Врати</Button>
+                      <Button variant="primary" icon={Check} onClick={() => { setError(""); setActing({ row: r, decision: "APPROVE" }); }}>
+                        {String(r.approve_label || "Одобри")}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
         </Panel>
       ))}
       {q.data ? <Pager page={page} pages={q.data.pages} set={setPage} /> : null}
       {acting ? (
         <Modal title={`${DECISION[acting.decision].title}: ${String(acting.row.title)}`}
-          description={`${String(acting.row.definition_label ?? "")} · ${String(acting.row.stage_name ?? "")}${acting.row.amount ? ` · ${formatMoney(acting.row.amount)} ден.` : ""}`}
+          description={`${String(acting.row.definition_label ?? "")} · ${String(acting.row.stage_name ?? "")}${acting.row.amount ? ` · ${formatAmount(acting.row.amount)}` : ""}`}
           onClose={() => setActing(null)}
           footer={<>
             <Button onClick={() => setActing(null)}>{t.cancel}</Button>
-            <Button variant={acting.decision === "REJECT" ? "danger-solid" : "primary"} busy={busy} onClick={() => void act()}
-              disabled={Boolean(needsComment) && !comment.trim()}>
+            <Button variant={acting.decision === "REJECT" ? "danger-solid" : "primary"} busy={busy}
+              onClick={() => { if (needsComment && !comment.trim()) { setError("Внесете причина: подносителот ќе ја види."); return; } void act(); }}>
               {acting.decision === "APPROVE" ? String(acting.row.approve_label || DECISION.APPROVE.button) : DECISION[acting.decision].button}
             </Button>
           </>}>
@@ -133,7 +133,7 @@ export function InboxScreen() {
   );
 }
 
-const LEVEL_TONE: Record<string, string> = { WARNING: "danger", ACTION: "warning", SUCCESS: "success" };
+const LEVEL_TONE: Record<string, string> = { WARNING: "is-stop", ACTION: "is-caution", SUCCESS: "is-go", INFO: "is-info" };
 
 export function NotificationsScreen() {
   const qc = useQueryClient();
@@ -153,32 +153,34 @@ export function NotificationsScreen() {
   };
   const rows = q.data?.results ?? [];
   return (
-    <Page title={t.notifications} narrow>
+    <Page title={t.notifications}>
       <PageHeader title={t.notifications}
+        controls={<Segmented label="Прикажи" value={filter} onChange={(v) => { setFilter(v); setPage(1); }}
+          options={[{ value: "unread", label: "Непрочитани" }, { value: "all", label: "Сите" }]} />}
         actions={<>
-          <Segmented label="Прикажи" value={filter} onChange={(v) => { setFilter(v); setPage(1); }}
-            options={[{ value: "unread", label: "Непрочитани" }, { value: "all", label: "Сите" }]} />
           <Button icon={CheckCheck} onClick={async () => {
-            try { await api.post("/workflow/notifications/read-all/"); toast("Сите известувања се означени како прочитани", "success"); refresh(); }
+            try { await api.post("/workflow/notifications/read-all/"); toast("Сите известувања се означени како прочитани.", "success"); refresh(); }
             catch (err) { toast((err as Error).message, "danger"); }
           }}>{t.markAllRead}</Button>
         </>} />
       <Panel flush>
         {q.isLoading ? <SkeletonRows rows={6} cols={3} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : !rows.length ? (
-          <EmptyState icon={Bell} title={filter === "unread" ? "Нема непрочитани известувања" : "Нема известувања"} />
+          <EmptyState icon={Bell} title={filter === "unread" ? "Нема непрочитани известувања." : "Нема известувања."} />
         ) : (
-          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          <ul className="feed">
             {rows.map((n) => (
-              <li key={n.id} className="notif-row" style={{ fontWeight: n.is_read ? 400 : 500 }}>
-                <Badge tone={LEVEL_TONE[String(n.level)] ?? "info"}>{String(n.level_display ?? n.level)}</Badge>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {n.route ? (
-                    <button type="button" className="link-button" onClick={() => { void markRead(n); navigate(String(n.route)); }}>{String(n.title)}</button>
-                  ) : <span>{String(n.title)}</span>}
-                  {n.message ? <div className="small muted" style={{ fontWeight: 400 }}>{String(n.message)}</div> : null}
+              <li key={n.id}>
+                <div className={`notif-row${n.is_read ? " read" : ""}`}>
+                  <span className={`ea-dot ${LEVEL_TONE[String(n.level)] ?? "is-info"}`} title={String(n.level_display ?? n.level)} aria-hidden />
+                  <div className="grow">
+                    {n.route ? (
+                      <button type="button" className="link-button n-title" onClick={() => { void markRead(n); navigate(String(n.route)); }}>{String(n.title)}</button>
+                    ) : <span className="n-title">{String(n.title)}</span>}
+                    {n.message ? <span className="n-sub">{String(n.message)}</span> : null}
+                    <time className="n-sub" dateTime={String(n.created_at)} title={formatDateTime(n.created_at)}>{formatRelative(n.created_at)}</time>
+                  </div>
+                  {!n.is_read ? <IconButton label={t.markRead} icon={Check} size="sm" onClick={() => void markRead(n)} /> : null}
                 </div>
-                <span className="xs muted nowrap" title={formatDateTime(n.created_at)}>{formatRelative(n.created_at)}</span>
-                {!n.is_read ? <IconButton label={t.markRead} icon={Check} size="sm" onClick={() => void markRead(n)} /> : <span style={{ width: 28 }} />}
               </li>
             ))}
           </ul>

@@ -5,9 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/api/client";
 import { Bullet, Kpi, Kpis, StatusBand, useOverview, type Data } from "@/components/dashboard";
-import { Badge, EmptyState, ErrorState, LinkButton, PageHeader, Panel, Segmented, SkeletonPanel } from "@/components/ui";
+import { Badge, EmptyState, ErrorState, LinkButton, PageHeader, Panel, Segmented, SkeletonPanel, Section } from "@/components/ui";
 import { Page } from "@/layout/Page";
-import { formatCompact, formatDate, formatMoney, formatNumber, num } from "@/lib/format";
+import { formatCompact, formatDate, formatMoney, formatNumber, formatPercent, num } from "@/lib/format";
 import { useStored } from "@/app/prefs";
 
 import { listUrl, Overview } from "./common";
@@ -33,33 +33,35 @@ export function ProjectsOverview() {
               { key: "done", label: "Завршени", count: d.by_status.FINISHED, done: true, to: listUrl(P, { status: "FINISHED" }) },
             ]} />
             <Kpis>
-              <Kpi label="Вредност на отворените" value={formatCompact(value)} unit="ден." sub={`${rows.length} активни и паузирани`} />
-              <Kpi label="Изведено" value={formatCompact(executed)} unit="ден." sub={value ? `${formatNumber((executed / value) * 100, 1)}% од вредноста` : undefined} />
-              <Kpi label="Фактурирано (платени ситуации)" value={formatCompact(invoiced)} unit="ден." sub={executed ? `${formatNumber((invoiced / executed) * 100, 1)}% од изведеното` : undefined} />
+              <Kpi label="Вредност на отворените" value={formatCompact(value)} unit="MKD" sub={`${rows.length} активни и паузирани`} />
+              <Kpi label="Изведено" value={formatCompact(executed)} unit="MKD" sub={value ? `${formatPercent((executed / value) * 100, 1)} од вредноста` : undefined} />
+              <Kpi label="Фактурирано (платени ситуации)" value={formatCompact(invoiced)} unit="MKD" sub={executed ? `${formatPercent((invoiced / executed) * 100, 1)} од изведеното` : undefined} />
               <Kpi label="По договорениот рок" value={formatNumber(d.overdue, 0)} sub="отворени проекти со поминат рок" tone={d.overdue ? "alarm" : undefined} />
             </Kpis>
-            <Panel title="Отворени проекти" sub="Изведено (темно) и фактурирано наспроти вредноста (линија)" flush>
-              {!rows.length ? <EmptyState compact title="Нема отворени проекти" /> : (
-                <div className="table-wrap">
-                  <table className="table">
-                    <thead><tr><th>Проект</th><th>Инвеститор</th><th className="num">Вредност</th><th style={{ width: "26%" }}>Извршување</th><th className="num">Изведено</th><th>Рок</th></tr></thead>
-                    <tbody>
-                      {rows.map((r) => (
-                        <tr key={String(r.id)}>
-                          <td><Link to={`/${P}/${r.id}`}>{String(r.name)}</Link>{r.code ? <div className="xs muted">{String(r.code)}</div> : null}</td>
-                          <td className="small">{String(r.customer || "") || <span className="muted-cell">—</span>}</td>
-                          <td className="num">{formatMoney(r.value)}</td>
-                          <td><Bullet budget={num(r.value)} actual={num(r.invoiced)} committed={Math.max(0, num(r.executed) - num(r.invoiced))} /></td>
-                          <td className="num">{formatNumber(r.progress_pct, 1)}%</td>
-                          <td className="nowrap">{r.deadline ? <Badge tone={r.overdue ? "danger" : ""} plain={!r.overdue}>{formatDate(r.deadline)}</Badge> : <span className="muted-cell">—</span>}
-                            {r.status === "ON_HOLD" ? <div><Badge tone="warning">паузиран</Badge></div> : null}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Panel>
+            <Section n={1} title="Листи и детали">
+              <Panel title="Отворени проекти" sub="Изведено (темно) и фактурирано наспроти вредноста (линија)" flush>
+                {!rows.length ? <EmptyState compact title="Нема отворени проекти" /> : (
+                  <div className="table-wrap">
+                    <table className="table">
+                      <thead><tr><th>Проект</th><th>Инвеститор</th><th className="num">Вредност</th><th className="col-26">Извршување</th><th className="num">Изведено</th><th>Рок</th></tr></thead>
+                      <tbody>
+                        {rows.map((r) => (
+                          <tr key={String(r.id)}>
+                            <td><Link to={`/${P}/${r.id}`}>{String(r.name)}</Link>{r.code ? <div className="xs muted">{String(r.code)}</div> : null}</td>
+                            <td className="small">{String(r.customer || "") || <span className="muted-cell">—</span>}</td>
+                            <td className="num">{formatMoney(r.value)}</td>
+                            <td><Bullet budget={num(r.value)} actual={num(r.invoiced)} committed={Math.max(0, num(r.executed) - num(r.invoiced))} /></td>
+                            <td className="num">{formatPercent(r.progress_pct, 1)}</td>
+                            <td className="nowrap">{r.deadline ? <Badge tone={r.overdue ? "danger" : ""} plain={!r.overdue}>{formatDate(r.deadline)}</Badge> : <span className="muted-cell">—</span>}
+                              {r.status === "ON_HOLD" ? <div><Badge tone="warning">паузиран</Badge></div> : null}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Panel>
+            </Section>
           </>
         );
       }}
@@ -88,9 +90,9 @@ export function BudgetPortfolio() {
       {q.isLoading ? <SkeletonPanel height={360} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : (
         <>
           <Kpis>
-            <Kpi label="Вкупен буџет" value={formatCompact(tot.b)} unit="ден." sub={`${rows.length} проекти`} />
-            <Kpi label="Потрошено" value={formatCompact(tot.a)} unit="ден." sub={tot.b ? `${formatNumber((tot.a / tot.b) * 100, 1)}% од буџетот` : undefined} />
-            <Kpi label="Нарачано, неплатено" value={formatCompact(tot.c)} unit="ден." />
+            <Kpi label="Вкупен буџет" value={formatCompact(tot.b)} unit="MKD" sub={`${rows.length} проекти`} />
+            <Kpi label="Потрошено" value={formatCompact(tot.a)} unit="MKD" sub={tot.b ? `${formatPercent((tot.a / tot.b) * 100, 1)} од буџетот` : undefined} />
+            <Kpi label="Нарачано, неплатено" value={formatCompact(tot.c)} unit="MKD" />
             <Kpi label="Надминати / близу прагот" value={`${over} / ${near}`} tone={over ? "alarm" : near ? "attention" : undefined} />
           </Kpis>
           <Panel title="Проекти" flush actions={<Segmented label="Подреди" value={sort} onChange={setSort}
@@ -98,7 +100,7 @@ export function BudgetPortfolio() {
             {!rows.length ? <EmptyState compact title="Нема буџети" /> : (
               <div className="table-wrap">
                 <table className="table">
-                  <thead><tr><th>Проект</th><th style={{ width: "30%" }}>Искористеност</th><th className="num">Буџет</th><th className="num">Потрошено</th><th className="num">Нарачано</th><th className="num">%</th></tr></thead>
+                  <thead><tr><th>Проект</th><th className="col-30">Искористеност</th><th className="num">Буџет</th><th className="num">Потрошено</th><th className="num">Нарачано</th><th className="num">%</th></tr></thead>
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.project}>
@@ -110,12 +112,12 @@ export function BudgetPortfolio() {
                         <td className="num">{formatMoney(r.total_budget)}</td>
                         <td className="num">{formatMoney(r.total_actual)}</td>
                         <td className="num">{formatMoney(r.committed)}</td>
-                        <td className={`num${r.overrun ? " tone-danger strong" : ""}`}>{formatNumber(r.pct, 0)}%</td>
+                        <td className={`num${r.overrun ? " tone-danger strong" : ""}`}>{formatPercent(r.pct, 0)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot><tr><td>Вкупно</td><td /><td className="num">{formatMoney(tot.b)}</td><td className="num">{formatMoney(tot.a)}</td><td className="num">{formatMoney(tot.c)}</td>
-                    <td className="num">{tot.b ? `${formatNumber((tot.a / tot.b) * 100, 0)}%` : ""}</td></tr></tfoot>
+                    <td className="num">{tot.b ? `${formatPercent((tot.a / tot.b) * 100, 0)}` : ""}</td></tr></tfoot>
                 </table>
               </div>
             )}

@@ -1,7 +1,7 @@
 /** Offer lines editor (v1 offer form with the calculator): rows priced by the server calculator as you type,
  * saved together (PUT …/items/), after which the server recalculates totals and approval needs. */
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2 } from "@/components/icons";
 
 import { api, ApiError } from "@/api/client";
 import type { FieldMeta, ResourceMeta, Row } from "@/api/types";
@@ -89,14 +89,14 @@ export function OfferItems({ meta, row }: { meta: ResourceMeta; row: Row }) {
 
   const needApproval = calc.filter((c) => c?.approval_required).length;
   return (
-    <Panel title="Ставки на понудата" sub={`${lines.length} ставки · пресметано без ДДВ ${formatMoney(total)} ден.`} flush
+    <Panel title="Ставки на понудата" sub={`${lines.length} ставки · пресметано без ДДВ ${formatMoney(total)} MKD`} flush
       actions={canEdit ? (
         <div className="row-tight">
           <Button size="sm" icon={Plus} onClick={() => { setDirty(true); setLines((l) => [...l, { quantity: "1" }]); }}>Додај ставка</Button>
           <Button size="sm" variant="primary" icon={Save} busy={saving} disabled={!dirty} onClick={save}>Зачувај ставки</Button>
         </div>
       ) : !editable ? <Badge plain>заклучена</Badge> : null}>
-      <div className="stack-sm" style={{ padding: error || needApproval || dirty ? "0 16px 8px" : 0 }}>
+      <div className={`stack-sm${error || needApproval || dirty ? " pad-x" : ""}`}>
         {error ? <Alert tone="danger" title="Ставките не се зачувани">{error.message}</Alert> : null}
         {needApproval ? <Alert tone="warning">{needApproval} {needApproval === 1 ? "ставка бара" : "ставки бараат"} одобрување пред испраќање.</Alert> : null}
         {dirty ? <span className="small tone-warning">Имате незачувани промени во ставките.</span> : null}
@@ -106,7 +106,7 @@ export function OfferItems({ meta, row }: { meta: ResourceMeta; row: Row }) {
           <table className="table">
             <thead>
               <tr>
-                <th className="num" style={{ width: 36 }}>#</th>
+                <th className="num col-idx">#</th>
                 {cols.map((c) => <th key={c.name} className={c.type === "decimal" ? "num" : undefined}>{c.label}</th>)}
                 <th className="num">Износ</th>
                 {canEdit ? <th aria-label={t.actions} /> : null}
@@ -118,7 +118,7 @@ export function OfferItems({ meta, row }: { meta: ResourceMeta; row: Row }) {
                   <td className="num muted">{i + 1}</td>
                   {cols.map((c) => (
                     <td key={c.name} className={!canEdit && c.type === "decimal" ? "num" : undefined}
-                      style={{ minWidth: canEdit ? (c.type === "fk" ? 220 : c.name === "description" ? 220 : 100) : undefined }}>
+                      data-w={canEdit ? (c.type === "fk" || c.name === "description" ? "wide" : "num") : undefined}>
                       {canEdit ? (
                         <FieldInput field={c} value={l[c.name]} onChange={(v) => update(i, c.name, v)}
                           initialLabel={l[`${c.name}_label`] as string | undefined} />

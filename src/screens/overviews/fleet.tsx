@@ -5,8 +5,9 @@ import { Link } from "react-router-dom";
 
 import { ColumnChart } from "@/charts";
 import { HBars, Kpi, Kpis, Meter, ShareBar, StatusBand, useOverview } from "@/components/dashboard";
-import { Badge, EmptyState, LinkButton, Panel, Segmented } from "@/components/ui";
-import { formatCompact, formatDate, formatDateTime, formatMoney, formatNumber, num } from "@/lib/format";
+import { DateInput } from "@/components/inputs";
+import { Badge, EmptyState, LinkButton, Panel, Segmented, Section } from "@/components/ui";
+import { formatCompact, formatDate, formatDateTime, formatMoney, formatNumber, formatPercent, num } from "@/lib/format";
 
 import { Overview } from "./common";
 
@@ -58,7 +59,7 @@ export function FleetOverview() {
       subtitle={q.data ? `${formatDate(q.data.from)} – ${formatDate(q.data.to)}${q.data.freshness?.refreshed_at ? ` · збирни податоци од ${formatDateTime(q.data.freshness.refreshed_at)}` : ""}` : undefined}
       actions={<>
         <Segmented label="Период" value={period} onChange={setPeriod} options={PERIODS} />
-        <input type="date" className="input" aria-label="На датум" title="На датум" value={on} onChange={(e) => setOn(e.target.value)} style={{ width: 150 }} />
+        <DateInput className="w-date" aria-label="На датум" value={on} onChange={(v) => { if (v) setOn(v); }} />
         <LinkButton to="/fleet/efficiency">Потрошувачка наспроти норма</LinkButton>
       </>}>
       {(d) => {
@@ -73,78 +74,82 @@ export function FleetOverview() {
               { key: "fines", label: "Неплатени казни", count: d.counts.open_fines, danger: true, to: "/fleet/fines", sub: formatMoney(d.counts.open_fines_total) },
             ]} />
             <Kpis>
-              <Kpi label="Трошок по километар" value={formatMoney(d.costs.per_km)} unit="ден." sub={`${formatNumber(d.costs.km, 0)} km · ${formatCompact(d.costs.total)} ден. вкупно`} />
+              <Kpi label="Трошок по километар" value={formatMoney(d.costs.per_km)} unit="MKD" sub={`${formatNumber(d.costs.km, 0)} km · ${formatCompact(d.costs.total)} MKD вкупно`} />
               <Kpi label="Искористеност" value={formatNumber(d.utilization.rate, 1)} unit="%" sub={`работеле ${d.utilization.worked} од ${d.utilization.vehicles} возила`} />
-              <Kpi label="Гориво: купено − потрошено" value={formatCompact(d.fuel.difference)} unit="ден." sub={`купено ${formatCompact(d.fuel.bought)} · потрошено ${formatCompact(d.fuel.consumed)}`} />
+              <Kpi label="Гориво: купено − потрошено" value={formatCompact(d.fuel.difference)} unit="MKD" sub={`купено ${formatCompact(d.fuel.bought)} · потрошено ${formatCompact(d.fuel.consumed)}`} />
               <Kpi label="Возачо-денови" value={formatNumber(d.drivers.total, 0)} delta={d.drivers.change_pct} sub="наспроти претходниот период" trend={d.series.drivers.map(num)} />
-              <Kpi label="Инциденти" value={formatNumber(d.incidents.count, 0)} sub={`штета ${formatMoney(d.incidents.total)} ден.`} tone={d.incidents.count ? "attention" : undefined} />
+              <Kpi label="Инциденти" value={formatNumber(d.incidents.count, 0)} sub={`штета ${formatMoney(d.incidents.total)} MKD`} tone={d.incidents.count ? "attention" : undefined} />
             </Kpis>
-            <div className="grid-2">
-              <Panel title="Гориво" sub="Купено и потрошено, денари">
-                <ColumnChart title="Купено и потрошено гориво" data={series(d, [["fuel_bought", ""], ["fuel_consumed", ""]])}
-                  series={[{ key: "fuel_bought", name: "Купено" }, { key: "fuel_consumed", name: "Потрошено" }]} />
-              </Panel>
-              <Panel title="Потрошено гориво по вид" sub="Денари">
-                <ColumnChart title="Потрошено гориво по вид возило" stacked data={series(d, [["consumed_trucks", ""], ["consumed_equipment", ""], ["consumed_cars_vans", ""]])}
-                  series={[{ key: "consumed_trucks", name: "Камиони" }, { key: "consumed_equipment", name: "Механизација" }, { key: "consumed_cars_vans", name: "Возила и комбиња" }]} />
-              </Panel>
-              <Panel title="Плати на возачи и патни трошоци" sub="Денари">
-                <ColumnChart title="Плати, патарини и дополнителни трошоци" stacked data={series(d, [["payroll", ""], ["paytoll", ""], ["additional", ""]])}
-                  series={[{ key: "payroll", name: "Плати" }, { key: "paytoll", name: "Патарини" }, { key: "additional", name: "Дополнителни" }]} />
-              </Panel>
-              <Panel title="Структура на трошоците" sub={`Документи за возила: ${formatMoney(d.costs.documents)} ден. (вклучени во трошокот по km)`}>
-                <div className="stack">
-                  <ShareBar unit="money" parts={BREAKDOWN.map(([k, label]) => ({ label, value: d.costs.breakdown[k] ?? 0 }))} />
-                  <div className="stack-sm">
-                    <div className="row-tight small"><span style={{ flex: 1 }}>Искористеност на возилата</span><span className="num strong">{formatNumber(d.utilization.rate, 1)}%</span></div>
-                    <Meter value={d.utilization.rate} label="Искористеност" />
-                    <span className="xs muted">{d.utilization.vehicle_days} возило-денови од можни {d.utilization.possible} ({d.utilization.working_days} работни дена)</span>
+            <Section n={1} title="Што бара акција">
+              <div className="grid-2">
+                <Panel title={`Без дневен извештај на ${formatDate(d.on)}`} flush>
+                  {!d.today.missing.length ? <EmptyState compact title="Сите возила имаат извештај" /> : (
+                    <div className="table-wrap short"><table className="table"><tbody>
+                      {d.today.missing.map((v) => (
+                        <tr key={v.id}><td><Link to={`/assets/vehicles/${v.id}`}>{plate(v.registration_plates, v.make, v.model)}</Link></td>
+                          <td className="right"><LinkButton size="sm" to="/fleet/daily-reports/new">Внеси извештај</LinkButton></td></tr>
+                      ))}
+                    </tbody></table></div>
+                  )}
+                </Panel>
+                <Panel title="Распоред на возила" sub={`${busy} ангажирани · ${d.board.length - busy} слободни`} flush>
+                  {!d.board.length ? <EmptyState compact /> : (
+                    <div className="table-wrap short">
+                      <table className="table">
+                        <thead><tr><th>Возило</th><th>Статус</th><th>Проект</th><th>Возач / ракувач</th></tr></thead>
+                        <tbody>{d.board.map((b) => (
+                          <tr key={b.vehicle}>
+                            <td><Link to={`/assets/vehicles/${b.vehicle}`}>{plate(b.registration_plates, b.make, b.model)}</Link><div className="xs muted">{b.category}</div></td>
+                            <td>{b.busy ? <Link to={`/fleet/travel-orders/${b.travel_order}`}><Badge tone="warning">ангажирано</Badge></Link> : <Badge tone="success">слободно</Badge>}</td>
+                            <td className="small wrap">{b.project ?? ""}</td>
+                            <td className="small">{b.operator ?? ""}</td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    </div>
+                  )}
+                </Panel>
+              </div>
+            </Section>
+            <Section n={2} title="Тек и состојба">
+              <div className="grid-2">
+                <Panel title="Гориво" sub="Купено и потрошено, MKD">
+                  <ColumnChart title="Купено и потрошено гориво" data={series(d, [["fuel_bought", ""], ["fuel_consumed", ""]])}
+                    series={[{ key: "fuel_bought", name: "Купено" }, { key: "fuel_consumed", name: "Потрошено" }]} />
+                </Panel>
+                <Panel title="Потрошено гориво по вид" sub="Денари">
+                  <ColumnChart title="Потрошено гориво по вид возило" stacked data={series(d, [["consumed_trucks", ""], ["consumed_equipment", ""], ["consumed_cars_vans", ""]])}
+                    series={[{ key: "consumed_trucks", name: "Камиони" }, { key: "consumed_equipment", name: "Механизација" }, { key: "consumed_cars_vans", name: "Возила и комбиња" }]} />
+                </Panel>
+                <Panel title="Плати на возачи и патни трошоци" sub="Денари">
+                  <ColumnChart title="Плати, патарини и дополнителни трошоци" stacked data={series(d, [["payroll", ""], ["paytoll", ""], ["additional", ""]])}
+                    series={[{ key: "payroll", name: "Плати" }, { key: "paytoll", name: "Патарини" }, { key: "additional", name: "Дополнителни" }]} />
+                </Panel>
+                <Panel title="Структура на трошоците" sub={`Документи за возила: ${formatMoney(d.costs.documents)} MKD (вклучени во трошокот по km)`}>
+                  <div className="stack">
+                    <ShareBar unit="money" parts={BREAKDOWN.map(([k, label]) => ({ label, value: d.costs.breakdown[k] ?? 0 }))} />
+                    <div className="stack-sm">
+                      <div className="row-tight small"><span className="grow-wrap">Искористеност на возилата</span><span className="num strong">{formatPercent(d.utilization.rate, 1)}</span></div>
+                      <Meter value={d.utilization.rate} label="Искористеност" />
+                      <span className="xs muted">{d.utilization.vehicle_days} возило-денови од можни {d.utilization.possible} ({d.utilization.working_days} работни дена)</span>
+                    </div>
                   </div>
-                </div>
-              </Panel>
-            </div>
-            <div className="grid-3">
-              <Panel title="Најголемо отстапување на гориво" sub="Наспроти норма" actions={<LinkButton to="/fleet/efficiency" size="sm">Целиот извештај</LinkButton>}>
-                <HBars unit="percent" rows={d.top_fuel_variance.map((r) => ({ key: r.key_id, label: r.key_label, value: r.variance_pct, over: num(r.variance_l) > 0 }))} empty="Нема отстапувања" />
-              </Panel>
-              <Panel title="Најскапо одржување" sub="Оваа година">
-                <HBars rows={d.top_maintenance.map((r) => ({ key: r.order__vehicle_id, label: plate(r.order__vehicle__registration_plates, r.order__vehicle__make, r.order__vehicle__model),
-                  value: r.total, to: `/assets/vehicles/${r.order__vehicle_id}` }))} empty="Нема трошоци за одржување" />
-              </Panel>
-              <Panel title="Најмногу инциденти" sub="Оваа година, штета во денари">
-                <HBars rows={d.top_incidents.map((r) => ({ key: r.vehicle_id, label: `${plate(r.vehicle__registration_plates, r.vehicle__make, r.vehicle__model)} (${r.count})`,
-                  value: r.total ?? 0, to: `/assets/vehicles/${r.vehicle_id}` }))} empty="Нема инциденти" />
-              </Panel>
-            </div>
-            <div className="grid-2">
-              <Panel title={`Без дневен извештај на ${formatDate(d.on)}`} flush>
-                {!d.today.missing.length ? <EmptyState compact title="Сите возила имаат извештај" /> : (
-                  <div className="table-wrap" style={{ maxHeight: 360 }}><table className="table"><tbody>
-                    {d.today.missing.map((v) => (
-                      <tr key={v.id}><td><Link to={`/assets/vehicles/${v.id}`}>{plate(v.registration_plates, v.make, v.model)}</Link></td>
-                        <td className="right"><LinkButton size="sm" to="/fleet/daily-reports/new">Внеси извештај</LinkButton></td></tr>
-                    ))}
-                  </tbody></table></div>
-                )}
-              </Panel>
-              <Panel title="Распоред на возила" sub={`${busy} ангажирани · ${d.board.length - busy} слободни`} flush>
-                {!d.board.length ? <EmptyState compact /> : (
-                  <div className="table-wrap" style={{ maxHeight: 360 }}>
-                    <table className="table">
-                      <thead><tr><th>Возило</th><th>Статус</th><th>Проект</th><th>Возач / ракувач</th></tr></thead>
-                      <tbody>{d.board.map((b) => (
-                        <tr key={b.vehicle}>
-                          <td><Link to={`/assets/vehicles/${b.vehicle}`}>{plate(b.registration_plates, b.make, b.model)}</Link><div className="xs muted">{b.category}</div></td>
-                          <td>{b.busy ? <Link to={`/fleet/travel-orders/${b.travel_order}`}><Badge tone="warning">ангажирано</Badge></Link> : <Badge tone="success">слободно</Badge>}</td>
-                          <td className="small">{b.project ?? ""}</td>
-                          <td className="small">{b.operator ?? ""}</td>
-                        </tr>
-                      ))}</tbody>
-                    </table>
-                  </div>
-                )}
-              </Panel>
-            </div>
+                </Panel>
+              </div>
+              <div className="grid-3">
+                <Panel title="Најголемо отстапување на гориво" sub="Наспроти норма" actions={<Link to="/fleet/efficiency" className="panel-link">Целиот извештај</Link>}>
+                  <HBars unit="percent" rows={d.top_fuel_variance.map((r) => ({ key: r.key_id, label: r.key_label, value: r.variance_pct, over: num(r.variance_l) > 0 }))} empty="Нема отстапувања" />
+                </Panel>
+                <Panel title="Најскапо одржување" sub="Оваа година">
+                  <HBars rows={d.top_maintenance.map((r) => ({ key: r.order__vehicle_id, label: plate(r.order__vehicle__registration_plates, r.order__vehicle__make, r.order__vehicle__model),
+                    value: r.total, to: `/assets/vehicles/${r.order__vehicle_id}` }))} empty="Нема трошоци за одржување" />
+                </Panel>
+                <Panel title="Најмногу инциденти" sub="Оваа година, штета во MKD">
+                  <HBars rows={d.top_incidents.map((r) => ({ key: r.vehicle_id, label: `${plate(r.vehicle__registration_plates, r.vehicle__make, r.vehicle__model)} (${r.count})`,
+                    value: r.total ?? 0, to: `/assets/vehicles/${r.vehicle_id}` }))} empty="Нема инциденти" />
+                </Panel>
+              </div>
+            </Section>
           </>
         );
       }}

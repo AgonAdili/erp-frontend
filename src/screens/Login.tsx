@@ -1,16 +1,17 @@
 /** Sign-in: local account (when allowed) or Microsoft Entra ID, then the MFA code when required. */
 import { useState } from "react";
-import { LogIn } from "lucide-react";
+import { Eye, EyeOff, LogIn } from "@/components/icons";
 
 import { ApiError } from "@/api/client";
 import { useSession } from "@/auth/session";
-import { Alert, Button, Field } from "@/components/ui";
+import { Alert, Button, Field, IconButton } from "@/components/ui";
 import { t } from "@/i18n/mk";
 
 export function Login() {
   const { session, login, verifyMfa, logout } = useSession();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [reveal, setReveal] = useState(false);
   const [remember, setRemember] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -21,6 +22,11 @@ export function Login() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (busy) return;
+    // the button stays enabled (08): an incomplete form is answered with an inline message
+    if (mfaPending ? code.replace(/\s/g, "").length < 6 : !username.trim() || !password) {
+      setError(mfaPending ? "Внесете го шестцифрениот код." : "Внесете корисничко име и лозинка.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -35,57 +41,53 @@ export function Login() {
   };
 
   return (
-    <div className="login">
-      <aside className="login-art" aria-hidden>
-        <div className="mark"><i>EA</i>{t.appName}</div>
-        <div className="lane-lines"><span /><span className="amber" /><span /></div>
-        <div className="stack" style={{ gap: 12, position: "relative" }}>
-          <h1>Понуди, градилишта, возен парк и книги на едно место.</h1>
-          <p>Секој налог, секоја ситуација и секое одобрување — со јасен следен чекор.</p>
+    <main className="auth" id="main">
+      <form className="auth-sheet" onSubmit={submit} noValidate aria-labelledby="login-title">
+        <div className="auth-brand">
+          <svg className="sb-mark" aria-hidden><use href={`${import.meta.env.BASE_URL}icons/solar.svg#eacore-mark`} /></svg>
+          <strong translate="no">EACore</strong>
         </div>
-      </aside>
-      <main className="login-form-wrap">
-        <form className="login-form" onSubmit={submit} noValidate>
-          <div className="stack-sm">
-            <h2>{mfaPending ? t.mfaTitle : t.login}</h2>
-            <p className="muted">{mfaPending ? t.mfaLead : t.loginLead}</p>
-          </div>
-          {error ? <Alert tone="danger">{error}</Alert> : null}
-          {mfaPending ? (
-            <Field label={t.mfaCode} htmlFor="mfa-code">
-              <input id="mfa-code" className="input otp-input" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={8}
-                pattern="[0-9 ]*" value={code} onChange={(e) => setCode(e.target.value.replace(/[^\d ]/g, ""))} />
+        <div className="stack-sm">
+          <h1 id="login-title">{mfaPending ? t.mfaTitle : t.login}</h1>
+          <p className="soft">{mfaPending ? t.mfaLead : t.loginLead}</p>
+        </div>
+        {error ? <Alert tone="danger">{error}</Alert> : null}
+        {mfaPending ? (
+          <Field label={t.mfaCode} htmlFor="mfa-code">
+            <input id="mfa-code" name="code" className="input otp-input" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={8}
+              spellCheck={false} pattern="[0-9 ]*" value={code} onChange={(e) => setCode(e.target.value.replace(/[^d ]/g, ""))} />
+          </Field>
+        ) : local ? (
+          <>
+            <Field label={t.username} htmlFor="username">
+              <input id="username" name="username" className="input" autoComplete="username" autoFocus value={username} autoCapitalize="none"
+                spellCheck={false} onChange={(e) => setUsername(e.target.value)} onBlur={() => setUsername((u) => u.trim())} />
             </Field>
-          ) : local ? (
-            <>
-              <Field label={t.username} htmlFor="username">
-                <input id="username" className="input" autoComplete="username" autoFocus value={username} autoCapitalize="none" spellCheck={false}
-                  onChange={(e) => setUsername(e.target.value)} />
-              </Field>
-              <Field label={t.password} htmlFor="password">
-                <input id="password" className="input" type="password" autoComplete="current-password" value={password}
+            <Field label={t.password} htmlFor="password">
+              <div className="password-field">
+                <input id="password" name="password" className="input" type={reveal ? "text" : "password"} autoComplete="current-password" value={password}
                   onChange={(e) => setPassword(e.target.value)} />
-              </Field>
-              <label className="check small">
-                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> {t.remember}
-              </label>
-            </>
-          ) : null}
-          {mfaPending || local ? (
-            <Button type="submit" variant="primary" busy={busy} disabled={mfaPending ? code.replace(/\s/g, "").length < 6 : !username || !password}>
-              {mfaPending ? t.verify : t.signIn}
-            </Button>
-          ) : null}
-          {mfaPending ? <Button variant="ghost" onClick={() => void logout()}>Најави се со друга сметка</Button> : null}
-          {!mfaPending && session?.sso_enabled ? (
-            <>
-              {local ? <div className="divider">{t.or}</div> : null}
-              <a className="btn" href="/oidc/authenticate/"><LogIn aria-hidden />{t.signInMicrosoft}</a>
-            </>
-          ) : null}
-          {session?.version ? <p className="xs muted center-text">Верзија {session.version}</p> : null}
-        </form>
-      </main>
-    </div>
+                <IconButton className="reveal" size="sm" label={reveal ? t.hidePassword : t.showPassword} icon={reveal ? EyeOff : Eye}
+                  aria-pressed={reveal} onClick={() => setReveal((v) => !v)} />
+              </div>
+            </Field>
+            <label className="check">
+              <input type="checkbox" name="remember" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> {t.remember}
+            </label>
+          </>
+        ) : null}
+        {mfaPending || local ? (
+          <Button type="submit" variant="primary" busy={busy}>{mfaPending ? t.verify : t.signIn}</Button>
+        ) : null}
+        {mfaPending ? <Button variant="ghost" onClick={() => void logout()}>{t.otherAccount}</Button> : null}
+        {!mfaPending && session?.sso_enabled ? (
+          <>
+            {local ? <div className="divider">{t.or}</div> : null}
+            <a className="btn btn-outline-secondary" href="/oidc/authenticate/"><LogIn /><span>{t.signInMicrosoft.replace("Microsoft", "")}<span translate="no">Microsoft</span></span></a>
+          </>
+        ) : null}
+        {session?.version ? <p className="xs muted">{t.version} {session.version}</p> : null}
+      </form>
+    </main>
   );
 }

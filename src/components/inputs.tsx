@@ -1,13 +1,151 @@
-/** Inputs chosen by field metadata type, plus the related-record and file pickers. */
+/** Inputs chosen by field metadata type, plus the related-record and file pickers. Dates show and accept
+ * dd.mm.yyyy (never the browser's date picker); amounts are right-aligned and formatted on leaving the field
+ * (branding_rules/03 "Fields", 07 §5). */
 import { useEffect, useId, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Paperclip, Upload, X } from "lucide-react";
+import { FileText, Paperclip, Upload, X } from "@/components/icons";
 
 import { api, type Query } from "@/api/client";
 import type { FieldMeta, Page, RelatedRef, Row } from "@/api/types";
 import { t } from "@/i18n/mk";
+import { formatNumber } from "@/lib/format";
 
 import { Switch } from "./ui";
+
+// ── dates: dd.mm.yyyy ─────────────────────────────────────────────────────────
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** "14.10.2026" / "14102026" / "2026-10-14" (and "… 14:30" with time) → ISO; null when incomplete or invalid. */
+export function parseDate(text: string, withTime = false): string | null {
+  const s = text.trim();
+  let m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(s);
+  let y: number, mo: number, d: number, hh = 0, mm = 0;
+  if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; hh = +(m[4] ?? 0); mm = +(m[5] ?? 0); }
+  else {
+    m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/.exec(s);
+    if (!m) return null;
+    d = +m[1]; mo = +m[2]; y = +m[3]; hh = +(m[4] ?? 0); mm = +(m[5] ?? 0);
+  }
+  const date = new Date(y, mo - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d || hh > 23 || mm > 59) return null;
+  const iso = `${y}-${pad(mo)}-${pad(d)}`;
+  return withTime ? `${iso}T${pad(hh)}:${pad(mm)}` : iso;
+}
+
+/** ISO → "14.10.2026" (or "14.10.2026 14:30"). */
+export function showDate(value: unknown, withTime = false): string {
+  if (!value) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(String(value));
+  if (!m) return String(value);
+  const date = `${m[3]}.${m[2]}.${m[1]}`;
+  return withTime ? `${date} ${m[4] ?? "00"}:${m[5] ?? "00"}` : date;
+}
+
+/** Typing digits only: the dots (and the space before the time) are put in for you. */
+function autoFormat(raw: string, withTime: boolean): string {
+  if (/[-/]/.test(raw)) return raw;
+  const digits = raw.replace(/\D/g, "").slice(0, withTime ? 12 : 8);
+  let out = digits.slice(0, 2);
+  if (digits.length > 2) out += `.${digits.slice(2, 4)}`;
+  if (digits.length > 4) out += `.${digits.slice(4, 8)}`;
+  if (withTime && digits.length > 8) out += ` ${digits.slice(8, 10)}`;
+  if (withTime && digits.length > 10) out += `:${digits.slice(10, 12)}`;
+  return out;
+}
+
+export function DateInput({ value, onChange, id, invalid, disabled, withTime, className, ...rest }: {
+  value: unknown; onChange: (iso: string | null) => void; id?: string; invalid?: boolean; disabled?: boolean; withTime?: boolean;
+  className?: string; "aria-label"?: string; "aria-describedby"?: string; name?: string;
+}) {
+  const [text, setText] = useState(() => showDate(value, withTime));
+  const [bad, setBad] = useState(false);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!focused.current) setText(showDate(value, withTime));
+  }, [value, withTime]);
+  return (
+    <input id={id} className={`input${invalid || bad ? " invalid" : ""}${className ? ` ${className}` : ""}`} inputMode="numeric"
+      autoComplete="off" spellCheck={false} placeholder={withTime ? "дд.мм.гггг чч:мм" : t.dateFormat} value={text} disabled={disabled}
+      aria-invalid={invalid || bad || undefined} {...rest}
+      onFocus={() => { focused.current = true; }}
+      onChange={(e) => {
+        const grew = e.target.value.length > text.length;
+        const next = grew ? autoFormat(e.target.value, Boolean(withTime)) : e.target.value;
+        setText(next);
+        setBad(false);
+        if (!next.trim()) onChange(null);
+        else { const iso = parseDate(next, withTime); if (iso) onChange(iso); }
+      }}
+      onBlur={() => {
+        focused.current = false;
+        const s = text.trim();
+        if (!s) { setBad(false); return; }
+        const iso = parseDate(s, withTime);
+        if (iso) { setText(showDate(iso, withTime)); setBad(false); } else setBad(true);
+      }} />
+  );
+}
+
+// ── month: "2026-11" as the month's name and the year ────────────────────────
+
+const MONTH_NAMES = ["јануари", "февруари", "март", "април", "мај", "јуни", "јули", "август", "септември", "октомври", "ноември", "декември"];
+
+export function MonthInput({ value, onChange, id, label }: { value: string; onChange: (ym: string) => void; id?: string; label: string }) {
+  const [y, m] = value.split("-").map(Number);
+  const set = (yy: number, mm: number) => onChange(`${yy}-${String(mm).padStart(2, "0")}`);
+  return (
+    <div className="row-tight" role="group" aria-label={label}>
+      <select id={id} className="input" aria-label={`${label}: месец`} value={m} onChange={(e) => set(y, Number(e.target.value))}>
+        {MONTH_NAMES.map((name, i) => <option key={name} value={i + 1}>{name}</option>)}
+      </select>
+      <input className="input num w-num" inputMode="numeric" aria-label={`${label}: година`} value={y}
+        onChange={(e) => { const v = Number(e.target.value.replace(/\D/g, "")); if (v > 1999 && v < 2100) set(v, m); }} />
+    </div>
+  );
+}
+
+// ── amounts: 1.234,50 and 1234.50 both accepted, shown back as 1.234,50 ───────
+
+/** "1.234,50" / "1234.50" / "1 234,5" → "1234.50"; null when empty, undefined when not a number. */
+export function parseDecimal(text: string): string | null | undefined {
+  let s = text.trim().replace(/[\s ]/g, "").replace("−", "-");
+  if (!s) return null;
+  if (s.includes(",") && s.includes(".")) s = s.replace(/\./g, "").replace(",", ".");
+  else if (s.includes(",")) s = s.replace(",", ".");
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+  return /^-?\d*\.?\d*$/.test(s) && s !== "-" && s !== "." ? s : undefined;
+}
+
+export function DecimalInput({ value, onChange, id, invalid, disabled, places = 2, unit, className, ...rest }: {
+  value: unknown; onChange: (v: string | null) => void; id?: string; invalid?: boolean; disabled?: boolean; places?: number;
+  unit?: string; className?: string; "aria-label"?: string; name?: string;
+}) {
+  const shown = (v: unknown) => (v === null || v === undefined || v === "" ? "" : formatNumber(v, places));
+  const [text, setText] = useState(() => shown(value));
+  const [bad, setBad] = useState(false);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!focused.current) setText(shown(value));
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  const input = (
+    <input id={id} className={`input num${invalid || bad ? " invalid" : ""}${className ? ` ${className}` : ""}`} inputMode="decimal"
+      autoComplete="off" spellCheck={false} value={text} disabled={disabled} aria-invalid={invalid || bad || undefined} {...rest}
+      onFocus={() => { focused.current = true; }}
+      onChange={(e) => {
+        setText(e.target.value);
+        const v = parseDecimal(e.target.value);
+        setBad(v === undefined);
+        if (v !== undefined) onChange(v);
+      }}
+      onBlur={() => {
+        focused.current = false;
+        const v = parseDecimal(text);
+        if (v !== undefined) setText(shown(v));
+      }} />
+  );
+  return unit ? <span className="input-unit">{input}<span className="unit">{unit}</span></span> : input;
+}
 
 export interface StoredFileRef {
   id: number;
@@ -43,17 +181,14 @@ export function FieldInput({
       return <textarea id={id} className={cls} value={str} disabled={disabled} maxLength={field.max_length} {...aria}
         onChange={(e) => onChange(e.target.value)} />;
     case "integer":
-      return <input id={id} className={`${cls} num`} type="number" step={1} value={str} disabled={disabled} {...aria}
-        onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))} />;
+      return <input id={id} className={`${cls} num`} inputMode="numeric" autoComplete="off" spellCheck={false} value={str} disabled={disabled} {...aria}
+        onChange={(e) => { const d = e.target.value.replace(/[^\d-]/g, ""); onChange(d === "" ? null : Number(d)); }} />;
     case "decimal":
-      return <input id={id} className={`${cls} num`} inputMode="decimal" value={str} disabled={disabled} {...aria}
-        onChange={(e) => onChange(e.target.value.replace(",", ".") || null)} />;
+      return <DecimalInput id={id} value={value} invalid={invalid} disabled={disabled} places={field.decimal_places ?? 2} onChange={onChange} />;
     case "date":
-      return <input id={id} className={cls} type="date" value={str.slice(0, 10)} disabled={disabled} {...aria}
-        onChange={(e) => onChange(e.target.value || null)} />;
+      return <DateInput id={id} value={value} invalid={invalid} disabled={disabled} onChange={onChange} />;
     case "datetime":
-      return <input id={id} className={cls} type="datetime-local" value={str.slice(0, 16)} disabled={disabled} {...aria}
-        onChange={(e) => onChange(e.target.value || null)} />;
+      return <DateInput id={id} value={value} invalid={invalid} disabled={disabled} withTime onChange={onChange} />;
     case "time":
       return <input id={id} className={cls} type="time" value={str.slice(0, 5)} disabled={disabled} {...aria}
         onChange={(e) => onChange(e.target.value || null)} />;
@@ -278,7 +413,7 @@ function LocalFileInput({ id, value, onChange, disabled }: { id?: string; value:
     return (
       <div className="row-tight file-ref">
         <Paperclip aria-hidden /><span className="truncate">{value.name}</span><span className="xs muted">{fileSize(value.size)}</span>
-        {!disabled ? <button type="button" className="combo-clear" style={{ position: "static", translate: "none" }} aria-label={t.remove} onClick={() => onChange(null)}><X aria-hidden /></button> : null}
+        {!disabled ? <button type="button" className="combo-clear inline" aria-label={t.remove} onClick={() => onChange(null)}><X aria-hidden /></button> : null}
       </div>
     );
   }
@@ -317,7 +452,7 @@ export function FileInput({ value, onChange, disabled, image, id }: {
           <FileText aria-hidden />
           {file.url ? <a href={file.inline_url ?? file.url} target="_blank" rel="noreferrer" className="truncate">{file.name}</a> : <span className="truncate">{file.name}</span>}
           <span className="xs muted">{fileSize(file.size)}</span>
-          {!disabled ? <button type="button" className="combo-clear" style={{ position: "static", translate: "none" }} aria-label={`${t.remove}: ${file.name}`} onClick={() => onChange(null)}><X aria-hidden /></button> : null}
+          {!disabled ? <button type="button" className="combo-clear inline" aria-label={`${t.remove}: ${file.name}`} onClick={() => onChange(null)}><X aria-hidden /></button> : null}
         </div>
       ) : typeof value === "number" ? <span className="muted">#{value}</span> : null}
       {!disabled && !file ? <DropZone id={id} onFile={(f) => void upload(f)} busy={busy} accept={image ? "image/*" : undefined} /> : null}

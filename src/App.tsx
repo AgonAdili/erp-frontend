@@ -2,7 +2,7 @@
  * Each screen file is its own chunk, so the first load carries only the shell. */
 import { Component, lazy, Suspense, type ComponentType, type ErrorInfo, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/components/icons";
 
 import { useSession } from "@/auth/session";
 import { Button, EmptyState, LinkButton, Spinner } from "@/components/ui";
@@ -64,12 +64,12 @@ class ErrorBoundary extends Component<{ children: ReactNode; resetKey: string },
     const chunk = /dynamically imported module|Failed to fetch|Loading chunk/i.test(this.state.error.message);
     return (
       <div className="page">
-        <EmptyState icon={AlertTriangle} title={chunk ? "Достапна е нова верзија" : "Екранот не може да се прикаже"}
+        <EmptyState heading icon={AlertTriangle} title={chunk ? "Достапна е нова верзија" : "Екранот не може да се прикаже"}
           action={<div className="row">
             <Button variant="primary" onClick={() => window.location.reload()}>Вчитај повторно</Button>
             <LinkButton to="/">{t.goHome}</LinkButton>
           </div>}>
-          {chunk ? "Апликацијата е ажурирана. Вчитајте ја страницата повторно." : this.state.error.message}
+          {chunk ? "Апликацијата е ажурирана. Вчитајте ја страницата повторно." : "Настана неочекувана грешка. Вчитајте ја страницата повторно; ако грешката се повтори, известете го администраторот."}
         </EmptyState>
       </div>
     );
@@ -88,6 +88,7 @@ function Shell() {
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/inbox" element={<InboxScreen />} />
+            <Route path="/workflow/inbox" element={<Navigate to="/inbox" replace />} />
             <Route path="/notifications" element={<NotificationsScreen />} />
 
             <Route path="/offers" element={<OffersOverview />} />
@@ -119,6 +120,7 @@ function Shell() {
             <Route path="/:module/:path" element={<ResourceScreen mode="list" />} />
             <Route path="/:module/:path/new" element={<ResourceScreen mode="new" />} />
             <Route path="/:module/:path/:id" element={<ResourceScreen mode="detail" />} />
+            <Route path="/:module/:path/:id/edit" element={<ResourceScreen mode="edit" />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

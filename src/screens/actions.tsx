@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { api, ApiError, buildUrl, newIdempotencyKey, type Query } from "@/api/client";
 import type { ActionInput, ActionMeta, ResourceMeta, Row } from "@/api/types";
-import { FileInput, RelatedMulti, RelatedSelect, type StoredFileRef } from "@/components/inputs";
+import { DateInput, FileInput, RelatedMulti, RelatedSelect, type StoredFileRef } from "@/components/inputs";
 import { JsonView } from "@/components/JsonView";
 import { useTrackTask } from "@/components/tasks";
 import { Alert, Button, Field, Modal, Spinner, Switch, useConfirm, useToast } from "@/components/ui";
@@ -38,7 +38,7 @@ function InputControl({ input, value, onChange }: { input: ActionInput; value: u
   const str = value === undefined || value === null ? "" : String(value);
   switch (input.type) {
     case "date":
-      return <input id={id} className="input" type="date" value={str} onChange={(e) => onChange(e.target.value)} />;
+      return <DateInput id={id} value={str} onChange={(v) => onChange(v ?? "")} />;
     case "number":
     case "decimal":
       return <input id={id} className="input num" inputMode="decimal" value={str} onChange={(e) => onChange(e.target.value.replace(",", "."))} />;
@@ -219,9 +219,9 @@ export function ActionButton({
           <div className="stack">
             {generalError ? <Alert tone="danger">{generalError}</Alert> : null}
             {(result === undefined || kind === "report") && inputs.length ? (
-              <div className="grid-2" style={{ gap: 14 }}>
+              <div className="form-fields">
                 {inputs.map((input) => input.type === "boolean" ? (
-                  <div key={input.name} className="field" style={{ justifyContent: "flex-end" }}>
+                  <div key={input.name} className="field justify-end">
                     <InputControl input={input} value={values[input.name]} onChange={(val) => setValues((s) => ({ ...s, [input.name]: val }))} />
                   </div>
                 ) : (

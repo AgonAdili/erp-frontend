@@ -17,13 +17,13 @@ export function useCrumb() {
 export function useDocumentTitle(title: string | undefined, crumb?: string) {
   const { setCrumb } = useContext(CrumbContext);
   useEffect(() => {
-    if (title) document.title = `${title} · ${t.appName}`;
+    if (title) document.title = `${title} — ${t.appName}`;
     setCrumb(crumb ?? "");
     return () => setCrumb("");
   }, [title, crumb, setCrumb]);
 }
 
 export function Page({ title, crumb, children, narrow }: { title?: string; crumb?: string; children: ReactNode; narrow?: boolean }) {
-  useDocumentTitle(title, crumb);
+  useDocumentTitle(title, crumb ?? title);
   return <div className={`page${narrow ? " narrow" : ""}`}>{children}</div>;
 }

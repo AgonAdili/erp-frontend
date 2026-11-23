@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 /** Partners overview: the onboarding lane (draft → verification → active), blocked partners, document
  * alerts, and the most recently added partners. */
 import { useQuery } from "@tanstack/react-query";
@@ -5,8 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import type { Page as ApiPage, Row } from "@/api/types";
 import { DataTable, Kpi, Kpis, StatusBand, useOverview, type Data } from "@/components/dashboard";
-import { Badge, LinkButton, Panel, statusTone } from "@/components/ui";
-import { formatNumber } from "@/lib/format";
+import { Badge, LinkButton, Panel, statusTone, Section } from "@/components/ui";
+import { formatNumber, formatPercent } from "@/lib/format";
 
 import { listUrl, Overview } from "./common";
 
@@ -30,18 +31,20 @@ export function PartnersOverview() {
               { key: "black", label: "Црна листа", count: s.BLACKLIST ?? 0, danger: true, to: listUrl(P, { status: "BLACKLIST" }) },
             ]} />
             <Kpis>
-              <Kpi label="Активни партнери" value={formatNumber(s.ACTIVE ?? 0, 0)} sub={d.total ? `${formatNumber(((s.ACTIVE ?? 0) / d.total) * 100, 0)}% од сите` : undefined} />
+              <Kpi label="Активни партнери" value={formatNumber(s.ACTIVE ?? 0, 0)} sub={d.total ? `${formatPercent(((s.ACTIVE ?? 0) / d.total) * 100, 0)} од сите` : undefined} />
               <Kpi label="Чекаат проверка" value={formatNumber(s.IN_VERIFICATION ?? 0, 0)} tone={s.IN_VERIFICATION ? "attention" : undefined} to={listUrl(P, { status: "IN_VERIFICATION" })} />
               <Kpi label="Истечени документи" value={formatNumber(d.alerts?.expired ?? 0, 0)} sub="кај активни партнери" tone={d.alerts?.expired ? "alarm" : undefined} />
               <Kpi label="Документи што истекуваат" value={formatNumber(d.alerts?.expiring ?? 0, 0)} sub="во следните 30 дена" tone={d.alerts?.expiring ? "attention" : undefined} />
             </Kpis>
-            <Panel title="Последно внесени" flush actions={<LinkButton to={`/${P}`} size="sm">Сите партнери</LinkButton>}>
-              <DataTable rows={latest.data?.results ?? []} columns={[
-                { key: "legal_name", label: "Партнер", to: (r) => `/${P}/${r.id}`, render: (r) => String(r._label ?? r.legal_name ?? `#${r.id}`) },
-                { key: "tax_number", label: "ЕДБ" },
-                { key: "status", label: "Статус", render: (r) => <Badge tone={statusTone(String(r.status))}>{String(r.status_display ?? r.status)}</Badge> },
-                { key: "created_at", label: "Внесен", kind: "datetime" }]} />
-            </Panel>
+            <Section n={1} title="Листи и детали">
+              <Panel title="Последно внесени" flush actions={<Link to={`/${P}`} className="panel-link">Сите партнери</Link>}>
+                <DataTable rows={latest.data?.results ?? []} columns={[
+                  { key: "legal_name", label: "Партнер", to: (r) => `/${P}/${r.id}`, render: (r) => String(r._label ?? r.legal_name ?? `#${r.id}`) },
+                  { key: "tax_number", label: "ЕДБ" },
+                  { key: "status", label: "Статус", render: (r) => <Badge tone={statusTone(String(r.status))}>{String(r.status_display ?? r.status)}</Badge> },
+                  { key: "created_at", label: "Внесен", kind: "datetime" }]} />
+              </Panel>
+            </Section>
           </>
         );
       }}

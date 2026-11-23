@@ -2,11 +2,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/components/icons";
 
 import { api, API_BASE } from "@/api/client";
 import { Kpi, Kpis } from "@/components/dashboard";
-import { RelatedSelect } from "@/components/inputs";
+import { DateInput, RelatedSelect } from "@/components/inputs";
 import { Badge, Button, EmptyState, ErrorState, Field, IconButton, LinkButton, PageHeader, Panel, Segmented, SkeletonRows, Switch } from "@/components/ui";
 import { t } from "@/i18n/mk";
 import { Page } from "@/layout/Page";
@@ -32,12 +32,12 @@ export function OfferApprovals() {
   return (
     <Page title="Одобрување понуди">
       <PageHeader title="Одобрување понуди" subtitle="Понуди што чекаат одобрување пред да се испратат до клиентот"
-        actions={<Switch checked={mine} onChange={setMine} label={`Само тие што јас ги одобрувам (${q.data?.count_mine ?? 0})`} />} />
+        controls={<Switch checked={mine} onChange={setMine} label={`Само тие што јас ги одобрувам (${q.data?.count_mine ?? 0})`} />} />
       {q.data ? (
         <Kpis>
           <Kpi label="Чекаат одобрување" value={q.data.count_total} />
           <Kpi label="Чекаат мене" value={q.data.count_mine} tone={q.data.count_mine ? "attention" : undefined} />
-          <Kpi label="Вкупна вредност" value={formatCompact(total)} unit="ден." />
+          <Kpi label="Вкупна вредност" value={formatCompact(total)} unit="MKD" />
         </Kpis>
       ) : null}
       <Panel flush>
@@ -58,7 +58,7 @@ export function OfferApprovals() {
                     <td className="num">{formatMoney(r.total)}</td>
                     <td className="right nowrap">
                       {r.can_approve && meta.data ? (
-                        <div className="row-tight" style={{ justifyContent: "flex-end" }}>
+                        <div className="row-tight justify-end">
                           {decide.map((a) => (
                             <ActionButton key={a.name} meta={meta.data!} action={a} row={{ id: r.id, status: r.status, version: r.version }}
                               variant={a.url_path === "approve" ? "primary" : "default"} onDone={() => { void q.refetch(); invalidate(); }} />
@@ -86,7 +86,7 @@ function Cell({ day }: { day: Data }) {
       {day.work_orders.map((w: Data) => (
         <Link key={w.id} to={`/workorders/work-orders/${w.id}`} className="board-item">
           <span className="strong small">{w.wo_number || `#${w.id}`}</span>
-          <span className="xs muted truncate" style={{ display: "block" }}>{w.project}</span>
+          <span className="xs muted truncate block">{w.project}</span>
         </Link>
       ))}
     </td>
@@ -117,15 +117,17 @@ export function ResourceBoard() {
   return (
     <Page title="Распоред на ресурси">
       <PageHeader title="Распоред на ресурси" subtitle={d ? d.label : "Возила, машини и работници по ден"}
-        actions={d ? <>
-          <IconButton label="Претходна недела" icon={ChevronLeft} variant="default" onClick={() => setWeek(d.prev_week)} />
-          <Button onClick={() => setWeek("")}>Оваа недела</Button>
-          <IconButton label="Следна недела" icon={ChevronRight} variant="default" onClick={() => setWeek(d.next_week)} />
-        </> : null} />
+        controls={d ? <div className="field"><span className="label">Недела</span>
+          <div className="row-tight">
+            <IconButton label="Претходна недела" icon={ChevronLeft} variant="default" onClick={() => setWeek(d.prev_week)} />
+            <Button onClick={() => setWeek("")}>Оваа недела</Button>
+            <IconButton label="Следна недела" icon={ChevronRight} variant="default" onClick={() => setWeek(d.next_week)} />
+          </div>
+        </div> : null} />
       {q.isLoading ? <SkeletonRows rows={8} cols={8} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : d ? <>
         <div className="legend">
-          <span><span className="swatch" style={{ background: "var(--success-soft)", border: "1px solid var(--success)" }} />распореден</span>
-          <span><span className="swatch" style={{ background: "var(--danger-soft)", border: "1px solid var(--danger)" }} />двојно резервиран{conflicts ? <strong className="tone-danger"> ({conflicts})</strong> : null}</span>
+          <span><span className="swatch c4" />распореден</span>
+          <span><span className="swatch stop" />двојно резервиран{conflicts ? <strong className="tone-danger"> ({conflicts})</strong> : null}</span>
         </div>
         {grid("Возила и машини", d.vehicles)}
         {grid("Работници", d.workers)}
@@ -161,13 +163,12 @@ export function LeaveTimeline() {
   return (
     <Page title="Распоред на отсуства">
       <PageHeader title="Распоред на отсуства" subtitle={d?.period_label ?? "Кој е отсутен и кога"}
-        actions={<LinkButton to="/hr/leaves/new" variant="primary">Ново отсуство</LinkButton>} />
-      <Panel>
-        <div className="toolbar">
+        actions={<LinkButton to="/hr/leaves/new" variant="primary">Ново отсуство</LinkButton>}
+        controls={<>
           <div className="field"><span className="label">Приказ</span><Segmented label="Приказ" value={scale} onChange={setScale} options={SCALES} /></div>
           {scale === "range" ? <>
-            <Field label={t.from} htmlFor="lt-from"><input id="lt-from" type="date" className="input" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} /></Field>
-            <Field label={t.to} htmlFor="lt-to"><input id="lt-to" type="date" className="input" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} /></Field>
+            <Field label={t.from} htmlFor="lt-from"><DateInput id="lt-from" value={range.from} onChange={(v) => setRange((r) => ({ ...r, from: v ?? "" }))} /></Field>
+            <Field label={t.to} htmlFor="lt-to"><DateInput id="lt-to" value={range.to} onChange={(v) => setRange((r) => ({ ...r, to: v ?? "" }))} /></Field>
           </> : (
             <div className="field"><span className="label">{t.period}</span>
               <div className="row-tight">
@@ -177,16 +178,15 @@ export function LeaveTimeline() {
               </div>
             </div>
           )}
-          <div style={{ minWidth: 220 }}>
+          <div className="min-field">
             <Field label="Оддел" htmlFor="lt-dept">
               <RelatedSelect id="lt-dept" related={{ endpoint: `${API_BASE}/org/departments/` }} value={department} onChange={(v) => setDepartment(v)} placeholder="Сите оддели" />
             </Field>
           </div>
-          <div className="field" style={{ justifyContent: "flex-end", paddingBottom: 6 }}>
+          <div className="field justify-end">
             <Switch checked={everyone} onChange={setEveryone} label="И вработените без отсуство" />
           </div>
-        </div>
-      </Panel>
+        </>} />
       {scale === "range" && !(range.from && range.to) ? <Panel><EmptyState title="Изберете период">Најмногу 186 дена.</EmptyState></Panel> : null}
       {q.isLoading ? <SkeletonRows rows={8} cols={10} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : d ? <>
         <div className="legend">

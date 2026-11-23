@@ -3,7 +3,7 @@
 import { Link } from "react-router-dom";
 
 import { asRows, DataTable, ShareBar, StatusBand, useOverview, type Data } from "@/components/dashboard";
-import { Badge, EmptyState, LinkButton, Panel, statusTone } from "@/components/ui";
+import { Badge, EmptyState, LinkButton, Panel, Section, Status, statusTone } from "@/components/ui";
 import { formatDate, num } from "@/lib/format";
 
 import { listUrl, Overview } from "./common";
@@ -31,38 +31,43 @@ export function WorkOrdersOverview() {
               { key: "hse", label: "Безбедност (HSE)", count: d.pending.hse, attention: true, to: listUrl(WO, { status: "PENDING_HSE" }) },
               { key: "final", label: "Конечно одобрување", count: d.pending.final, attention: true, to: listUrl(WO, { status: "READY_FOR_APPROVAL" }) },
             ]} />
-            <div className="grid-2">
-              <Panel title="Чекаат ваша акција" sub="Налози каде што следниот чекор е ваш" flush>
-                <DataTable rows={mine} empty="Нема налози што чекаат на вас" columns={[
-                  { key: "wo_number", label: "Налог", to: wo, render: (r) => String(r.wo_number || `#${r.id}`) }, { key: "project", label: "Проект" },
-                  { key: "work_date", label: "Датум", kind: "date" },
-                  { key: "status_label", label: "Статус", render: (r) => <Badge tone={statusTone(String(r.status ?? ""))}>{String(r.status_label)}</Badge> }]} />
-              </Panel>
-              <Panel title="Отворени налози по фаза">
-                {summary.length ? <ShareBar parts={summary.map((s) => ({ label: String(s.label), value: num(s.count) }))} />
-                  : <EmptyState compact title="Нема отворени налози" />}
-              </Panel>
-            </div>
-            <Panel title="План за неделата" sub={week.length ? `${formatDate(week[0].date)} – ${formatDate(week[week.length - 1].date)}` : undefined}>
-              <div className="week-plan">
-                {week.map((day) => (
-                  <section key={String(day.date)} className={`week-day${day.is_today ? " today" : ""}`} aria-label={`${day.day} ${formatDate(day.date)}`}>
-                    <header className="week-day-head">
-                      <strong>{String(day.day)}</strong>
-                      <span className="xs muted">{formatDate(day.date).slice(0, 5)}</span>
-                      {day.is_today ? <Badge tone="accent" plain>денес</Badge> : day.is_tomorrow ? <Badge plain>утре</Badge> : null}
-                    </header>
-                    {asRows(day.work_orders).length ? asRows(day.work_orders).map((w) => (
-                      <Link key={String(w.id)} to={wo(w)} className="week-item">
-                        <span className="strong">{String(w.wo_number || `#${w.id}`)}</span>
-                        <span className="truncate small">{String(w.project ?? "")}</span>
-                        <span className="xs muted">{String(w.status_label ?? "")}</span>
-                      </Link>
-                    )) : <span className="xs muted">Слободно</span>}
-                  </section>
-                ))}
+            <Section n={1} title="Што бара акција">
+              {/* full width each: side by side the table was cut and the phase bar card stood half empty (04 §2) */}
+              <div className="stack">
+                <Panel title="Чекаат ваша акција" sub="Налози каде што следниот чекор е ваш" flush>
+                  <DataTable rows={mine} empty="Нема налози што чекаат на вас" columns={[
+                    { key: "wo_number", label: "Налог", to: wo, render: (r) => String(r.wo_number || `#${r.id}`) }, { key: "project", label: "Проект", className: "wrap" },
+                    { key: "work_date", label: "Датум", kind: "date" },
+                    { key: "status_label", label: "Статус", render: (r) => <Badge tone={statusTone(String(r.status ?? ""))}>{String(r.status_label)}</Badge> }]} />
+                </Panel>
+                <Panel title="Отворени налози по фаза">
+                  {summary.length ? <ShareBar parts={summary.map((s) => ({ label: String(s.label), value: num(s.count) }))} />
+                    : <EmptyState compact title="Нема отворени налози" />}
+                </Panel>
               </div>
-            </Panel>
+            </Section>
+            <Section n={2} title="Тек и состојба">
+              <Panel title="План за неделата" sub={week.length ? `${formatDate(week[0].date)} – ${formatDate(week[week.length - 1].date)}` : undefined}>
+                <div className="week-plan">
+                  {week.map((day) => (
+                    <section key={String(day.date)} className={`week-day${day.is_today ? " today" : ""}`} aria-label={`${day.day} ${formatDate(day.date)}`}>
+                      <header className="week-day-head">
+                        <strong>{String(day.day)}</strong>
+                        <span className="xs muted">{formatDate(day.date).slice(0, 5)}</span>
+                        {day.is_today ? <Badge tone="accent" plain>денес</Badge> : day.is_tomorrow ? <Badge plain>утре</Badge> : null}
+                      </header>
+                      {asRows(day.work_orders).length ? asRows(day.work_orders).map((w) => (
+                        <Link key={String(w.id)} to={wo(w)} className="week-item">
+                          <span className="ea-id strong">{String(w.wo_number || `#${w.id}`)}</span>
+                          <span className="small wrap-any">{String(w.project ?? "")}</span>
+                          <span className="xs"><Status tone={statusTone(String(w.status ?? ""))}>{String(w.status_label ?? "")}</Status></span>
+                        </Link>
+                      )) : <span className="xs muted">Слободно</span>}
+                    </section>
+                  ))}
+                </div>
+              </Panel>
+            </Section>
           </>
         );
       }}

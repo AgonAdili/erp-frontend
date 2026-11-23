@@ -2,7 +2,7 @@
  * expires or reaches its retention date. */
 import { ColumnChart } from "@/charts";
 import { asRows, DataTable, HBars, Kpi, Kpis, ShareBar, StatusBand, useOverview, type Data } from "@/components/dashboard";
-import { LinkButton, Panel } from "@/components/ui";
+import { LinkButton, Panel, Section } from "@/components/ui";
 import { formatNumber, num } from "@/lib/format";
 
 import { listUrl, Overview } from "./common";
@@ -37,24 +37,28 @@ export function DmsOverview() {
               <Kpi label="Истечени" value={formatNumber(d.expired, 0)} tone={d.expired ? "alarm" : undefined} />
               <Kpi label="Рок за чување поминат" value={formatNumber(d.retention_due, 0)} sub="кандидати за излачување" tone={d.retention_due ? "attention" : undefined} />
             </Kpis>
-            <div className="grid-2">
-              <Panel title="Заведени документи по месец" sub="По датум на документот">
-                <ColumnChart title="Заведени документи по месец" unit="number" data={trend.map((r) => ({ label: String(r.label), registered: num(r.registered) }))}
-                  series={[{ key: "registered", name: "Заведени" }]} />
+            <Section n={1} title="Што бара акција">
+              <Panel title="Истекуваат во следните 30 дена" flush>
+                <DataTable rows={asRows(d.expiring)} empty="Ниеден документ не истекува наскоро" columns={[
+                  { key: "archive_number", label: "Архивски број", to: (r) => `/${D}/${r.id}`, render: (r) => String(r.archive_number || `#${r.id}`) },
+                  { key: "subject", label: "Предмет" }, { key: "expiry_date", label: "Важи до", kind: "date" }]} />
               </Panel>
-              <Panel title="По регистар и насока">
-                <div className="stack">
-                  <ShareBar parts={Object.entries(d.by_direction as Record<string, number>).map(([k, v]) => ({ label: DIRECTION[k] ?? k, value: v }))} />
-                  <HBars unit="number" rows={asRows(d.by_register).map((r) => ({ key: String(r.register_id), label: String(r.register__name), value: r.count,
-                    to: listUrl(D, { register: String(r.register_id) }) }))} empty="Нема заведени документи" />
-                </div>
-              </Panel>
-            </div>
-            <Panel title="Истекуваат во следните 30 дена" flush>
-              <DataTable rows={asRows(d.expiring)} empty="Ниеден документ не истекува наскоро" columns={[
-                { key: "archive_number", label: "Архивски број", to: (r) => `/${D}/${r.id}`, render: (r) => String(r.archive_number || `#${r.id}`) },
-                { key: "subject", label: "Предмет" }, { key: "expiry_date", label: "Важи до", kind: "date" }]} />
-            </Panel>
+            </Section>
+            <Section n={2} title="Тек и состојба">
+              <div className="grid-2">
+                <Panel title="Заведени документи по месец" sub="По датум на документот">
+                  <ColumnChart title="Заведени документи по месец" unit="number" data={trend.map((r) => ({ label: String(r.label), registered: num(r.registered) }))}
+                    series={[{ key: "registered", name: "Заведени" }]} />
+                </Panel>
+                <Panel title="По регистар и насока">
+                  <div className="stack">
+                    <ShareBar parts={Object.entries(d.by_direction as Record<string, number>).map(([k, v]) => ({ label: DIRECTION[k] ?? k, value: v }))} />
+                    <HBars unit="number" rows={asRows(d.by_register).map((r) => ({ key: String(r.register_id), label: String(r.register__name), value: r.count,
+                      to: listUrl(D, { register: String(r.register_id) }) }))} empty="Нема заведени документи" />
+                  </div>
+                </Panel>
+              </div>
+            </Section>
           </>
         );
       }}

@@ -1,23 +1,23 @@
-/** What a record's detail page adds: child resources as tabs (filtered to the record, with an Add drawer that
- * fills the link) and computed panels (project overview and BOQ, budget vs actual, partner approvals,
+/** What a record's detail page adds: child resources (filtered to the record, with an Add dialog that fills
+ * the link) and computed panels (project overview and BOQ, budget vs actual, partner approvals,
  * payroll calculation, MPIN, offer items, quotation comparison). Keyed by the server's resource key. */
-import { useState, type ComponentType } from "react";
+import type { ComponentType } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Circle, Download, FileText, Plus, XCircle } from "lucide-react";
+import { CheckCircle2, Circle, Download, FileText, XCircle } from "@/components/icons";
 
 import { api, API_BASE, download } from "@/api/client";
 import type { ResourceMeta, Row } from "@/api/types";
 import { Bullet, Kpi, Kpis, Meter } from "@/components/dashboard";
 import {
-  Alert, Badge, Button, Drawer, EmptyState, ErrorState, Panel, Skeleton, SkeletonPanel, Spinner, statusTone,
+  Alert, Badge, Button, EmptyState, ErrorState, Panel, Skeleton, SkeletonPanel, Spinner, statusTone,
+  cssVars,
 } from "@/components/ui";
 import { t } from "@/i18n/mk";
-import { formatCompact, formatMoney, formatNumber, num } from "@/lib/format";
-import { useInvalidateResource, useMeta } from "@/meta/hooks";
+import { formatCompact, formatMoney, formatNumber, formatPercent, num } from "@/lib/format";
+import { useMeta } from "@/meta/hooks";
 
 import { OfferItems } from "./offerItems";
 import { QuotationCompare } from "./procurement";
-import { ResourceForm } from "./ResourceForm";
 import { ResourceList } from "./ResourceList";
 
 export interface ChildSpec {
@@ -29,22 +29,13 @@ export interface ChildSpec {
 export function ChildTable({ spec, parent }: { spec: ChildSpec; parent: Row }) {
   const endpoint = `${API_BASE}/${spec.path}/`;
   const meta = useMeta(endpoint);
-  const [adding, setAdding] = useState(false);
-  const invalidate = useInvalidateResource(endpoint);
   if (meta.isLoading) return <SkeletonPanel />;
   if (meta.error) return <ErrorState error={meta.error} />;
   if (!meta.data || !meta.data.permissions.view) return <Panel><EmptyState title={t.forbiddenTitle}>{t.forbiddenText}</EmptyState></Panel>;
   const m = meta.data;
   return (
-    <section className="panel" style={{ overflow: "hidden" }} aria-label={m.title}>
-      <ResourceList meta={m} baseQuery={{ [spec.fk]: parent.id }} embedded
-        headerExtra={m.permissions.add ? <Button size="sm" variant="primary" icon={Plus} onClick={() => setAdding(true)}>{t.add}</Button> : null} />
-      {adding ? (
-        <Drawer narrow title={`${m.title_singular || m.title}: ${t.addNew.toLowerCase()}`} onClose={() => setAdding(false)}>
-          <ResourceForm meta={m} defaults={{ [spec.fk]: parent.id }} compact
-            onSaved={() => { setAdding(false); invalidate(); }} onCancel={() => setAdding(false)} />
-        </Drawer>
-      ) : null}
+    <section aria-label={m.title}>
+      <ResourceList meta={m} baseQuery={{ [spec.fk]: parent.id }} embedded />
     </section>
   );
 }
@@ -149,19 +140,19 @@ function ProjectOverview({ meta, row }: { meta: ResourceMeta; row: Row }) {
   return (
     <div className="stack">
       <Kpis>
-        <Kpi label="Вредност на проектот" value={formatCompact(value)} unit="ден." sub={d.value_source || undefined} />
-        <Kpi label="Изведено (градежна книга)" value={formatCompact(executed)} unit="ден." sub={`${formatNumber(pctExec, 1)}% од вредноста`} />
-        <Kpi label="Фактурирано (платени ситуации)" value={formatCompact(invoiced)} unit="ден." sub={value ? `${formatNumber((invoiced / value) * 100, 1)}% од вредноста` : undefined} />
-        <Kpi label="Непредвидени работи" value={formatCompact(d.unforeseen_total)} unit="ден." tone={num(d.unforeseen_total) > 0 ? "attention" : undefined} />
+        <Kpi label="Вредност на проектот" value={formatCompact(value)} unit="MKD" sub={d.value_source || undefined} />
+        <Kpi label="Изведено (градежна книга)" value={formatCompact(executed)} unit="MKD" sub={`${formatPercent(pctExec, 1)} од вредноста`} />
+        <Kpi label="Фактурирано (платени ситуации)" value={formatCompact(invoiced)} unit="MKD" sub={value ? `${formatPercent((invoiced / value) * 100, 1)} од вредноста` : undefined} />
+        <Kpi label="Непредвидени работи" value={formatCompact(d.unforeseen_total)} unit="MKD" tone={num(d.unforeseen_total) > 0 ? "attention" : undefined} />
         <Kpi label="Активни инженери" value={d.engineers_active} />
       </Kpis>
       <Panel title="Извршување" sub="Изведено и фактурирано наспроти вредноста на проектот">
         <div className="stack-sm">
           <Bullet budget={value} actual={invoiced} committed={Math.max(0, executed - invoiced)} />
-          <div className="legend" style={{ marginBottom: 0 }}>
-            <span><span className="swatch" style={{ background: "var(--series-1)" }} />Фактурирано <span className="lv">{formatMoney(invoiced)}</span></span>
-            <span><span className="swatch" style={{ background: "color-mix(in srgb, var(--series-2) 30%, transparent)" }} />Изведено, нефактурирано <span className="lv">{formatMoney(Math.max(0, executed - invoiced))}</span></span>
-            <span><span className="swatch" style={{ background: "var(--ink)", width: 3 }} />Вредност <span className="lv">{formatMoney(value)}</span></span>
+          <div className="legend">
+            <span><span className="swatch" />Фактурирано <span className="lv">{formatMoney(invoiced)}</span></span>
+            <span><span className="swatch c4" />Изведено, нефактурирано <span className="lv">{formatMoney(Math.max(0, executed - invoiced))}</span></span>
+            <span><span className="line-key" style={cssVars({ "--c": "var(--ea-text)" })} />Вредност <span className="lv">{formatMoney(value)}</span></span>
           </div>
         </div>
       </Panel>
@@ -170,7 +161,7 @@ function ProjectOverview({ meta, row }: { meta: ResourceMeta; row: Row }) {
           {([["Повеќе од договореното", d.over, "danger"], ["Помалку од договореното", d.under, "info"]] as const).map(([title, list, tone]) => (
             <Panel key={title} title={title} sub={`${list.length} ставки`} flush>
               {!list.length ? <EmptyState compact title="Нема" /> : (
-                <div className="table-wrap" style={{ maxHeight: 300 }}>
+                <div className="table-wrap short">
                   <table className="table compact">
                     <thead><tr><th>Бр.</th><th>Ставка</th><th className="num">Разлика</th><th className="num">Вредност</th></tr></thead>
                     <tbody>{list.map((e) => (
@@ -185,18 +176,18 @@ function ProjectOverview({ meta, row }: { meta: ResourceMeta; row: Row }) {
           ))}
         </div>
       ) : null}
-      <Panel title="Предмер" sub={boq.data ? `Вкупно ${formatMoney(boq.data.total)} ден.` : undefined} flush>
+      <Panel title="Предмер" sub={boq.data ? `Вкупно ${formatMoney(boq.data.total)} MKD` : undefined} flush>
         {boq.isLoading ? <Spinner /> : !boq.data?.rows.length ? <EmptyState compact title="Проектот нема предмер" /> : (
-          <div className="table-wrap" style={{ maxHeight: 480 }}>
+          <div className="table-wrap mid">
             <table className="table compact">
               <thead><tr><th>Бр.</th><th>Опис</th><th>Ед.</th><th className="num">Количина</th><th className="num">Ед. цена</th><th className="num">Вкупно</th></tr></thead>
               <tbody>
                 {boq.data.rows.map((r) => {
                   const heading = r.row_type && r.row_type !== "ITEM";
                   return (
-                    <tr key={r.id} style={heading ? { background: "var(--surface-2)", fontWeight: 600 } : undefined}>
+                    <tr key={r.id} className={heading ? "heading-row" : undefined}>
                       <td className="nowrap">{String(r.number ?? "")}</td>
-                      <td className="wrap" style={{ paddingLeft: 12 + r.depth * 16 }}>{String(r.title ?? r.description ?? "")}</td>
+                      <td className="wrap indent" style={cssVars({ "--depth": r.depth })}>{String(r.title ?? r.description ?? "")}</td>
                       <td>{String(r.unit ?? "")}</td>
                       <td className="num">{heading ? "" : formatNumber(r.quantity, 2)}</td>
                       <td className="num">{heading ? "" : formatMoney(r.unit_price)}</td>
@@ -227,14 +218,14 @@ function PartnerOverview({ meta, row }: { meta: ResourceMeta; row: Row }) {
       <Panel title="Одобрувања" sub={`${d.approvals_done} од ${d.approvals_total} задолжителни`}>
         <div className="stack-sm">
           <Meter value={d.approvals_done} max={d.approvals_total || 1} label="Одобрувања" />
-          <ul style={{ listStyle: "none", margin: 0, padding: 0 }} className="stack-sm">
+          <ul className="list-plain stack-sm">
             {(d.approval_rows ?? []).map((r: Record<string, any>) => { // eslint-disable-line @typescript-eslint/no-explicit-any
               const status = String(r.approval?.status ?? "");
               const ok = /APPROVED/.test(status), bad = /REJECT/.test(status);
               return (
                 <li key={r.role} className="row-tight">
-                  {ok ? <CheckCircle2 aria-hidden style={{ width: 18, color: "var(--success)" }} /> : bad ? <XCircle aria-hidden style={{ width: 18, color: "var(--danger)" }} /> : <Circle aria-hidden style={{ width: 18, color: "var(--ink-faint)" }} />}
-                  <span style={{ flex: 1 }}>{r.label}{r.required ? "" : <span className="muted small"> (незадолжително)</span>}</span>
+                  {ok ? <CheckCircle2 className="ico-go" /> : bad ? <XCircle className="ico-stop" /> : <Circle className="ico-muted" />}
+                  <span className="grow-wrap">{r.label}{r.required ? "" : <span className="muted small"> (незадолжително)</span>}</span>
                   {r.approval ? <Badge tone={statusTone(status)}>{String(r.approval.status_display ?? status)}</Badge> : <span className="small muted">чека</span>}
                 </li>
               );
@@ -245,14 +236,14 @@ function PartnerOverview({ meta, row }: { meta: ResourceMeta; row: Row }) {
       <Panel title="Може ли да се работи со партнерот">
         <div className="stack-sm">
           {gates.map(([label, g]) => g ? (
-            <div key={label} className="row-tight" style={{ alignItems: "flex-start" }}>
-              {g.allowed ? <CheckCircle2 aria-hidden style={{ width: 18, color: "var(--success)", flex: "none" }} /> : <XCircle aria-hidden style={{ width: 18, color: "var(--danger)", flex: "none" }} />}
+            <div key={label} className="row-tight items-start">
+              {g.allowed ? <CheckCircle2 className="ico-go" /> : <XCircle className="ico-stop" />}
               <span><strong>{label}:</strong> {g.allowed ? "дозволено" : "блокирано"}{g.reason ? <span className="small muted"> — {g.reason}</span> : null}</span>
             </div>
           ) : null)}
           {issues.length ? (
             <Alert tone="warning" title="Пред активирање треба да се дополни">
-              <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>{issues.map((i, k) => <li key={k}>{i.message ?? i.code}</li>)}</ul>
+              <ul className="list-bullets">{issues.map((i, k) => <li key={k}>{i.message ?? i.code}</li>)}</ul>
             </Alert>
           ) : null}
           {d.pending_bank_changes ? <Alert tone="info">Промени на банкарска сметка што чекаат проверка: {d.pending_bank_changes}</Alert> : null}
@@ -277,21 +268,21 @@ function BudgetSummary({ meta, row }: { meta: ResourceMeta; row: Row }) {
   const s = q.data;
   return (
     <div className="stack">
-      {s.overrun ? <Alert tone="danger" title="Буџетот е надминат">Потрошеното ја надминува планираната вредност за {formatMoney(Math.abs(num(s.variance)))} ден.</Alert> : null}
+      {s.overrun ? <Alert tone="danger" title="Буџетот е надминат">Потрошеното ја надминува планираната вредност за {formatMoney(Math.abs(num(s.variance)))} MKD</Alert> : null}
       <Kpis>
-        <Kpi label="Буџет" value={formatCompact(s.total_budget)} unit="ден." />
-        <Kpi label="Потрошено" value={formatCompact(s.total_actual)} unit="ден." sub={`${formatNumber(s.pct, 1)}% од буџетот`} tone={s.overrun ? "alarm" : undefined} />
-        <Kpi label="Нарачано, неплатено" value={formatCompact(s.committed)} unit="ден." />
-        <Kpi label="Преостанато" value={formatCompact(s.variance)} unit="ден." />
+        <Kpi label="Буџет" value={formatCompact(s.total_budget)} unit="MKD" />
+        <Kpi label="Потрошено" value={formatCompact(s.total_actual)} unit="MKD" sub={`${formatPercent(s.pct, 1)} од буџетот`} tone={s.overrun ? "alarm" : undefined} />
+        <Kpi label="Нарачано, неплатено" value={formatCompact(s.committed)} unit="MKD" />
+        <Kpi label="Преостанато" value={formatCompact(s.variance)} unit="MKD" />
       </Kpis>
       <Panel title="По категорија" sub="Потрошено (темно), нарачано (светло) и буџет (линија)">
         <div className="stack">
           {s.rows.map((r) => (
-            <div key={r.category} className="stack-sm" style={{ gap: 4 }}>
+            <div key={r.category} className="stack-sm">
               <div className="row-tight small">
-                <span style={{ flex: 1 }}>{r.label} {r.over ? <Badge tone="danger">надминато</Badge> : null}</span>
+                <span className="grow-wrap">{r.label} {r.over ? <Badge tone="danger">надминато</Badge> : null}</span>
                 <span className="num">{formatMoney(r.actual)} / {formatMoney(r.budget)}</span>
-                <span className="num muted" style={{ width: 52, textAlign: "right" }}>{formatNumber(r.pct, 0)}%</span>
+                <span className="num muted w-pct">{formatPercent(r.pct, 0)}</span>
               </div>
               <Bullet budget={num(r.budget)} actual={num(r.actual)} />
             </div>
@@ -319,20 +310,20 @@ function PayrollStatutory({ meta, row }: { meta: ResourceMeta; row: Row }) {
   const s = q.data;
   return (
     <Panel title="Пресметка од бруто до нето" sub={s.frozen ? "Заклучена пресметка" : "Прелиминарна пресметка — може да се промени"}
-      actions={<div className="row-tight">
+      actions={<div className="row-tight wrap">
         {(["payslip", "combined", "statutory"] as const).map((kind) => (
-          <a key={kind} className="btn sm" target="_blank" rel="noreferrer" href={`${meta.endpoint}${row.id}/pdf/?kind=${kind}`}>
+          <a key={kind} className="btn btn-outline-secondary btn-sm" target="_blank" rel="noreferrer" href={`${meta.endpoint}${row.id}/pdf/?kind=${kind}`}>
             <FileText aria-hidden />{kind === "payslip" ? "Платен лист" : kind === "combined" ? "Комбиниран" : "Образец"}
           </a>
         ))}
       </div>}>
       <dl className="fact-list">
         <div><dt>Бруто плата</dt><dd className="num">{formatMoney(s.bruto)}</dd></div>
-        {Object.entries(s.breakdown).map(([k, v]) => <div key={k}><dt style={{ paddingLeft: 12 }}>− {BREAKDOWN_LABELS[k] ?? k}</dt><dd className="num">{formatMoney(v)}</dd></div>)}
+        {Object.entries(s.breakdown).map(([k, v]) => <div key={k}><dt className="indent">− {BREAKDOWN_LABELS[k] ?? k}</dt><dd className="num">{formatMoney(v)}</dd></div>)}
         <div><dt>Придонеси вкупно</dt><dd className="num">{formatMoney(s.pridonesi_vkupno)}</dd></div>
         <div><dt>Даночна основа</dt><dd className="num">{formatMoney(s.danocna_osnova)}</dd></div>
         <div><dt>Персонален данок</dt><dd className="num">{formatMoney(s.danok)}</dd></div>
-        <div><dt><strong>Нето плата</strong></dt><dd className="num" style={{ fontSize: 18 }}>{formatMoney(s.neto)}</dd></div>
+        <div><dt><strong>Нето плата</strong></dt><dd className="num fs-18">{formatMoney(s.neto)}</dd></div>
       </dl>
     </Panel>
   );
@@ -348,12 +339,12 @@ function MpinDetail({ meta, row }: { meta: ResourceMeta; row: Row }) {
         <Button size="sm" icon={Download} onClick={() => void download(`${meta.endpoint}${row.id}/txt/`)}>TXT за УЈП</Button>
         <Button size="sm" icon={Download} onClick={() => void download(`${meta.endpoint}${row.id}/xml/`)}>XML</Button>
       </div>}>
-      <div className="stack-sm" style={{ padding: "0 16px" }}>
+      <div className="stack-sm pad-x">
         {checks.missing_company_details.length ? <Alert tone="warning" title="Недостасуваат податоци за обврзникот">{checks.missing_company_details.join(", ")}</Alert> : null}
         {checks.unreconciled.length ? <Alert tone="danger">Редови што не се усогласени: {checks.unreconciled.length}</Alert> : null}
         {checks.missing_municipality.length ? <Alert tone="warning">Вработени без шифра на општина: {checks.missing_municipality.length}</Alert> : null}
       </div>
-      <div className="table-wrap" style={{ maxHeight: 520 }}>
+      <div className="table-wrap mid">
         <table className="table compact">
           <thead><tr><th className="num">#</th><th>ЕМБГ</th><th>Општина</th><th className="num">Бруто</th><th className="num">ПИО</th>
             <th className="num">Здравство</th><th className="num">Данок</th><th className="num">Нето</th><th /></tr></thead>

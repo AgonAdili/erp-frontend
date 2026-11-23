@@ -1,22 +1,23 @@
-/** The frame around every signed-in screen: the module rail, the module panel (its screens and lists), the top
- * bar (breadcrumbs, ⌘K, legal entity, notifications, user menu), shortcuts and the idle-timeout warning. */
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+/** The app shell (branding_rules/04 §1): skip link · sidebar (modules grouped by module group, the module icon in
+ * its group's colour) · top bar (breadcrumbs, search ⌘K, "+ Ново", notifications, profile) · module tabs
+ * (Преглед first, then the module's lists) · main. On phones a bottom nav replaces the sidebar. */
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Bell, Building, Check, ChevronDown, ChevronRight, Clock, House, Inbox, Keyboard, LogOut, Menu as MenuIcon, Monitor, Moon,
-  PanelLeft, PanelLeftClose, Pin, Rows3, Rows4, Search, Sun, User,
-} from "lucide-react";
 
 import { api } from "@/api/client";
 import type { Page, Row } from "@/api/types";
 import { useSession } from "@/auth/session";
 import { usePrefs } from "@/app/prefs";
-import { Button, EmptyState, IconButton, Kbd, Menu, Modal, Popover, Tooltip } from "@/components/ui";
+import {
+  Bell, Check, ChevronRight, House, Inbox, Keyboard, LogOut, Menu as MenuIcon, Monitor, Moon, PanelLeftClose, PanelLeftOpen,
+  Plus, Search, Sun, User,
+} from "@/components/icons";
+import { Button, EmptyState, IconButton, Kbd, Menu, Modal, Popover, Tooltip, type MenuEntry } from "@/components/ui";
 import { t } from "@/i18n/mk";
 import { formatRelative } from "@/lib/format";
 import { useLiveUpdates } from "@/live/useLiveUpdates";
-import { groupForPath, resourcePath } from "@/nav/modules";
+import { groupForPath, MODULE_GROUPS, resourcePath } from "@/nav/modules";
 import { useNav, type VisibleGroup } from "@/nav/useNav";
 
 import { CommandPalette } from "./CommandPalette";
@@ -31,124 +32,77 @@ function useInboxCount() {
   });
 }
 
-// ── rail ──────────────────────────────────────────────────────────────────────
+function useUnreadCount() {
+  return useQuery({
+    queryKey: ["notifications", "unread"],
+    queryFn: () => api.get<{ count: number }>("/workflow/notifications/unread/"),
+    refetchInterval: 60_000,
+    select: (d) => d.count,
+  });
+}
 
-function Rail({ groups, active, onPick }: { groups: VisibleGroup[]; active: string; onPick: () => void }) {
+const capped = (n: number) => (n > 99 ? "99+" : String(n));
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "?";
+}
+
+function Tip({ on, label, children }: { on: boolean; label: string; children: ReactNode }) {
+  return on ? <Tooltip content={label} side="right">{children}</Tooltip> : <>{children}</>;
+}
+
+// ── sidebar ───────────────────────────────────────────────────────────────────
+
+function Sidebar({ groups, activeKey, onNavigate }: { groups: VisibleGroup[]; activeKey: string; onNavigate: () => void }) {
+  const { navCollapsed: collapsed, setNavCollapsed, entity } = usePrefs();
+  const { session } = useSession();
   const inbox = useInboxCount();
-  const { navCollapsed, setNavCollapsed } = usePrefs();
   const location = useLocation();
+  const entities = session?.access?.entities ?? [];
+  const company = entities.find((e) => e.id === entity) ?? entities[0];
   const atHome = location.pathname === "/";
   return (
-    <nav className="rail" aria-label={t.menu}>
-      <Link to="/" className="brand" aria-label={t.home} onClick={onPick}>EA</Link>
-      <Tooltip content={t.home} side="right">
-        <Link to="/" className={`rail-btn${atHome ? " active" : ""}`} aria-label={t.home} onClick={onPick}><House aria-hidden /></Link>
-      </Tooltip>
-      <Tooltip content={t.inbox} side="right">
-        <Link to="/inbox" className={`rail-btn${location.pathname === "/inbox" ? " active" : ""}`}
-          aria-label={`${t.inbox}${inbox.data ? `: ${inbox.data}` : ""}`} onClick={onPick}>
-          <Inbox aria-hidden />
-          {inbox.data ? <span className="dot">{inbox.data > 99 ? "99+" : inbox.data}</span> : null}
-        </Link>
-      </Tooltip>
-      <span className="rail-sep" aria-hidden />
-      {groups.map((g) => (
-        <Tooltip key={g.group.key} content={g.group.label} side="right">
-          <Link to={g.landing} className={`rail-btn${active === g.group.key ? " active" : ""}`} aria-label={g.group.label}
-            aria-current={active === g.group.key ? "true" : undefined} onClick={onPick}>
-            <g.group.icon aria-hidden />
+    <aside className="sidebar" aria-label={t.menu}>
+      <Link to="/" className="sb-brand" onClick={onNavigate} aria-label={`${t.appName} — ${t.home}`}>
+        <svg className="sb-mark" aria-hidden><use href={`${import.meta.env.BASE_URL}icons/solar.svg#eacore-mark`} /></svg>
+        <span className="sb-word"><strong translate="no">EACore</strong><span>{company?.short_name || company?.name || "EA Group"}</span></span>
+      </Link>
+      <nav className="sb-scroll" aria-label={t.menu}>
+        <Tip on={collapsed} label={t.home}>
+          <Link to="/" className={`sb-item plain${atHome ? " active" : ""}`} aria-current={atHome ? "page" : undefined} onClick={onNavigate}>
+            <span className="sb-tile"><House /></span><span className="sb-text">{t.home}</span>
           </Link>
-        </Tooltip>
-      ))}
-      <span className="grow" />
-      <Tooltip content={navCollapsed ? t.expand : t.collapse} side="right">
-        <button type="button" className="rail-btn modnav-toggle" aria-label={navCollapsed ? t.expand : t.collapse}
-          onClick={() => setNavCollapsed(!navCollapsed)}>
-          {navCollapsed ? <PanelLeft aria-hidden /> : <PanelLeftClose aria-hidden />}
-        </button>
-      </Tooltip>
-    </nav>
-  );
-}
-
-// ── module panel ──────────────────────────────────────────────────────────────
-
-function PinButton({ route }: { route: string }) {
-  const { pins, togglePin } = usePrefs();
-  const on = pins.includes(route);
-  return (
-    <button type="button" className={`pin-btn${on ? " on" : ""}`} aria-label={on ? t.unpin : t.pin} title={on ? t.unpin : t.pin}
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePin(route); }}>
-      <Pin aria-hidden />
-    </button>
-  );
-}
-
-function GroupPanel({ g, onNavigate }: { g: VisibleGroup; onNavigate: () => void }) {
-  const location = useLocation();
-  const current = `/${resourcePath(location.pathname)}`;
-  const inMore = g.more.some((r) => r.route === current);
-  const [showMore, setShowMore] = useState(inMore);
-  useEffect(() => { if (inMore) setShowMore(true); }, [inMore]);
-  const linkClass = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : "");
-  return (
-    <>
-      {g.links.length ? (
-        <>
-          {g.links.map((l) => (
-            <NavLink key={l.to} to={l.to} end className={linkClass} onClick={onNavigate}>{l.label}</NavLink>
-          ))}
-        </>
-      ) : null}
-      {g.primary.length ? <div className="nav-label">{t.records}</div> : null}
-      {g.primary.map((r) => (
-        <NavLink key={r.route} to={r.route} className={() => (current === r.route ? "active" : "")} onClick={onNavigate}>
-          <span className="truncate">{r.title}</span><PinButton route={r.route} />
-        </NavLink>
-      ))}
-      {g.more.length ? (
-        <>
-          <button type="button" className="nav-more" aria-expanded={showMore} onClick={() => setShowMore((s) => !s)}>
-            {showMore ? <ChevronDown aria-hidden /> : <ChevronRight aria-hidden />}
-            {g.primary.length ? `${t.more} (${g.more.length})` : `${t.records} (${g.more.length})`}
-          </button>
-          {showMore ? g.more.map((r) => (
-            <NavLink key={r.route} to={r.route} className={() => (current === r.route ? "active" : "")} onClick={onNavigate}>
-              <span className="truncate">{r.title}</span><PinButton route={r.route} />
-            </NavLink>
-          )) : null}
-        </>
-      ) : null}
-    </>
-  );
-}
-
-function QuickPanel({ onNavigate }: { onNavigate: () => void }) {
-  const { pins, recent } = usePrefs();
-  const { resources, groups } = useNav();
-  const titleOf = (route: string) => resources.find((r) => r.route === route)?.title
-    ?? groups.flatMap((g) => g.links).find((l) => l.to === route)?.label ?? route;
-  return (
-    <>
-      <div className="nav-label">{t.pinned}</div>
-      {pins.length ? pins.map((p) => (
-        <NavLink key={p} to={p} onClick={onNavigate}><Pin aria-hidden /><span className="truncate">{titleOf(p)}</span><PinButton route={p} /></NavLink>
-      )) : <p className="xs muted" style={{ padding: "4px 10px", margin: 0 }}>Закачете листа со иглата до нејзиното име.</p>}
-      <div className="nav-label">{t.recent}</div>
-      {recent.length ? recent.slice(0, 8).map((r) => (
-        <NavLink key={r.route} to={r.route} onClick={onNavigate}><Clock aria-hidden /><span className="truncate">{r.title}</span></NavLink>
-      )) : <p className="xs muted" style={{ padding: "4px 10px", margin: 0 }}>Записите што ги отворате ќе се појават тука.</p>}
-    </>
-  );
-}
-
-function ModNav({ group, onNavigate }: { group?: VisibleGroup; onNavigate: () => void }) {
-  const { navCollapsed } = usePrefs();
-  return (
-    <aside className={`modnav${navCollapsed ? " collapsed" : ""}`} aria-label={group?.group.label ?? t.home}>
-      <div className="modnav-head"><h2>{group?.group.label ?? "Брз пристап"}</h2></div>
-      <div className="modnav-body">
-        {group ? <GroupPanel key={group.group.key} g={group} onNavigate={onNavigate} /> : <QuickPanel onNavigate={onNavigate} />}
+        </Tip>
+        <Tip on={collapsed} label={t.inbox}>
+          <NavLink to="/inbox" className={({ isActive }) => `sb-item plain${isActive ? " active" : ""}`} onClick={onNavigate}
+            aria-label={`${t.inbox}${inbox.data ? `: ${inbox.data}` : ""}`}>
+            <span className="sb-tile"><Inbox /></span><span className="sb-text">{t.inbox}</span>
+            {inbox.data ? <span className="sb-count">{capped(inbox.data)}</span> : null}
+          </NavLink>
+        </Tip>
+        {MODULE_GROUPS.map(({ tone, label }) => {
+          const list = groups.filter((g) => g.group.tone === tone);
+          if (!list.length) return null;
+          return (
+            <div key={tone} data-module={tone}>
+              <div className="sb-group-label ea-label">{label}</div>
+              {list.map((g) => {
+                const current = g.group.key === activeKey;
+                return (
+                  <Tip key={g.group.key} on={collapsed} label={g.group.label}>
+                    <Link to={g.landing} className={`sb-item${current ? " active" : ""}`} aria-current={current ? "true" : undefined} onClick={onNavigate}>
+                      <span className="sb-tile"><g.group.icon /></span><span className="sb-text">{g.group.label}</span>
+                    </Link>
+                  </Tip>
+                );
+              })}
+            </div>
+          );
+        })}
+      </nav>
+      <div className="sb-foot">
+        <IconButton className="sb-collapse" label={collapsed ? t.expand : t.collapse} icon={collapsed ? PanelLeftOpen : PanelLeftClose}
+          onClick={() => setNavCollapsed(!collapsed)} />
       </div>
     </aside>
   );
@@ -156,6 +110,7 @@ function ModNav({ group, onNavigate }: { group?: VisibleGroup; onNavigate: () =>
 
 // ── top bar ───────────────────────────────────────────────────────────────────
 
+/** Ancestors only: the module, then the list; never an item that repeats its parent. */
 function Breadcrumbs({ group }: { group?: VisibleGroup }) {
   const location = useLocation();
   const crumb = useCrumb();
@@ -166,46 +121,42 @@ function Breadcrumbs({ group }: { group?: VisibleGroup }) {
   const res = resources.find((r) => r.path === parts.slice(0, 2).join("/"));
   const link = group?.links.find((l) => l.to === location.pathname);
   if (res) {
-    items.push({ to: res.route, label: res.title });
-    if (parts[2] === "new") items.push({ label: t.addNew });
-    else if (parts[2]) items.push({ label: crumb || `#${parts[2]}` });
-  } else if (link && !link.overview) {
-    items.push({ label: link.label });
-  } else if (link?.overview) {
-    items.push({ label: link.label });
-  } else if (crumb) {
-    items.push({ label: crumb });
-  }
-  if (!items.length) items.push({ label: location.pathname === "/" ? t.home : crumb || t.appName });
+    if (parts[2]) items.push({ to: res.route, label: res.title });
+    items.push({ label: parts[2] === "new" ? t.newRecord : parts[3] === "edit" ? t.edit : parts[2] ? crumb || `#${parts[2]}` : res.title });
+  } else if (link && !link.overview) items.push({ label: link.label });
+  else if (!group) items.push({ label: location.pathname === "/" ? t.home : crumb || t.appName });
   return (
     <nav className="crumbs" aria-label="Патека">
       {items.map((it, i) => (
-        <span key={i} className="row-tight" style={{ minWidth: 0, gap: 4 }}>
-          {i > 0 ? <ChevronRight aria-hidden /> : null}
-          {it.to && i < items.length - 1 ? <Link to={it.to}>{it.label}</Link> : <span className="current" aria-current="page">{it.label}</span>}
+        <span key={i} className="row-tight">
+          {i > 0 ? <ChevronRight /> : null}
+          {it.to && i < items.length - 1 ? <Link to={it.to}>{it.label}</Link> : <span className="truncate" aria-current="page">{it.label}</span>}
         </span>
       ))}
     </nav>
   );
 }
 
-function EntitySwitcher() {
-  const { session } = useSession();
-  const { entity, setEntity } = usePrefs();
-  const entities = session?.access?.entities ?? [];
-  if (entities.length <= 1) return null;
-  const current = entities.find((e) => e.id === entity);
+/** "+ Ново": choice tiles of what to create, by module, filtered by permission. */
+function CreateMenu({ groups }: { groups: VisibleGroup[] }) {
+  const [open, setOpen] = useState(false);
+  const byGroup = groups.map((g) => ({ g, items: [...g.primary, ...g.more].filter((r) => r.entry.permissions.add).slice(0, 6) })).filter((x) => x.items.length);
+  if (!byGroup.length) return null;
   return (
-    <Menu label={t.entity} trigger={
-      <button type="button" className="btn ghost entity-btn" aria-label={`${t.entity}: ${current?.name ?? ""}`}>
-        <Building aria-hidden /><span>{current?.short_name || current?.code || t.entity}</span><ChevronDown aria-hidden />
-      </button>
-    } items={[
-      { heading: true, label: "Правно лице за прегледите" },
-      ...entities.map((e) => ({
-        label: e.name, icon: e.id === entity ? Check : undefined, hint: e.code, onSelect: () => setEntity(e.id),
-      })),
-    ]} />
+    <Popover open={open} onOpenChange={setOpen} align="end" trigger={<Button variant="primary" icon={Plus} className="create-btn"><span>{t.addNew}</span></Button>}>
+      <div className="create-panel">
+        {byGroup.map(({ g, items }) => (
+          <div key={g.group.key} className="create-group" data-module={g.group.tone}>
+            <span className="ea-label">{g.group.label}</span>
+            <div className="create-tiles">
+              {items.map((r) => (
+                <Link key={r.route} to={`${r.route}/new`} className="create-tile" onClick={() => setOpen(false)}><g.group.icon />{r.title}</Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Popover>
   );
 }
 
@@ -213,17 +164,13 @@ function NotificationsPopover() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const count = useQuery({
-    queryKey: ["notifications", "unread"],
-    queryFn: () => api.get<{ count: number }>("/workflow/notifications/unread/"),
-    refetchInterval: 60_000,
-  });
+  const count = useUnreadCount();
   const list = useQuery({
     queryKey: ["notifications", "popover"],
     queryFn: () => api.get<Page<Row>>("/workflow/notifications/", { is_read: "false", page_size: 8 }),
     enabled: open,
   });
-  const n = count.data?.count ?? 0;
+  const n = count.data ?? 0;
   const refresh = () => void qc.invalidateQueries({ queryKey: ["notifications"] });
   const openOne = async (row: Row) => {
     setOpen(false);
@@ -231,73 +178,134 @@ function NotificationsPopover() {
     refresh();
     if (row.route) navigate(String(row.route));
   };
+  const tone = (level: unknown) => (level === "WARNING" ? "stop" : level === "ACTION" ? "caution" : level === "SUCCESS" ? "go" : "info");
   return (
     <Popover open={open} onOpenChange={setOpen} align="end" trigger={
-      <button type="button" className="btn ghost icon" aria-label={`${t.notifications}${n ? `: ${n}` : ""}`} style={{ position: "relative" }}>
-        <Bell aria-hidden />
-        {n ? <span className="count" style={{ position: "absolute", top: 1, right: -2 }}>{n > 99 ? "99+" : n}</span> : null}
+      <button type="button" className="btn btn-ghost btn-icon bell" aria-label={`${t.notifications}${n ? `: ${n}` : ""}`}>
+        <Bell />{n ? <span className="sb-count">{capped(n)}</span> : null}
       </button>
     }>
-      <div style={{ width: "min(380px, calc(100vw - 24px))" }}>
-        <div className="row" style={{ padding: "12px 14px 8px" }}>
-          <strong>{t.notifications}</strong><span className="spacer" />
+      <div className="stack-sm">
+        <div className="row ea-panel-head">
+          <h2 className="grow">{t.notifications}</h2>
           {n ? <Button size="sm" variant="ghost" onClick={async () => { await api.post("/workflow/notifications/read-all/"); refresh(); }}>{t.markAllRead}</Button> : null}
         </div>
-        {list.isLoading ? <div style={{ padding: 20 }} className="muted small">{t.loading}</div>
-          : !(list.data?.results ?? []).length ? <EmptyState compact icon={Bell} title="Нема нови известувања" /> : (
-            <div style={{ padding: "0 6px 6px" }}>
+        {list.isLoading ? <div className="ea-panel-body muted">{t.loading}</div>
+          : !(list.data?.results ?? []).length ? <EmptyState compact icon={Bell} title="Нема нови известувања." /> : (
+            <ul className="feed">
               {(list.data?.results ?? []).map((row) => (
-                <button key={row.id} type="button" className="menu-item" style={{ width: "100%", alignItems: "flex-start", border: 0, background: "none", textAlign: "left" }}
-                  onClick={() => void openOne(row)}>
-                  <span className={`badge ${row.level === "WARNING" ? "danger" : row.level === "ACTION" ? "warning" : "info"} plain`} style={{ width: 8, height: 8, padding: 0, marginTop: 7 }} aria-hidden />
-                  <span style={{ minWidth: 0 }}>
-                    <span style={{ display: "block", fontWeight: 500 }}>{String(row.title)}</span>
-                    {row.message ? <span className="small muted" style={{ display: "block" }}>{String(row.message)}</span> : null}
-                    <span className="xs muted">{formatRelative(row.created_at)}</span>
-                  </span>
-                </button>
+                <li key={row.id}>
+                  <button type="button" className="notif-row" onClick={() => void openOne(row)}>
+                    <span className={`ea-dot is-${tone(row.level)}`} aria-hidden />
+                    <span className="grow">
+                      <span className="n-title">{String(row.title)}</span>
+                      {row.message ? <span className="n-sub">{String(row.message)}</span> : null}
+                      <span className="n-sub">{formatRelative(row.created_at)}</span>
+                    </span>
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        <div className="panel-foot" style={{ justifyContent: "center" }}>
-          <Link to="/notifications" className="panel-link" onClick={() => setOpen(false)}>{t.viewAll}</Link>
-        </div>
+        <div className="ea-panel-foot"><Link to="/notifications" onClick={() => setOpen(false)}>{t.viewAll}</Link></div>
       </div>
     </Popover>
   );
 }
 
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "?";
-}
-
 function UserMenu({ onShortcuts }: { onShortcuts: () => void }) {
   const { session, logout } = useSession();
-  const { theme, setTheme, density, setDensity } = usePrefs();
+  const { theme, setTheme, entity, setEntity } = usePrefs();
   const navigate = useNavigate();
   const user = session?.user;
   const name = user?.full_name || user?.username || "";
+  const entities = session?.access?.entities ?? [];
+  const items: MenuEntry[] = [
+    { heading: true, label: name },
+    { label: t.profile, icon: User, onSelect: () => navigate("/profile") },
+    ...(entities.length > 1 ? [
+      { label: t.entity, heading: true, separatorBefore: true } as MenuEntry,
+      ...entities.map((e) => ({ label: e.name, icon: e.id === entity ? Check : undefined, hint: e.code, onSelect: () => setEntity(e.id) })),
+    ] : []),
+    { label: t.theme, heading: true, separatorBefore: true },
+    { label: t.themeLight, icon: theme === "light" ? Check : Sun, onSelect: () => setTheme("light") },
+    { label: t.themeDark, icon: theme === "dark" ? Check : Moon, onSelect: () => setTheme("dark") },
+    { label: t.themeSystem, icon: theme === "system" ? Check : Monitor, onSelect: () => setTheme("system") },
+    { label: t.shortcuts, icon: Keyboard, hint: "?", onSelect: onShortcuts, separatorBefore: true },
+    { label: t.signOut, icon: LogOut, onSelect: () => void logout(), separatorBefore: true },
+  ];
   return (
-    <Menu label={name} trigger={
-      <button type="button" className="btn ghost" aria-label={`${t.profile}: ${name}`} style={{ paddingLeft: 4, gap: 8 }}>
-        <span className="avatar" aria-hidden>{initials(name)}</span>
-        <ChevronDown aria-hidden />
-      </button>
-    } items={[
-      { heading: true, label: name },
-      { label: t.profile, icon: User, onSelect: () => navigate("/profile") },
-      { label: t.theme, heading: true, separatorBefore: true },
-      { label: t.themeSystem, icon: theme === "system" ? Check : Monitor, onSelect: () => setTheme("system") },
-      { label: t.themeLight, icon: theme === "light" ? Check : Sun, onSelect: () => setTheme("light") },
-      { label: t.themeDark, icon: theme === "dark" ? Check : Moon, onSelect: () => setTheme("dark") },
-      { label: t.density, heading: true, separatorBefore: true },
-      { label: t.comfortable, icon: density === "comfortable" ? Check : Rows3, onSelect: () => setDensity("comfortable") },
-      { label: t.compact, icon: density === "compact" ? Check : Rows4, onSelect: () => setDensity("compact") },
-      { label: t.shortcuts, icon: Keyboard, hint: "?", onSelect: onShortcuts, separatorBefore: true },
-      { label: t.signOut, icon: LogOut, onSelect: () => void logout(), danger: true, separatorBefore: true },
-    ]} />
+    <Menu label={name} items={items} trigger={
+      <button type="button" className="avatar-btn" aria-label={`${t.profile}: ${name}`}><span className="avatar" aria-hidden>{initials(name)}</span></button>
+    } />
   );
 }
+
+// ── module tabs: Преглед first, then the module's lists ──────────────────────
+
+/** Room kept for the "Повеќе (n)" trigger when tabs move into it. */
+const MORE_W = 132;
+
+function ModuleTabs({ g }: { g: VisibleGroup }) {
+  const location = useLocation();
+  const here = `/${resourcePath(location.pathname)}`;
+  const tab = (active: boolean) => (active ? "active" : "");
+  // Преглед first, then the board links and the lists, in order; the ones that don't fit go into "Повеќе"
+  const entries = useMemo(() => [
+    ...g.links.map((l) => ({ to: l.to, label: l.overview ? t.overview : l.label, link: true })),
+    ...g.primary.slice(0, 6).map((r) => ({ to: r.route, label: r.title, link: false })),
+  ], [g]);
+  const navRef = useRef<HTMLElement>(null);
+  const widths = useRef<number[]>([]);
+  const [fit, setFit] = useState(entries.length);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    widths.current = [];
+    setFit(entries.length);
+    const measure = () => {
+      if (widths.current.length !== entries.length) {
+        const kids = [...nav.querySelectorAll<HTMLElement>(":scope > [data-tab]")];
+        if (kids.length !== entries.length) return;
+        widths.current = kids.map((k) => k.offsetWidth);
+      }
+      const gap = parseFloat(getComputedStyle(nav).columnGap) || 0;
+      const room = nav.clientWidth;
+      const total = widths.current.reduce((s, w) => s + w + gap, 0);
+      const extra = g.primary.length > 6 || g.more.length;
+      if (total <= room - (extra ? MORE_W : 0)) { setFit(entries.length); return; }
+      let used = MORE_W, n = 0;
+      while (n < entries.length && used + widths.current[n] + gap <= room) { used += widths.current[n] + gap; n++; }
+      setFit(Math.max(1, n));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, [entries, g.primary.length, g.more.length]);
+  const shown = entries.slice(0, fit);
+  const rest = [
+    ...entries.slice(fit).map((e) => ({ route: e.to, title: e.label })),
+    ...g.primary.slice(6), ...g.more,
+  ];
+  const inRest = rest.find((r) => r.route === here || r.route === location.pathname);
+  return (
+    <div className="modtabs" data-module={g.group.tone}>
+      <span className="mod-name"><span className="sb-tile"><g.group.icon /></span>{g.group.label}</span>
+      <nav className="tabs" aria-label={g.group.label} ref={navRef}>
+        {shown.map((e) => e.link
+          ? <NavLink key={e.to} to={e.to} end data-tab className={({ isActive }) => tab(isActive)}>{e.label}</NavLink>
+          : <Link key={e.to} to={e.to} data-tab className={tab(here === e.to)} aria-current={here === e.to ? "page" : undefined}>{e.label}</Link>)}
+        {rest.length ? (
+          <Menu label={t.more} align="start" items={rest.map((r) => ({ label: r.title, to: r.route, icon: r.route === here || r.route === location.pathname ? Check : undefined }))}
+            trigger={<button type="button" className={tab(Boolean(inRest))}>{inRest ? inRest.title : `${t.more} (${rest.length})`}</button>} />
+        ) : null}
+      </nav>
+    </div>
+  );
+}
+
+// ── dialogs ───────────────────────────────────────────────────────────────────
 
 const SHORTCUTS: [string[], string][] = [
   [["Ctrl", "K"], "Пребарај или оди на екран"],
@@ -305,9 +313,9 @@ const SHORTCUTS: [string[], string][] = [
   [["J"], "Следен ред во листа"],
   [["K"], "Претходен ред во листа"],
   [["Enter"], "Отвори го избраниот ред"],
-  [["N"], "Нов запис во листата"],
+  [["N"], "Нов запис"],
   [["Ctrl", "S"], "Зачувај формулар"],
-  [["Esc"], "Затвори дијалог или панел"],
+  [["Esc"], "Затвори"],
   [["?"], "Оваа листа"],
 ];
 
@@ -315,9 +323,7 @@ function ShortcutsDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal title={t.shortcuts} onClose={onClose} size="sm">
       <dl className="fact-list">
-        {SHORTCUTS.map(([keys, label]) => (
-          <div key={label}><dt>{label}</dt><dd className="row-tight">{keys.map((k) => <Kbd key={k}>{k}</Kbd>)}</dd></div>
-        ))}
+        {SHORTCUTS.map(([keys, label]) => <div key={label}><dt>{label}</dt><dd className="row-tight">{keys.map((k) => <Kbd key={k}>{k}</Kbd>)}</dd></div>)}
       </dl>
     </Modal>
   );
@@ -335,9 +341,8 @@ function IdleDialog() {
   if (!idleWarning) return null;
   const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
   return (
-    <Modal size="sm" title={t.idleTitle} onClose={keepAlive}
-      footer={<Button variant="primary" autoFocus onClick={keepAlive}>{t.stayLoggedIn}</Button>}>
-      <p>{t.idleWarning} <strong className="num" style={{ fontSize: 18 }}>{mm}:{ss}</strong>.</p>
+    <Modal size="sm" title={t.idleTitle} onClose={keepAlive} footer={<Button variant="primary" autoFocus onClick={keepAlive}>{t.stayLoggedIn}</Button>}>
+      {t.idleWarning} <strong className="num">{mm}:{ss}</strong>.
     </Modal>
   );
 }
@@ -347,8 +352,26 @@ function isTyping(e: KeyboardEvent) {
   return Boolean(el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)));
 }
 
+// ── phones: the bottom nav ────────────────────────────────────────────────────
+
+function BottomNav({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void }) {
+  const inbox = useInboxCount();
+  const link = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : "");
+  return (
+    <nav className="bottom-nav" aria-label={t.menu}>
+      <NavLink to="/" end className={link}><House />{t.home}</NavLink>
+      <NavLink to="/inbox" className={link}><Inbox />{t.inbox}{inbox.data ? <span className="sb-count">{capped(inbox.data)}</span> : null}</NavLink>
+      <button type="button" onClick={onSearch}><Search />{t.search}</button>
+      <button type="button" onClick={onMenu}><MenuIcon />{t.menu}</button>
+    </nav>
+  );
+}
+
+// ── frame ─────────────────────────────────────────────────────────────────────
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { session } = useSession();
+  const { navCollapsed } = usePrefs();
   const [drawer, setDrawer] = useState(false);
   const [palette, setPalette] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
@@ -372,25 +395,25 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <CrumbProvider>
-      <div className="shell">
+      <a className="skip-link" href="#main">{t.skipToContent}</a>
+      <div className={`app${navCollapsed ? " collapsed" : ""}${drawer ? " nav-open" : ""}`}>
         {drawer ? <div className="nav-scrim" onClick={() => setDrawer(false)} aria-hidden /> : null}
-        <div className={`nav-drawer${drawer ? " open" : ""}`}>
-          <Rail groups={groups} active={activeKey} onPick={() => setDrawer(false)} />
-          <ModNav group={active} onNavigate={() => setDrawer(false)} />
-        </div>
+        <Sidebar groups={groups} activeKey={activeKey} onNavigate={() => setDrawer(false)} />
         <div className="main">
           <header className="topbar">
             <IconButton className="menu-toggle" label={t.menu} icon={MenuIcon} onClick={() => setDrawer(true)} tip={false} />
             <Breadcrumbs group={active} />
             <button type="button" className="search-trigger" onClick={() => setPalette(true)} aria-label={t.searchEverywhere}>
-              <Search aria-hidden /><span>{t.searchEverywhere}</span><Kbd>Ctrl K</Kbd>
+              <Search /><span>{t.searchEverywhere}</span><Kbd>Ctrl K</Kbd>
             </button>
-            <EntitySwitcher />
-            <NotificationsPopover />
+            <CreateMenu groups={groups} />
+            <span className="bell-wrap"><NotificationsPopover /></span>
             <UserMenu onShortcuts={() => setShortcuts(true)} />
           </header>
-          <main className="content" id="main">{children}</main>
+          {active ? <ModuleTabs g={active} /> : null}
+          <main className="content" id="main" tabIndex={-1} data-module={active?.group.tone}>{children}</main>
         </div>
+        <BottomNav onMenu={() => setDrawer(true)} onSearch={() => setPalette(true)} />
       </div>
       <CommandPalette open={palette} onOpenChange={setPalette} />
       {shortcuts ? <ShortcutsDialog onClose={() => setShortcuts(false)} /> : null}

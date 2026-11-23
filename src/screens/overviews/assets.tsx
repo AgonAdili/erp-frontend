@@ -3,8 +3,8 @@
 import { API_BASE } from "@/api/client";
 import { ColumnChart } from "@/charts";
 import { DataTable, Kpi, Kpis, StatusBand, useCount, useOverview, type Data } from "@/components/dashboard";
-import { LinkButton, Panel } from "@/components/ui";
-import { formatCompact, formatMoney, formatNumber, num } from "@/lib/format";
+import { LinkButton, Panel, Section } from "@/components/ui";
+import { formatCompact, formatMoney, formatNumber, formatPercent, num } from "@/lib/format";
 
 import { listUrl, Overview } from "./common";
 
@@ -41,30 +41,34 @@ export function AssetsOverview() {
               { key: "stocktake", label: "Пописи во тек", count: stocktakes, to: listUrl("assets/stocktakes", { status: "COUNTING" }) },
             ]} />
             <Kpis>
-              <Kpi label="Набавна вредност" value={formatCompact(tot.cost)} unit="ден." sub={`${formatNumber(tot.n, 0)} средства во регистарот`} />
-              <Kpi label="Акумулирана амортизација" value={formatCompact(tot.accum)} unit="ден." sub={tot.cost ? `${formatNumber((tot.accum / tot.cost) * 100, 1)}% отпишано` : undefined} />
-              <Kpi label="Сегашна вредност" value={formatCompact(tot.nbv)} unit="ден." />
+              <Kpi label="Набавна вредност" value={formatCompact(tot.cost)} unit="MKD" sub={`${formatNumber(tot.n, 0)} средства во регистарот`} />
+              <Kpi label="Акумулирана амортизација" value={formatCompact(tot.accum)} unit="MKD" sub={tot.cost ? `${formatPercent((tot.accum / tot.cost) * 100, 1)} отпишано` : undefined} />
+              <Kpi label="Сегашна вредност" value={formatCompact(tot.nbv)} unit="MKD" />
               <Kpi label="Без услови за амортизација" value={attention.data ? formatNumber(attention.data.length, 0) : "…"} sub="ќе бидат прескокнати"
                 tone={attention.data?.length ? "attention" : undefined} />
             </Kpis>
-            <Panel title="По класа на средства" sub="Сегашна вредност и акумулирана амортизација (заедно: набавна вредност)">
-              <ColumnChart title="Средства по класа" stacked data={rows.map((r) => ({ label: String(r.asset_class__name ?? r.asset_class__code ?? "—"), nbv: num(r.nbv), accum: num(r.accum) }))}
-                series={[{ key: "nbv", name: "Сегашна вредност" }, { key: "accum", name: "Амортизирано" }]} />
-            </Panel>
-            <div className="grid-2">
-              <Panel title="Регистар по класа" flush>
-                <DataTable rows={rows} columns={[
-                  { key: "asset_class__name", label: "Класа", render: (r) => String(r.asset_class__name ?? r.asset_class__code ?? "—") },
-                  { key: "n", label: "Број", kind: "number" }, { key: "cost", label: "Набавна", kind: "money" },
-                  { key: "nbv", label: "Сегашна", kind: "money" }]}
-                  footer={rows.length > 1 ? <tfoot><tr><td>Вкупно</td><td className="num">{formatNumber(tot.n, 0)}</td><td className="num">{formatMoney(tot.cost)}</td><td className="num">{formatMoney(tot.nbv)}</td></tr></tfoot> : undefined} />
+            <Section n={1} title="Тек и состојба">
+              <Panel title="По класа на средства" sub="Сегашна вредност и акумулирана амортизација (заедно: набавна вредност)">
+                <ColumnChart title="Средства по класа" stacked data={rows.map((r) => ({ label: String(r.asset_class__name ?? r.asset_class__code ?? "—"), nbv: num(r.nbv), accum: num(r.accum) }))}
+                  series={[{ key: "nbv", name: "Сегашна вредност" }, { key: "accum", name: "Амортизирано" }]} />
               </Panel>
-              <Panel title="Ќе бидат прескокнати при амортизација" sub="Активни средства на кои им недостасува податок" flush>
-                <DataTable rows={attention.data ?? []} maxHeight={380} empty="Сите активни средства се подготвени" columns={[
-                  { key: "asset_code", label: "Шифра", to: (r) => `/${FA}/${r.id}` }, { key: "asset_name", label: "Средство" },
-                  { key: "reason", label: "Причина", className: "small" }]} />
-              </Panel>
-            </div>
+            </Section>
+            <Section n={2} title="Листи и детали">
+              <div className="grid-2">
+                <Panel title="Регистар по класа" flush>
+                  <DataTable rows={rows} columns={[
+                    { key: "asset_class__name", label: "Класа", render: (r) => String(r.asset_class__name ?? r.asset_class__code ?? "—") },
+                    { key: "n", label: "Број", kind: "number" }, { key: "cost", label: "Набавна", kind: "money" },
+                    { key: "nbv", label: "Сегашна", kind: "money" }]}
+                    footer={rows.length > 1 ? <tfoot><tr><td>Вкупно</td><td className="num">{formatNumber(tot.n, 0)}</td><td className="num">{formatMoney(tot.cost)}</td><td className="num">{formatMoney(tot.nbv)}</td></tr></tfoot> : undefined} />
+                </Panel>
+                <Panel title="Ќе бидат прескокнати при амортизација" sub="Активни средства на кои им недостасува податок" flush>
+                  <DataTable rows={attention.data ?? []} maxHeight={380} empty="Сите активни средства се подготвени" columns={[
+                    { key: "asset_code", label: "Шифра", to: (r) => `/${FA}/${r.id}` }, { key: "asset_name", label: "Средство" },
+                    { key: "reason", label: "Причина", className: "small" }]} />
+                </Panel>
+              </div>
+            </Section>
           </>
         );
       }}

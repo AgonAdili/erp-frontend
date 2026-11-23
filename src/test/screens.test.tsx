@@ -56,8 +56,8 @@ describe("ResourceList", () => {
       results: [{ id: 7, category: "PAID", category_display: "Платено отсуство", start_date: "2026-03-06" }],
     }));
     wrap(<ResourceList meta={META} />);
-    expect(await screen.findByText("Платено отсуство")).toBeInTheDocument();
-    expect(screen.getByText("06.03.2026")).toBeInTheDocument();
+    expect(await screen.findByText("06.03.2026")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Платено отсуство" })).toHaveAttribute("href", "/hr/leaves/7");
     await userEvent.click(screen.getByRole("columnheader", { name: /Почетен датум/ }));
     await waitFor(() => expect(String(fetchMock.mock.calls.at(-1)![0])).toContain("ordering=start_date"));
   });
@@ -70,7 +70,8 @@ describe("ResourceForm", () => {
         errors: { category: ["Платеното отсуство ја надминува годишната квота."] } }, 400));
     wrap(<ResourceForm meta={META} onSaved={() => undefined} />);
     await userEvent.selectOptions(screen.getByLabelText(/Категорија/), "PAID");
-    await userEvent.type(screen.getByLabelText(/Почетен датум/), "2026-03-06");
+    await userEvent.type(screen.getByLabelText(/Почетен датум/), "06032026");
+    expect(screen.getByLabelText(/Почетен датум/)).toHaveValue("06.03.2026");
     await userEvent.click(screen.getByRole("button", { name: "Зачувај" }));
     expect(await screen.findByText(/годишната квота/, { selector: ".error" })).toHaveTextContent("годишната квота");
     const [url, init] = fetchMock.mock.calls[0];

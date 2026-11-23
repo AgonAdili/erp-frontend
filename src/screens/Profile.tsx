@@ -1,7 +1,7 @@
 /** My profile: who I am, which permissions I hold (v1 my_profile), password change, appearance, two-step sign-in. */
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check } from "lucide-react";
+import { Check } from "@/components/icons";
 
 import { api, ApiError } from "@/api/client";
 import { usePrefs } from "@/app/prefs";
@@ -104,10 +104,10 @@ export function Profile() {
             {perms.data.modules.map((m) => (
               <div key={m.label} className="stack-sm">
                 <h3>{m.label}</h3>
-                <ul style={{ margin: 0, padding: 0, listStyle: "none" }} className="stack-sm">
+                <ul className="list-plain stack-sm">
                   {m.resources.map((r) => (
-                    <li key={r.label} className="small"><span className="row-tight"><Check aria-hidden style={{ width: 14, color: "var(--success)" }} />{r.label}</span>
-                      <span className="xs muted" style={{ paddingLeft: 22 }}>{r.actions.join(", ")}</span></li>
+                    <li key={r.label} className="small"><span className="row-tight"><Check className="ico-go" />{r.label}</span>
+                      <span className="xs muted indent">{r.actions.join(", ")}</span></li>
                   ))}
                 </ul>
               </div>

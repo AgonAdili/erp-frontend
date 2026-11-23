@@ -1,6 +1,6 @@
 /** Nested child rows (invoice lines, order items, diary workforce …): an inline editor and a read-only table,
  * both with totals for numeric columns. */
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "@/components/icons";
 
 import type { FieldMeta, Row } from "@/api/types";
 import { t } from "@/i18n/mk";
@@ -38,13 +38,13 @@ export function RowsEditor({ field, value, onChange, errors }: {
   return (
     <div className="stack-sm rows-editor">
       {rows.length ? (
-        <div className="table-wrap" style={{ border: "1px solid var(--rule)", borderRadius: "var(--r)" }}>
+        <div className="table-wrap rows-frame">
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: 36 }} className="num">#</th>
+                <th className="col-idx num">#</th>
                 {cols.map((c) => <th key={c.name} className={isNumericType(c.type) ? "num" : ""}>{c.label}{c.required ? <span className="tone-danger"> *</span> : null}</th>)}
-                <th aria-label={t.actions} style={{ width: 44 }} />
+                <th aria-label={t.actions} className="col-act" />
               </tr>
             </thead>
             <tbody>
@@ -52,7 +52,7 @@ export function RowsEditor({ field, value, onChange, errors }: {
                 <tr key={i}>
                   <td className="num muted">{i + 1}</td>
                   {cols.map((c) => (
-                    <td key={c.name} style={{ minWidth: c.type === "fk" ? 220 : c.type === "text" || c.type === "string" ? 180 : c.type === "boolean" ? 60 : 110 }}>
+                    <td key={c.name} className={`cell-${c.type === "fk" ? "fk" : c.type === "text" || c.type === "string" ? "text" : c.type === "boolean" ? "bool" : "num"}`}>
                       {c.type === "boolean" ? (
                         <input type="checkbox" checked={Boolean(r[c.name])} aria-label={`${c.label} ${i + 1}`}
                           onChange={(e) => update(i, c.name, e.target.checked)} />
@@ -92,7 +92,7 @@ export function RowsTable({ field, rows }: { field: FieldMeta; rows: Row[] }) {
     <div className="table-wrap">
       <table className="table">
         <thead>
-          <tr><th style={{ width: 36 }} className="num">#</th>{cols.map((c) => <th key={c.name} className={isNumericType(c.type) ? "num" : ""}>{c.label}</th>)}</tr>
+          <tr><th className="col-idx num">#</th>{cols.map((c) => <th key={c.name} className={isNumericType(c.type) ? "num" : ""}>{c.label}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (

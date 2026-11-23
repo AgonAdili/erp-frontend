@@ -3,15 +3,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Clock, Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Save } from "@/components/icons";
 
 import { api, ApiError, API_BASE } from "@/api/client";
 import { HBars, Kpi, Kpis } from "@/components/dashboard";
-import { RelatedSelect } from "@/components/inputs";
-import { Alert, Button, EmptyState, ErrorState, Field, IconButton, PageHeader, Panel, SkeletonRows, useToast } from "@/components/ui";
+import { DateInput, MonthInput, RelatedSelect } from "@/components/inputs";
+import { Alert, Button, EmptyState, ErrorState, Field, IconButton, PageHeader, Panel, SkeletonRows, useConfirm, useToast } from "@/components/ui";
 import { MONTHS, t } from "@/i18n/mk";
 import { Page } from "@/layout/Page";
-import { addDays, formatDate, formatNumber, num, todayISO, weekdayName } from "@/lib/format";
+import { addDays, formatDate, formatNumber, formatPercent, num, todayISO, weekdayName } from "@/lib/format";
 
 interface DayRow {
   employee: number;
@@ -37,7 +37,7 @@ const DEFAULT_OUT = "15:00";
 
 function SaveBar({ dirty, saving, onSave, children }: { dirty: boolean; saving: boolean; onSave: () => void; children?: React.ReactNode }) {
   return (
-    <div className="save-bar" style={{ margin: 0, borderRadius: "0 0 var(--r-lg) var(--r-lg)" }}>
+    <div className="save-bar">
       {dirty ? <span className="dirty">{t.unsaved}</span> : <span className="xs muted">Сите промени се зачувани</span>}
       {children}
       <span className="spacer" />
@@ -53,6 +53,7 @@ export function AttendanceDay() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const q = useQuery({
     queryKey: ["attendance-day", date],
     queryFn: () => api.get<{ rows: DayRow[] }>("/hr/attendance/day/", { date }),
@@ -63,10 +64,12 @@ export function AttendanceDay() {
     setRows((list) => list.map((r) => (r.from_leave || r.is_missing || r.check_in || r.check_out ? r : { ...r, check_in: DEFAULT_IN, check_out: DEFAULT_OUT })));
     setDirty(true);
   };
-  const go = (days: number) => {
-    if (dirty && !window.confirm(t.leaveText)) return;
-    setDate((d) => addDays(d, days));
+  const changeDate = async (next: string) => {
+    if (next === date) return;
+    if (dirty && !(await confirm({ title: t.leaveTitle, text: t.leaveText, confirmLabel: t.leave, danger: true }))) return;
+    setDate(next);
   };
+  const go = (days: number) => void changeDate(addDays(date, days));
 
   const save = async () => {
     setSaving(true);
@@ -96,13 +99,16 @@ export function AttendanceDay() {
 
   return (
     <Page title="Присуство по ден">
+      {dialog}
       <PageHeader title="Присуство по ден" subtitle={`${weekday}, ${formatDate(date)}`}
-        actions={<>
-          <IconButton label="Претходен ден" icon={ChevronLeft} variant="default" onClick={() => go(-1)} />
-          <input type="date" className="input" aria-label={t.date} value={date} onChange={(e) => setDate(e.target.value)} style={{ width: 160 }} />
-          <IconButton label="Следен ден" icon={ChevronRight} variant="default" onClick={() => go(1)} />
-          <Button onClick={() => setDate(todayISO())}>{t.today}</Button>
-        </>} />
+        controls={<div className="field"><span className="label">{t.date}</span>
+          <div className="row-tight">
+            <IconButton label="Претходен ден" icon={ChevronLeft} variant="default" onClick={() => go(-1)} />
+            <DateInput className="w-date" aria-label={t.date} value={date} onChange={(v) => { if (v) void changeDate(v); }} />
+            <IconButton label="Следен ден" icon={ChevronRight} variant="default" onClick={() => go(1)} />
+            <Button onClick={() => void changeDate(todayISO())}>{t.today}</Button>
+          </div>
+        </div>} />
       <Kpis>
         <Kpi label="Присутни" value={formatNumber(present, 0)} />
         <Kpi label="Отсутни" value={formatNumber(absent, 0)} tone={rows.some((r) => r.is_missing && r.missing_reason === "UNANNOUNCED") ? "alarm" : undefined} />
@@ -115,14 +121,14 @@ export function AttendanceDay() {
         {q.isLoading ? <SkeletonRows rows={10} cols={6} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : !rows.length ? (
           <EmptyState title="Нема активни вработени" />
         ) : (
-          <div className="table-wrap" style={{ maxHeight: "calc(100vh - 420px)" }}>
+          <div className="table-wrap tall">
             <table className="table compact">
               <thead>
                 <tr><th className="sticky-col">Вработен</th><th>Доаѓање</th><th>Заминување</th><th>Отсутен</th><th>Причина</th><th>Мерка</th><th>Проект</th><th className="num">Оброк</th></tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={r.employee} style={r.from_leave ? { opacity: 0.6 } : undefined}>
+                  <tr key={r.employee} className={r.from_leave ? "on-leave" : undefined}>
                     <td className="sticky-col nowrap">{r.employee_name}{r.from_leave ? <div className="xs muted">на отсуство</div> : null}</td>
                     <td><input type="time" className="input sm" disabled={r.from_leave || r.is_missing} value={r.check_in?.slice(0, 5) ?? ""}
                       onChange={(e) => update(i, { check_in: e.target.value })} aria-label={`${r.employee_name}: доаѓање`} /></td>
@@ -146,11 +152,11 @@ export function AttendanceDay() {
                         </select>
                       ) : null}
                     </td>
-                    <td style={{ minWidth: 220 }}>
+                    <td className="min-field">
                       <RelatedSelect related={{ endpoint: `${API_BASE}/projects/projects/` }} value={r.project}
                         disabled={r.from_leave || r.is_missing} onChange={(v) => update(i, { project: v })} />
                     </td>
-                    <td><input className="input sm num" inputMode="decimal" style={{ width: 90 }} disabled={r.from_leave || r.is_missing}
+                    <td><input className="input sm num w-num" inputMode="decimal" disabled={r.from_leave || r.is_missing}
                       value={r.meal_amount ?? ""} onChange={(e) => update(i, { meal_amount: e.target.value })} aria-label={`${r.employee_name}: оброк`} /></td>
                   </tr>
                 ))}
@@ -192,6 +198,8 @@ export function AttendanceMonth() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
+  const guard = async () => !dirty || confirm({ title: t.leaveTitle, text: t.leaveText, confirmLabel: t.leave, danger: true });
   const q = useQuery({
     queryKey: ["attendance-month", employee, year, month],
     queryFn: () => api.get<{ days: MonthDay[] }>("/hr/attendance/month/", { employee, year, month }),
@@ -204,7 +212,8 @@ export function AttendanceMonth() {
       : { ...d, check_in: DEFAULT_IN, check_out: DEFAULT_OUT })));
     setDirty(true);
   };
-  const shift = (delta: number) => {
+  const shift = async (delta: number) => {
+    if (!(await guard())) return;
     const idx = year * 12 + month - 1 + delta;
     setYm(monthValue(Math.floor(idx / 12), (idx % 12) + 1));
   };
@@ -233,18 +242,19 @@ export function AttendanceMonth() {
   const unfilled = days.filter((d) => d.is_working_day && !d.is_holiday && !d.from_leave && !d.is_missing && !d.check_in && !d.check_out).length;
   return (
     <Page title="Присуство по месец">
+      {dialog}
       <PageHeader title="Присуство по месец" subtitle="Целиот месец за еден вработен"
-        actions={<>
-          <div style={{ minWidth: 280 }}>
+        controls={<>
+          <div className="min-field-lg">
             <Field label="Вработен" htmlFor="am-emp">
-              <RelatedSelect id="am-emp" related={{ endpoint: `${API_BASE}/people/employees/` }} value={employee} onChange={(v) => setEmployee(v)} placeholder="Изберете вработен" />
+              <RelatedSelect id="am-emp" related={{ endpoint: `${API_BASE}/people/employees/` }} value={employee} onChange={async (v) => { if (await guard()) setEmployee(v); }} placeholder="Изберете вработен" />
             </Field>
           </div>
           <Field label={t.month} htmlFor="am-month">
             <div className="row-tight">
-              <IconButton label="Претходен месец" icon={ChevronLeft} variant="default" onClick={() => shift(-1)} />
-              <input id="am-month" type="month" className="input" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} style={{ width: 160 }} />
-              <IconButton label="Следен месец" icon={ChevronRight} variant="default" onClick={() => shift(1)} />
+              <IconButton label="Претходен месец" icon={ChevronLeft} variant="default" onClick={() => void shift(-1)} />
+              <MonthInput id="am-month" label={t.month} value={ym} onChange={async (v) => { if (await guard()) setYm(v); }} />
+              <IconButton label="Следен месец" icon={ChevronRight} variant="default" onClick={() => void shift(1)} />
             </div>
           </Field>
         </>} />
@@ -262,14 +272,14 @@ export function AttendanceMonth() {
           <Panel flush title={`${MONTHS[month - 1]} ${year}`}
             actions={<Button size="sm" icon={Clock} disabled={!unfilled} onClick={fillWorkdays}>Пополни {DEFAULT_IN}–{DEFAULT_OUT} за {unfilled} работни дена</Button>}>
             {q.isLoading ? <SkeletonRows rows={10} cols={6} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : (
-              <div className="table-wrap" style={{ maxHeight: "calc(100vh - 420px)" }}>
+              <div className="table-wrap tall">
                 <table className="table compact">
                   <thead><tr><th>Датум</th><th>Ден</th><th>Доаѓање</th><th>Заминување</th><th>Отсутен</th><th>Причина</th><th>Проект</th><th className="num">Оброк</th></tr></thead>
                   <tbody>
                     {days.map((d, i) => {
                       const off = !d.is_working_day || d.is_holiday;
                       return (
-                        <tr key={d.date} className={off ? "off-day" : undefined} style={d.from_leave ? { opacity: 0.6 } : undefined}>
+                        <tr key={d.date} className={[off ? "off-day" : "", d.from_leave ? "on-leave" : ""].join(" ").trim() || undefined}>
                           <td className="nowrap num">{formatDate(d.date)}</td>
                           <td className="small">{d.day_name}{d.is_holiday ? <span className="tone-warning"> · празник</span> : null}{d.from_leave ? <span className="muted"> · отсуство</span> : null}</td>
                           <td><input type="time" className="input sm" disabled={d.from_leave || d.is_missing} value={d.check_in?.slice(0, 5) ?? ""}
@@ -285,11 +295,11 @@ export function AttendanceMonth() {
                               {REASONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                             </select>
                           </td>
-                          <td style={{ minWidth: 220 }}>
+                          <td className="min-field">
                             <RelatedSelect related={{ endpoint: `${API_BASE}/projects/projects/` }} value={d.project}
                               disabled={d.from_leave || d.is_missing} onChange={(v) => update(i, { project: v })} />
                           </td>
-                          <td><input className="input sm num" inputMode="decimal" style={{ width: 90 }} disabled={d.from_leave || d.is_missing}
+                          <td><input className="input sm num w-num" inputMode="decimal" disabled={d.from_leave || d.is_missing}
                             value={d.meal_amount ?? ""} onChange={(e) => update(i, { meal_amount: e.target.value })} aria-label={`${formatDate(d.date)}: оброк`} /></td>
                         </tr>
                       );
@@ -373,9 +383,9 @@ export function KpiMonth() {
   return (
     <Page title="Показатели по месец">
       <PageHeader title="Показатели по месец" subtitle="Пресметано од присуството во живо; „Зачувај“ го запишува месецот во показателите"
-        actions={<>
-          <Field label={t.month} htmlFor="kpi-month"><input id="kpi-month" type="month" className="input" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} /></Field>
-          <div style={{ minWidth: 220 }}>
+        controls={<>
+          <Field label={t.month} htmlFor="kpi-month"><MonthInput id="kpi-month" label={t.month} value={ym} onChange={setYm} /></Field>
+          <div className="min-field">
             <Field label="Оддел" htmlFor="kpi-dept">
               <RelatedSelect id="kpi-dept" related={{ endpoint: `${API_BASE}/org/departments/` }} value={department} onChange={(v) => setDepartment(v)} placeholder="Сите оддели" />
             </Field>
@@ -398,7 +408,7 @@ export function KpiMonth() {
       ) : null}
       <Panel flush title="Вработени">
         {q.isLoading ? <SkeletonRows rows={10} cols={7} /> : !rows.length ? <EmptyState title="Нема активни вработени" /> : (
-          <div className="table-wrap" style={{ maxHeight: "calc(100vh - 300px)" }}>
+          <div className="table-wrap tall">
             <table className="table">
               <thead>
                 <tr>{header("employee_name", "Вработен", false)}{KPI_COLS.map(([k, label]) => <React.Fragment key={k}>{header(k, label)}</React.Fragment>)}<th /></tr>
@@ -409,7 +419,7 @@ export function KpiMonth() {
                     <td><Link to={`/people/employees/${r.employee}`}>{r.employee_name}</Link></td>
                     {KPI_COLS.map(([k]) => (
                       <td key={k} className={`num${k === "attendance_percentage" && num(r[k]) < 90 ? " tone-danger strong" : ""}`}>
-                        {k === "attendance_percentage" ? `${formatNumber(r[k], 1)}%` : formatNumber(r[k], k.endsWith("days") ? 0 : 2)}
+                        {k === "attendance_percentage" ? `${formatPercent(r[k], 1)}` : formatNumber(r[k], k.endsWith("days") ? 0 : 2)}
                       </td>
                     ))}
                     <td className="right"><Button size="sm" busy={storing === r.employee} onClick={() => void store(r.employee, r.employee_name)}
@@ -421,7 +431,7 @@ export function KpiMonth() {
                 <tr>
                   <td>Вкупно / просек ({rows.length})</td>
                   {KPI_COLS.map(([k]) => (
-                    <td key={k} className="num">{k === "attendance_percentage" ? `${formatNumber(avg(k), 1)}%` : formatNumber(sum(k), k.endsWith("days") ? 0 : 2)}</td>
+                    <td key={k} className="num">{k === "attendance_percentage" ? `${formatPercent(avg(k), 1)}` : formatNumber(sum(k), k.endsWith("days") ? 0 : 2)}</td>
                   ))}
                   <td />
                 </tr>

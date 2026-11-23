@@ -1,11 +1,15 @@
-/** UI strings (Macedonian, as v1). Labels of fields, choices and resources come from the server's metadata.
- * One verb per action through the whole flow: the button says "Зачувај", the toast says "Зачувано". */
+/** UI strings (Macedonian), with the glossary of branding_rules/07 §2. Labels of fields, choices and resources
+ * come from the server's metadata. One verb per action through the whole flow: the button says "Зачувај", the
+ * toast says "… е зачуван." Sentence case; „…“ quotes; the ellipsis character. */
 export const t = {
-  appName: "EA Core",
+  appName: "EACore",
   login: "Најава",
   loginLead: "Најавете се со вашата корисничка сметка.",
   username: "Корисничко име",
   password: "Лозинка",
+  showPassword: "Прикажи лозинка",
+  hidePassword: "Сокриј лозинка",
+  otherAccount: "Најави се со друга сметка",
   remember: "Запомни ме на овој уред",
   signIn: "Најави се",
   signInMicrosoft: "Најави се со Microsoft",
@@ -20,15 +24,17 @@ export const t = {
   searchPlaceholder: "Пребарај…",
   searchEverywhere: "Пребарај или оди на…",
   filters: "Филтри",
-  applyFilters: "Примени",
+  moreFilters: "Повеќе филтри",
+  applyFilters: "Филтрирај",
   clearFilters: "Исчисти филтри",
   add: "Додај",
-  addNew: "Нов запис",
-  edit: "Измени",
+  addNew: "Ново",
+  newRecord: "Нов запис",
+  edit: "Уреди",
   delete: "Избриши",
   deleteRecord: "Избриши запис",
   save: "Зачувај",
-  saveChanges: "Зачувај промени",
+  saveChanges: "Зачувај",
   cancel: "Откажи",
   close: "Затвори",
   back: "Назад",
@@ -51,21 +57,39 @@ export const t = {
   open: "Отвори",
   openFull: "Отвори цела страница",
   peek: "Брз преглед",
-  noResults: "Нема записи",
-  noResultsFiltered: "Ниеден запис не одговара на филтрите.",
+  noResults: "Нема записи.",
+  noResultsFiltered: "Нема резултати за овие филтри.",
+  noData: "нема податоци",
   page: "Страна",
   of: "од",
   total: "вкупно",
   rows: "редови",
   perPage: "по страна",
   selected: "избрани",
-  saved: "Зачувано",
+  saved: "Зачувано.",
   created: "Креирано",
   deleted: "Избришано",
   done: "Готово",
   confirmDelete: "Записот ќе биде трајно избришан. Ова не може да се врати.",
   conflict: "Записот е изменет од друг корисник. Прикажана е најновата верзија.",
   required: "Задолжително поле.",
+  requiredNote: "* задолжително поле",
+  errorSummary: "Записот не е зачуван. Поправете ги полињата:",
+  skipToContent: "Прескокни до содржината",
+  follow: "Следи",
+  shown: "Прикажани",
+  inList: "во",
+  previous: "Претходен",
+  next: "Следен",
+  quickView: "Брз преглед",
+  duplicate: "Дуплирај",
+  howToRead: "Како се чита",
+  source: "Извор",
+  showData: "Прикажи ги податоците",
+  openList: "Отвори листа",
+  nextSteps: "Следни чекори",
+  documents: "Документи",
+  dateFormat: "дд.мм.гггг",
   notifications: "Известувања",
   inbox: "Одобрувања",
   markAllRead: "Означи ги сите прочитани",
@@ -84,7 +108,7 @@ export const t = {
   upload: "Прикачи",
   uploadHint: "Повлечете датотека тука или кликнете за избор",
   remove: "Отстрани",
-  choose: "Избери…",
+  choose: "Изберете…",
   version: "Верзија",
   createdAt: "Креирано",
   updatedAt: "Изменето",
@@ -96,11 +120,11 @@ export const t = {
   notFoundText: "Адресата можеби е погрешна или записот е избришан.",
   goHome: "Кон почетна",
   unsaved: "Незачувани промени",
-  leaveTitle: "Да се напушти формуларот?",
-  leaveText: "Промените што не се зачувани ќе се изгубат.",
-  leave: "Напушти без зачувување",
+  leaveTitle: "Имате незачувани промени",
+  leaveText: "Ако излезете сега, промените ќе се изгубат.",
+  leave: "Отфрли промени",
   stay: "Остани",
-  theme: "Изглед",
+  theme: "Тема",
   themeSystem: "Според системот",
   themeLight: "Светол",
   themeDark: "Темен",
@@ -136,8 +160,9 @@ export const t = {
   copied: "Копирано",
 };
 
-export const MONTHS = ["Јануари", "Февруари", "Март", "Април", "Мај", "Јуни", "Јули", "Август", "Септември", "Октомври",
-  "Ноември", "Декември"];
+/** Month names are lowercase in Macedonian (07 §2). */
+export const MONTHS = ["јануари", "февруари", "март", "април", "мај", "јуни", "јули", "август", "септември", "октомври",
+  "ноември", "декември"];
 
 /** Backend module key → label (resource metadata uses these). */
 export const MODULES: Record<string, { label: string; order: number }> = {
@@ -169,3 +194,12 @@ export const MODULES: Record<string, { label: string; order: number }> = {
 export function moduleLabel(key: string): string {
   return MODULES[key]?.label ?? key;
 }
+
+/** Common status codes (07 §2), for a status the server sends without its label: a code never shows raw. */
+export const STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Нацрт", SUBMITTED: "Поднесено", PENDING: "Чека одобрување", PENDING_APPROVAL: "Чека одобрување",
+  APPROVED: "Одобрено", REJECTED: "Одбиено", RETURNED: "Вратено", IN_PROGRESS: "Во тек", COMPLETED: "Завршено",
+  CANCELLED: "Откажано", PAID: "Платено", PARTIALLY_PAID: "Делумно платено", UNPAID: "Неплатено", OVERDUE: "Задоцнето",
+  OPEN: "Отворено", CLOSED: "Затворено", POSTED: "Книжено", NOT_POSTED: "Не е книжено", ACTIVE: "Активно",
+  INACTIVE: "Неактивно", MATCHED: "Усогласено", UNMATCHED: "Неусогласено",
+};

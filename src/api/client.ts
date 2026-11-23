@@ -39,6 +39,7 @@ export class ApiError extends Error {
 }
 
 function defaultMessage(status: number): string {
+  if (status === 0) return "Нема врска со серверот. Проверете ја мрежата и обидете се повторно.";
   if (status === 401) return "Сесијата истече. Најавете се повторно.";
   if (status === 403) return "Немате дозвола за оваа акција.";
   if (status === 404) return "Записот не е пронајден.";
@@ -104,13 +105,20 @@ export async function request<T = unknown>(path: string, options: RequestOptions
     if (options.version !== undefined && options.version !== null) headers["If-Match"] = `"${options.version}"`;
     if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
   }
-  const response = await fetch(buildUrl(path, options.query), {
-    method,
-    headers,
-    body,
-    credentials: "same-origin",
-    signal: options.signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path, options.query), {
+      method,
+      headers,
+      body,
+      credentials: "same-origin",
+      signal: options.signal,
+    });
+  } catch (err) {
+    // offline or the server unreachable: a translated message instead of the browser's "Failed to fetch"
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    throw new ApiError(0, {});
+  }
   if (response.status === 401 && onUnauthorized) onUnauthorized();
   if (!response.ok) {
     let data: ApiErrorBody = {};

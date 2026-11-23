@@ -80,7 +80,7 @@ export function AllocationEditor({
     }),
     enabled: Boolean(party),
   });
-  if (!party) return <p className="muted small" style={{ margin: 0 }}>Изберете го {spec.partyLabel} за да се прикажат отворените ставки.</p>;
+  if (!party) return <p className="muted small m-0">Изберете го {spec.partyLabel} за да се прикажат отворените ставки.</p>;
   if (q.isLoading) return <Skeleton height={120} />;
   const items = q.data?.results ?? [];
   const byItem = new Map(value.map((a) => [Number(a[spec.item]), a]));
@@ -98,8 +98,8 @@ export function AllocationEditor({
   return (
     <div className="stack">
       <div className="row">
-        <span className="small muted">Отворено <strong className="num" style={{ color: "var(--ink)" }}>{formatMoney(amount(openTotal))}</strong></span>
-        <span className="small muted">Распоредено <strong className="num" style={{ color: "var(--ink)" }}>{formatMoney(amount(allocated))}</strong></span>
+        <span className="small muted">Отворено <strong className="num text-ink">{formatMoney(amount(openTotal))}</strong></span>
+        <span className="small muted">Распоредено <strong className="num text-ink">{formatMoney(amount(allocated))}</strong></span>
         <span className={`small ${left < 0 ? "tone-danger" : "muted"}`}>Нераспоредено <strong className="num">{formatMoney(amount(left))}</strong></span>
         <span className="spacer" />
         <Button size="sm" variant="primary" disabled={!total || !items.length} onClick={() => onChange(distribute(items, total / 100, spec.item))}>
@@ -128,7 +128,7 @@ export function AllocationEditor({
                     <td>{formatDate(item.due_date)}</td>
                     <td className="num">{formatMoney(item.original_amount)}</td>
                     <td className="num">{formatMoney(item.open_amount)}</td>
-                    <td className="num" style={{ width: 160 }}>
+                    <td className="num w-date">
                       <input className={`input num${over ? " invalid" : ""}`} type="number" step="0.01" min="0"
                         aria-label={`Распореди на ${item.invoice_number || item.id}`}
                         value={a ? String(a.amount) : ""} onChange={(e) => setAmount(item, e.target.value)} />
@@ -140,7 +140,7 @@ export function AllocationEditor({
           </table>
         </div>
       )}
-      <p className="muted small" style={{ margin: 0 }}>Без распоред, плаќањето се затвора автоматски по најстар рок.</p>
+      <p className="muted small m-0">Без распоред, плаќањето се затвора автоматски по најстар рок.</p>
     </div>
   );
 }

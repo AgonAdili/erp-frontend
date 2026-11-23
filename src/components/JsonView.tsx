@@ -2,7 +2,7 @@
  * definition lists, nested blocks as sections, and a ranked bar view for short bucketed lists (aging …).
  * Used for the server's report actions (trial balance, aging, stock valuation …). */
 import type { ReactNode } from "react";
-import { Download } from "lucide-react";
+import { Download } from "@/components/icons";
 
 import { formatDate, formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 
@@ -75,16 +75,16 @@ function Table({ rows, name }: { rows: Record<string, unknown>[]; name: string }
   return (
     <div className="stack-sm">
       {showBars ? (
-        <div className="panel" style={{ padding: 14 }}>
+        <div className="ea-panel pad">
           <HBars rows={rows.map((r, i) => ({ key: i, label: String(r[textKey!] ?? ""), value: r[amountKey!] }))}
             unit={/count|days|quantity/.test(amountKey!) ? "number" : "money"} />
         </div>
       ) : null}
-      <div className="row-tight" style={{ justifyContent: "flex-end" }}>
+      <div className="row-tight justify-end">
         <span className="xs muted">{formatNumber(rows.length, 0)} редови</span>
         <Button size="sm" variant="ghost" icon={Download} onClick={() => downloadCsv(keys, rows, name)}>CSV</Button>
       </div>
-      <div className="table-wrap" style={{ maxHeight: 460, border: "1px solid var(--rule)", borderRadius: "var(--r)" }}>
+      <div className="table-wrap mid boxed">
         <table className="table compact">
           <thead><tr>{keys.map((k) => <th key={k} className={numericKeys.includes(k) ? "num" : ""}>{label(k)}</th>)}</tr></thead>
           <tbody>
@@ -113,7 +113,7 @@ export function JsonView({ data, depth = 0, title = "" }: { data: unknown; depth
   if (Array.isArray(data)) {
     if (!data.length) return <span className="muted">Нема записи.</span>;
     if (data.every(isRecord)) return <Table rows={data as Record<string, unknown>[]} name={title} />;
-    return <ul style={{ margin: 0, paddingLeft: 18 }}>{data.map((v, i) => <li key={i}>{isRecord(v) || Array.isArray(v) ? <JsonView data={v} depth={depth + 1} title={title} /> : scalar("", v)}</li>)}</ul>;
+    return <ul className="list-bullets">{data.map((v, i) => <li key={i}>{isRecord(v) || Array.isArray(v) ? <JsonView data={v} depth={depth + 1} title={title} /> : scalar("", v)}</li>)}</ul>;
   }
   if (isRecord(data)) {
     const simple = Object.entries(data).filter(([, v]) => !isRecord(v) && !Array.isArray(v));

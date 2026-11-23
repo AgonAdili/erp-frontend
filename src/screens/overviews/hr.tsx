@@ -1,9 +1,10 @@
+import { Link } from "react-router-dom";
 /** People overview: headcount, who is in today, this month's attendance by reason, the payroll run's stage,
  * and pending loans and garnishments. */
 import { HBars, Kpi, Kpis, ShareBar, StatusBand, useOverview } from "@/components/dashboard";
-import { Alert, LinkButton, Panel } from "@/components/ui";
+import { Alert, LinkButton, Panel, Section, Status, statusTone } from "@/components/ui";
 import { MONTHS } from "@/i18n/mk";
-import { formatCompact, formatDateTime, formatMoney, formatNumber, num } from "@/lib/format";
+import { formatCompact, formatDateTime, formatMoney, formatNumber, formatPercent, num } from "@/lib/format";
 
 import { listUrl, Overview } from "./common";
 
@@ -37,44 +38,48 @@ export function HrOverview() {
         const payTotal = Object.values(d.payroll).reduce((s, p) => s + num(p.total), 0);
         return (
           <>
-            <StatusBand title={`Плати за ${MONTHS[now.getMonth()].toLowerCase()} ${now.getFullYear()}`} total={payTotal ? `${formatCompact(payTotal)} ден. вкупно` : "сè уште нема пресметка"} stages={[
+            <StatusBand title={`Плати за ${MONTHS[now.getMonth()].toLowerCase()} ${now.getFullYear()}`} total={payTotal ? `${formatCompact(payTotal)} MKD вкупно` : "сè уште нема пресметка"} stages={[
               { key: "draft", label: "Пресметани (нацрт)", count: pay("DRAFT").count, attention: true, to: listUrl("hr/payroll", { status: "DRAFT", year: now.getFullYear(), month: now.getMonth() + 1 }),
-                sub: num(pay("DRAFT").total) ? `${formatCompact(pay("DRAFT").total)} ден.` : undefined },
+                sub: num(pay("DRAFT").total) ? `${formatCompact(pay("DRAFT").total)} MKD` : undefined },
               { key: "approved", label: "Одобрени", count: pay("APPROVED").count, to: listUrl("hr/payroll", { status: "APPROVED", year: now.getFullYear(), month: now.getMonth() + 1 }),
-                sub: num(pay("APPROVED").total) ? `${formatCompact(pay("APPROVED").total)} ден.` : undefined },
+                sub: num(pay("APPROVED").total) ? `${formatCompact(pay("APPROVED").total)} MKD` : undefined },
               { key: "paid", label: "Исплатени", count: pay("PAID").count, done: true, to: listUrl("hr/payroll", { status: "PAID", year: now.getFullYear(), month: now.getMonth() + 1 }),
-                sub: num(pay("PAID").total) ? `${formatCompact(pay("PAID").total)} ден.` : undefined },
+                sub: num(pay("PAID").total) ? `${formatCompact(pay("PAID").total)} MKD` : undefined },
             ]} />
             <Kpis>
               <Kpi label="Активни вработени" value={formatNumber(active, 0)} sub={`${d.headcount.HOLIDAY ?? 0} на одмор · ${d.headcount.INACTIVE ?? 0} неактивни`} to="/people/employees" />
-              <Kpi label="Присутни денес" value={formatNumber(d.today.present, 0)} sub={active ? `${formatNumber((d.today.present / active) * 100, 0)}% од активните` : undefined} to="/hr/attendance-day" />
+              <Kpi label="Присутни денес" value={formatNumber(d.today.present, 0)} sub={active ? `${formatPercent((d.today.present / active) * 100, 0)} од активните` : undefined} to="/hr/attendance-day" />
               <Kpi label="На отсуство денес" value={formatNumber(d.today.on_leave, 0)} to="/hr/leave-timeline" />
               <Kpi label="Денови отсуство овој месец" value={formatNumber(absent.reduce((a, [, v]) => a + v, 0), 0)} sub={absent.length ? `најчесто: ${(REASON_LABEL[absent[0][0]] ?? absent[0][0]).toLowerCase()}` : undefined} to="/hr/leave-timeline" />
               <Kpi label="Заеми за одобрување" value={formatNumber(d.loans_pending, 0)} tone={d.loans_pending ? "attention" : undefined} to={listUrl("hr/loans", { status: "PENDING" })} />
               <Kpi label="Активни извршувања" value={formatNumber(d.bailiffs_active, 0)} to={listUrl("hr/bailiffs", { status: "ACTIVE" })} />
             </Kpis>
             {d.month.freshness?.stale ? <Alert tone="info">Месечните збирови се од {formatDateTime(d.month.freshness.refreshed_at)} и се освежуваат во позадина.</Alert> : null}
-            <div className="grid-2">
-              <Panel title="Присуство овој месец" sub="Денови по вид, сите вработени">
-                <ShareBar parts={reasons.map(([k, v]) => ({ label: REASON_LABEL[k] ?? k, value: v, color: k === "PRESENT" ? "var(--series-1)" : undefined }))} />
-              </Panel>
-              <Panel title="Отсуства овој месец" sub="Денови по причина">
-                <HBars unit="number" rows={absent.map(([k, v]) => ({ key: k, label: REASON_LABEL[k] ?? k, value: v, over: k === "UNANNOUNCED" }))} empty="Нема отсуства" />
-              </Panel>
-            </div>
-            <Panel title="Плати овој месец" flush actions={<LinkButton to="/hr/payroll" size="sm">Сите плати</LinkButton>}>
-              <div className="table-wrap">
-                <table className="table">
-                  <thead><tr><th>Статус</th><th className="num">Вработени</th><th className="num">Вкупно</th></tr></thead>
-                  <tbody>
-                    {(["DRAFT", "APPROVED", "PAID"] as const).map((s) => (
-                      <tr key={s}><td>{s === "DRAFT" ? "Нацрт" : s === "APPROVED" ? "Одобрено" : "Исплатено"}</td>
-                        <td className="num">{formatNumber(pay(s).count, 0)}</td><td className="num">{formatMoney(pay(s).total)}</td></tr>
-                    ))}
-                  </tbody>
-                </table>
+            <Section n={1} title="Тек и состојба">
+              <div className="grid-2">
+                <Panel title="Присуство овој месец" sub="Денови по вид, сите вработени">
+                  <ShareBar parts={reasons.map(([k, v]) => ({ label: REASON_LABEL[k] ?? k, value: v, color: k === "PRESENT" ? "var(--ea-chart-1)" : undefined }))} />
+                </Panel>
+                <Panel title="Отсуства овој месец" sub="Денови по причина">
+                  <HBars unit="number" rows={absent.map(([k, v]) => ({ key: k, label: REASON_LABEL[k] ?? k, value: v, over: k === "UNANNOUNCED" }))} empty="Нема отсуства" />
+                </Panel>
               </div>
-            </Panel>
+            </Section>
+            <Section n={2} title="Листи и детали">
+              <Panel title="Плати овој месец" flush actions={<Link to="/hr/payroll" className="panel-link">Сите плати</Link>}>
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead><tr><th scope="col">Статус</th><th scope="col" className="num">Вработени</th><th scope="col" className="num">Вкупно (MKD)</th></tr></thead>
+                    <tbody>
+                      {(["DRAFT", "APPROVED", "PAID"] as const).map((s) => (
+                        <tr key={s}><td><Status tone={statusTone(s)}>{s === "DRAFT" ? "Нацрт" : s === "APPROVED" ? "Одобрено" : "Исплатено"}</Status></td>
+                          <td className="num">{formatNumber(pay(s).count, 0)}</td><td className="num">{formatMoney(pay(s).total)}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Panel>
+            </Section>
           </>
         );
       }}
