@@ -59,7 +59,7 @@ function FormPage({ meta, id }: { meta: ResourceMeta; id?: string }) {
   if (editing && (record.error || !row)) return <Page title={meta.title}><ErrorState heading error={record.error} onRetry={() => void record.refetch()} /></Page>;
 
   return (
-    <Page title={title} crumb={editing ? t.edit : t.newRecord}>
+    <Page title={title}>
       <div className={`form-page${wide ? " wide" : ""}`}>
         <PageHeader back={{ to: back, label: editing ? label : meta.title }} title={title} />
         <ResourceForm meta={meta} row={row} defaults={editing ? undefined : prefill}

@@ -332,7 +332,7 @@ export function ResourceDetail({ meta, id }: { meta: ResourceMeta; id: string; v
   const row = record.data;
   const route = routeFor(meta.endpoint);
   const title = row ? String(row._label ?? `#${row.id}`) : "";
-  useDocumentTitle(title ? `${title} — ${meta.title}` : meta.title_singular, title);
+  useDocumentTitle(title ? `${title} — ${meta.title}` : meta.title_singular);
 
   useEffect(() => {
     if (row) pushRecent({ route: `${route}/${row.id}`, title, kind: meta.title_singular || meta.title });

@@ -38,11 +38,7 @@
   /* ── main: top bar, module tabs, content ─────────────────────── */
   .main { display: flex; flex-direction: column; min-width: 0; height: 100%; }
   .topbar { display: flex; align-items: center; gap: var(--ea-sp-2); height: var(--ea-header-h); padding: 0 var(--ea-sp-4) 0 var(--ea-page-pad); background: var(--ea-chrome); border-bottom: var(--ea-hairline) solid var(--ea-line); flex: none; }
-  .crumbs { display: flex; align-items: center; gap: var(--ea-sp-1); min-width: 0; font-size: var(--ea-fs-14); color: var(--ea-text-3); flex: 1; overflow: hidden; }
-  .crumbs a { color: var(--ea-text-2); white-space: nowrap; text-decoration: none; }
-  .crumbs a:hover { color: var(--ea-text); text-decoration: underline; }
-  .crumbs > .ico { width: var(--ea-icon-14); height: var(--ea-icon-14); color: var(--ea-text-3); }
-  .search-trigger { display: flex; align-items: center; gap: var(--ea-sp-2); height: var(--ea-control); padding: 0 var(--ea-sp-2) 0 var(--ea-sp-3); width: min(280px, 28vw); border: var(--ea-hairline) solid var(--ea-line-strong); border-radius: var(--ea-r-round); background: var(--ea-surface); color: var(--ea-text-3); cursor: pointer; font-size: var(--ea-fs-14); }
+  .search-trigger { display: flex; margin-inline-end: auto; align-items: center; gap: var(--ea-sp-2); height: var(--ea-control); padding: 0 var(--ea-sp-2) 0 var(--ea-sp-3); width: min(280px, 28vw); border: var(--ea-hairline) solid var(--ea-line-strong); border-radius: var(--ea-r-round); background: var(--ea-surface); color: var(--ea-text-3); cursor: pointer; font-size: var(--ea-fs-14); }
   .search-trigger:hover { border-color: var(--ea-control-border); color: var(--ea-text-2); }
   .search-trigger span { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .topbar .bell { position: relative; }

@@ -1,5 +1,5 @@
 /** The app shell (branding_rules/04 §1): skip link · sidebar (modules grouped by module group, the module icon in
- * its group's colour) · top bar (breadcrumbs, search ⌘K, "+ Ново", notifications, profile) · module tabs
+ * its group's colour) · top bar (search ⌘K, "+ Ново", notifications, profile) · module tabs
  * (Преглед first, then the module's lists) · main. On phones a bottom nav replaces the sidebar. */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -10,7 +10,7 @@ import type { Page, Row } from "@/api/types";
 import { useSession } from "@/auth/session";
 import { usePrefs } from "@/app/prefs";
 import {
-  Bell, Check, ChevronRight, House, Inbox, Keyboard, LogOut, Menu as MenuIcon, Monitor, Moon, PanelLeftClose, PanelLeftOpen,
+  Bell, Check, House, Inbox, Keyboard, LogOut, Menu as MenuIcon, Monitor, Moon, PanelLeftClose, PanelLeftOpen,
   Plus, Search, Sun, User,
 } from "@/components/icons";
 import { Button, EmptyState, IconButton, Kbd, Menu, Modal, Popover, Tooltip, type MenuEntry } from "@/components/ui";
@@ -21,7 +21,6 @@ import { groupForPath, MODULE_GROUPS, resourcePath } from "@/nav/modules";
 import { useNav, type VisibleGroup } from "@/nav/useNav";
 
 import { CommandPalette } from "./CommandPalette";
-import { CrumbProvider, useCrumb } from "./Page";
 
 function useInboxCount() {
   return useQuery({
@@ -109,33 +108,6 @@ function Sidebar({ groups, activeKey, onNavigate }: { groups: VisibleGroup[]; ac
 }
 
 // ── top bar ───────────────────────────────────────────────────────────────────
-
-/** Ancestors only: the module, then the list; never an item that repeats its parent. */
-function Breadcrumbs({ group }: { group?: VisibleGroup }) {
-  const location = useLocation();
-  const crumb = useCrumb();
-  const { resources } = useNav();
-  const parts = location.pathname.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
-  const items: { to?: string; label: string }[] = [];
-  if (group) items.push({ to: group.landing, label: group.group.label });
-  const res = resources.find((r) => r.path === parts.slice(0, 2).join("/"));
-  const link = group?.links.find((l) => l.to === location.pathname);
-  if (res) {
-    if (parts[2]) items.push({ to: res.route, label: res.title });
-    items.push({ label: parts[2] === "new" ? t.newRecord : parts[3] === "edit" ? t.edit : parts[2] ? crumb || `#${parts[2]}` : res.title });
-  } else if (link && !link.overview) items.push({ label: link.label });
-  else if (!group) items.push({ label: location.pathname === "/" ? t.home : crumb || t.appName });
-  return (
-    <nav className="crumbs" aria-label="Патека">
-      {items.map((it, i) => (
-        <span key={i} className="row-tight">
-          {i > 0 ? <ChevronRight /> : null}
-          {it.to && i < items.length - 1 ? <Link to={it.to}>{it.label}</Link> : <span className="truncate" aria-current="page">{it.label}</span>}
-        </span>
-      ))}
-    </nav>
-  );
-}
 
 /** "+ Ново": choice tiles of what to create, by module, filtered by permission. */
 function CreateMenu({ groups }: { groups: VisibleGroup[] }) {
@@ -394,18 +366,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <CrumbProvider>
+    <>
       <a className="skip-link" href="#main">{t.skipToContent}</a>
       <div className={`app${navCollapsed ? " collapsed" : ""}${drawer ? " nav-open" : ""}`}>
         {drawer ? <div className="nav-scrim" onClick={() => setDrawer(false)} aria-hidden /> : null}
         <Sidebar groups={groups} activeKey={activeKey} onNavigate={() => setDrawer(false)} />
         <div className="main">
           <header className="topbar">
-            <IconButton className="menu-toggle" label={t.menu} icon={MenuIcon} onClick={() => setDrawer(true)} tip={false} />
-            <Breadcrumbs group={active} />
             <button type="button" className="search-trigger" onClick={() => setPalette(true)} aria-label={t.searchEverywhere}>
               <Search /><span>{t.searchEverywhere}</span><Kbd>Ctrl K</Kbd>
             </button>
+            <IconButton className="menu-toggle" label={t.menu} icon={MenuIcon} onClick={() => setDrawer(true)} tip={false} />
             <CreateMenu groups={groups} />
             <span className="bell-wrap"><NotificationsPopover /></span>
             <UserMenu onShortcuts={() => setShortcuts(true)} />
@@ -418,6 +389,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <CommandPalette open={palette} onOpenChange={setPalette} />
       {shortcuts ? <ShortcutsDialog onClose={() => setShortcuts(false)} /> : null}
       <IdleDialog />
-    </CrumbProvider>
+    </>
   );
 }
