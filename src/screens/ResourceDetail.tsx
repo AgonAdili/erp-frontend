@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, FileText, History as HistoryIcon, MessageSquare, Paperclip, Pencil, Printer, Send, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, FileText, History as HistoryIcon, MessageSquare, Paperclip, Pencil, Printer, Send, Trash2, X } from "@/components/icons";
 
 import { api, ApiError } from "@/api/client";
 import type { ActionMeta, FieldMeta, ResourceMeta, Row } from "@/api/types";
@@ -24,6 +24,7 @@ import { ActionButton, actionApplies, actionKind } from "./actions";
 import { CHILDREN, ChildTable, CUSTOM, HANDLED_ROWS, PANELS_FIRST } from "./extensions";
 import { ResourceForm } from "./ResourceForm";
 import { isStatusColumn } from "./ResourceList";
+import { tr } from "@/i18n";
 
 const SKIP = new Set(["id", "_label", "version"]);
 const AUDIT = new Set(["created_at", "updated_at", "created_by", "updated_by"]);
@@ -40,7 +41,7 @@ function FieldValue({ row, field }: { row: Row; field: FieldMeta }) {
   if (masked) return <span className="muted">•••</span>;
   const text = displayValue(row, field.name, field.type, field.decimal_places);
   if (isStatusColumn(field.name) && text) return <Badge tone={statusTone(String(row[field.name]))}>{text}</Badge>;
-  if (field.type === "boolean") return row[field.name] ? <span className="row-tight"><Check aria-hidden style={{ width: 16, color: "var(--success)" }} />{t.yes}</span> : <span className="muted">{t.no}</span>;
+  if (field.type === "boolean") return row[field.name] ? <span className="row-tight"><Check aria-hidden style={{ width: 16, color: "var(--ea-go)" }} />{t.yes}</span> : <span className="muted">{t.no}</span>;
   if (!text) return <span className="muted-cell">{t.none}</span>;
   if (field.type === "url") return <a href={text} target="_blank" rel="noreferrer">{text}</a>;
   if (field.type === "email") return <a href={`mailto:${text}`}>{text}</a>;
@@ -88,8 +89,8 @@ interface HistoryEntry { at: string; actor: string; action: string; changes: Rec
 interface CommentEntry { id: number; author: string; body: string; created_at: string }
 
 const ACTION_LABEL: Record<string, string> = {
-  create: "креираше", created: "креираше", update: "измени", updated: "измени", delete: "избриша", deleted: "избриша",
-  transition: "ја смени состојбата", status: "ја смени состојбата",
+  create: tr("креираше"), created: tr("креираше"), update: tr("измени"), updated: tr("измени"), delete: tr("избриша"), deleted: tr("избриша"),
+  transition: tr("ја смени состојбата"), status: tr("ја смени состојбата"),
 };
 
 function changeText(meta: ResourceMeta, name: string, v: unknown): string {
@@ -140,26 +141,26 @@ function Activity({ meta, row }: { meta: ResourceMeta; row: Row }) {
     <div className="stack">
       <div className="stack-sm">
         <label htmlFor="comment-body" className="sr-only">{t.comments}</label>
-        <textarea id="comment-body" className="input" value={body} onChange={(e) => setBody(e.target.value)} placeholder="Напишете коментар…"
+        <textarea id="comment-body" className="form-control" value={body} onChange={(e) => setBody(e.target.value)} placeholder={tr("Напишете коментар…")}
           onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void post(); }} style={{ minHeight: 72 }} />
         <div className="row-tight" style={{ justifyContent: "flex-end" }}>
           <span className="xs muted">Ctrl + Enter</span>
-          <Button size="sm" variant="primary" icon={Send} busy={posting} disabled={!body.trim()} onClick={() => void post()}>Објави коментар</Button>
+          <Button size="sm" variant="primary" icon={Send} busy={posting} disabled={!body.trim()} onClick={() => void post()}>{tr("Објави коментар")}</Button>
         </div>
       </div>
-      {history.isLoading || comments.isLoading ? <Skeleton height={80} /> : !items.length ? <EmptyState compact icon={HistoryIcon} title="Сè уште нема активност" /> : (
+      {history.isLoading || comments.isLoading ? <Skeleton height={80} /> : !items.length ? <EmptyState compact icon={HistoryIcon} title={tr("Сè уште нема активност")} /> : (
         <ol className="timeline">
           {items.map((it, i) => it.kind === "comment" ? (
             <li key={`c${it.c.id}`}>
               <span className="t-icon comment"><MessageSquare aria-hidden /></span>
-              <div className="t-head"><strong>{it.c.author}</strong> коментираше · <time dateTime={it.at} title={formatDateTime(it.at)}>{formatRelative(it.at)}</time></div>
+              <div className="t-head"><strong>{it.c.author}</strong>{" "}{tr("коментираше ·")}{" "}<time dateTime={it.at} title={formatDateTime(it.at)}>{formatRelative(it.at)}</time></div>
               <div className="t-body t-comment">{it.c.body}</div>
             </li>
           ) : (
             <li key={`h${i}`}>
               <span className="t-icon"><HistoryIcon aria-hidden /></span>
               <div className="t-head">
-                <strong>{it.h.actor || "Систем"}</strong> {ACTION_LABEL[it.h.action?.toLowerCase()] ?? it.h.action} · <time dateTime={it.at} title={formatDateTime(it.at)}>{formatRelative(it.at)}</time>
+                <strong>{it.h.actor || tr("Систем")}</strong> {ACTION_LABEL[it.h.action?.toLowerCase()] ?? it.h.action} · <time dateTime={it.at} title={formatDateTime(it.at)}>{formatRelative(it.at)}</time>
               </div>
               {it.h.note ? <div className="t-body small">{it.h.note}</div> : null}
               {Object.keys(it.h.changes ?? {}).length && !/^create/i.test(it.h.action) ? (
@@ -208,7 +209,7 @@ function Attachments({ meta, row, canEdit }: { meta: ResourceMeta; row: Row; can
       const stored = await api.post<StoredFileRef>("/files/", form);
       await api.post(path, { file: stored.id, description });
       setDescription("");
-      toast(`Прикачено: ${f.name}`, "success");
+      toast(tr("Прикачено: {0}", f.name), "success");
       refresh();
     } catch (err) {
       toast(err instanceof ApiError ? err.message : String(err), "danger");
@@ -217,11 +218,11 @@ function Attachments({ meta, row, canEdit }: { meta: ResourceMeta; row: Row; can
     }
   };
   const remove = async (a: AttachmentRow) => {
-    const ok = await confirm({ title: "Отстрани прилог", text: `„${a.file?.name ?? a.description}“ ќе биде отстранет од записот.`, confirmLabel: "Отстрани прилог", danger: true });
+    const ok = await confirm({ title: tr("Отстрани прилог"), text: tr("„{0}“ ќе биде отстранет од записот.", a.file?.name ?? a.description), confirmLabel: tr("Отстрани прилог"), danger: true });
     if (!ok) return;
     try {
       await api.del(`/attachments/${a.id}/`);
-      toast("Прилогот е отстранет", "success");
+      toast(tr("Прилогот е отстранет"), "success");
       refresh();
     } catch (err) {
       toast(err instanceof ApiError ? err.message : String(err), "danger");
@@ -233,13 +234,13 @@ function Attachments({ meta, row, canEdit }: { meta: ResourceMeta; row: Row; can
       {canEdit ? (
         <div className="stack-sm">
           <DropZone onFile={(f) => void upload(f)} busy={busy} />
-          <input className="input" placeholder="Опис на прилогот (незадолжително)" aria-label="Опис на прилогот" value={description}
+          <input className="form-control" placeholder={tr("Опис на прилогот (незадолжително)")} aria-label={tr("Опис на прилогот")} value={description}
             onChange={(e) => setDescription(e.target.value)} />
         </div>
       ) : null}
-      {q.isLoading ? <Skeleton height={60} /> : q.error ? <ErrorState error={q.error} compact /> : !q.data?.length ? <EmptyState compact icon={Paperclip} title="Нема прилози" /> : (
-        <div className="table-wrap" style={{ border: "1px solid var(--rule)", borderRadius: "var(--r)" }}>
-          <table className="table">
+      {q.isLoading ? <Skeleton height={60} /> : q.error ? <ErrorState error={q.error} compact /> : !q.data?.length ? <EmptyState compact icon={Paperclip} title={tr("Нема прилози")} /> : (
+        <div className="table-responsive table-wrap" style={{ border: "1px solid var(--ea-line)", borderRadius: "var(--ea-r-control)" }}>
+          <table className="table ea-table">
             <tbody>
               {q.data.map((a) => (
                 <tr key={a.id}>
@@ -280,14 +281,14 @@ function FieldsPanel({ meta, row, fields }: { meta: ResourceMeta; row: Row; fiel
         </dl>
       </Panel>
       {amounts.length ? (
-        <Panel title="Износи">
+        <Panel title={tr("Износи")}>
           <dl className="dl">
             {amounts.map((f) => <div key={f.name}><dt>{f.label}</dt><dd className="num" style={{ fontWeight: 500 }}><FieldValue row={row} field={f} /></dd></div>)}
           </dl>
         </Panel>
       ) : null}
       {notes.filter((f) => displayValue(row, f.name, f.type)).length ? (
-        <Panel title="Опис и белешки">
+        <Panel title={tr("Опис и белешки")}>
           <dl className="dl">
             {notes.filter((f) => displayValue(row, f.name, f.type)).map((f) => <div key={f.name} className="wide"><dt>{f.label}</dt><dd><FieldValue row={row} field={f} /></dd></div>)}
           </dl>
@@ -306,9 +307,9 @@ function SideFacts({ meta, row }: { meta: ResourceMeta; row: Row }) {
   if (row.created_at) facts.push([t.createdAt, <span title={formatDateTime(row.created_at)}>{formatRelative(row.created_at)}{by("created_by") ? ` · ${by("created_by")}` : ""}</span>]);
   if (row.updated_at) facts.push([t.updatedAt, <span title={formatDateTime(row.updated_at)}>{formatRelative(row.updated_at)}{by("updated_by") ? ` · ${by("updated_by")}` : ""}</span>]);
   if (row.version !== undefined) facts.push([t.version, row.version]);
-  facts.push(["Број во системот", `#${row.id}`]);
+  facts.push([tr("Број во системот"), `#${row.id}`]);
   return (
-    <Panel title="Запис">
+    <Panel title={tr("Запис")}>
       <dl className="fact-list">
         {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
       </dl>
@@ -449,10 +450,10 @@ export function ResourceDetail({ meta, id, variant = "page" }: { meta: ResourceM
               <div className="detail-side">
                 <SideFacts meta={meta} row={row} />
                 {childSpecs.length ? (
-                  <Panel title="Поврзани записи">
+                  <Panel title={tr("Поврзани записи")}>
                     <div className="stack-sm">
                       {childSpecs.map((s) => (
-                        <button key={s.path} type="button" className="btn ghost" style={{ justifyContent: "space-between" }} onClick={() => setTab(`child:${s.path}`)}>
+                        <button key={s.path} type="button" className="btn btn-ghost" style={{ justifyContent: "space-between" }} onClick={() => setTab(`child:${s.path}`)}>
                           {s.label}<ChevronRight aria-hidden />
                         </button>
                       ))}

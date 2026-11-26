@@ -1,6 +1,6 @@
 /** Nested child rows (invoice lines, order items, diary workforce …): an inline editor and a read-only table,
  * both with totals for numeric columns. */
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "@/components/icons";
 
 import type { FieldMeta, Row } from "@/api/types";
 import { t } from "@/i18n/mk";
@@ -8,6 +8,7 @@ import { displayValue, formatMoney, formatNumber, isNumericType, num } from "@/l
 
 import { FieldInput } from "./inputs";
 import { Button, EmptyState, IconButton } from "./ui";
+import { tr } from "@/i18n";
 
 const HIDDEN = new Set(["id", "created_at", "updated_at", "_label"]);
 const SUMMABLE = /(amount|total|value|price_total|net|gross|vat|cost|quantity|qty|hours|liters|km)$/;
@@ -38,8 +39,8 @@ export function RowsEditor({ field, value, onChange, errors }: {
   return (
     <div className="stack-sm rows-editor">
       {rows.length ? (
-        <div className="table-wrap" style={{ border: "1px solid var(--rule)", borderRadius: "var(--r)" }}>
-          <table className="table">
+        <div className="table-responsive table-wrap" style={{ border: "1px solid var(--ea-line)", borderRadius: "var(--ea-r-control)" }}>
+          <table className="table ea-table">
             <thead>
               <tr>
                 <th style={{ width: 36 }} className="num">#</th>
@@ -60,7 +61,7 @@ export function RowsEditor({ field, value, onChange, errors }: {
                         <FieldInput field={c} value={r[c.name]} onChange={(v) => update(i, c.name, v)}
                           invalid={Boolean(rowErrors[i]?.[c.name])} initialLabel={r[`${c.name}_label`] as string | undefined} />
                       )}
-                      {rowErrors[i]?.[c.name] ? <div className="field"><span className="error">{rowErrors[i][c.name][0]}</span></div> : null}
+                      {rowErrors[i]?.[c.name] ? <div className="ea-field"><span className="error">{rowErrors[i][c.name][0]}</span></div> : null}
                     </td>
                   ))}
                   <td>
@@ -76,9 +77,9 @@ export function RowsEditor({ field, value, onChange, errors }: {
             ) : null}
           </table>
         </div>
-      ) : <div className="panel"><EmptyState compact title="Нема ставки" /></div>}
+      ) : <div className="ea-panel"><EmptyState compact title={tr("Нема ставки")} /></div>}
       <div>
-        <Button size="sm" icon={Plus} onClick={() => onChange([...rows, {}])}>Додај ставка</Button>
+        <Button size="sm" icon={Plus} onClick={() => onChange([...rows, {}])}>{tr("Додај ставка")}</Button>
       </div>
     </div>
   );
@@ -86,11 +87,11 @@ export function RowsEditor({ field, value, onChange, errors }: {
 
 export function RowsTable({ field, rows }: { field: FieldMeta; rows: Row[] }) {
   const cols = shownChildren(field);
-  if (!rows?.length) return <EmptyState compact title="Нема ставки" />;
+  if (!rows?.length) return <EmptyState compact title={tr("Нема ставки")} />;
   const sums = totalsRow(cols, rows);
   return (
-    <div className="table-wrap">
-      <table className="table">
+    <div className="table-responsive table-wrap">
+      <table className="table ea-table">
         <thead>
           <tr><th style={{ width: 36 }} className="num">#</th>{cols.map((c) => <th key={c.name} className={isNumericType(c.type) ? "num" : ""}>{c.label}</th>)}</tr>
         </thead>

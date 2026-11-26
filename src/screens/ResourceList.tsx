@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Columns3, Download, Eye, FileSpreadsheet, Filter, Plus, Search,
   SearchX, Star, Trash2, X,
-} from "lucide-react";
+} from "@/components/icons";
 
 import { api, ApiError, download, type Query } from "@/api/client";
 import type { ColumnMeta, FilterMeta, ResourceMeta, Row } from "@/api/types";
@@ -23,6 +23,7 @@ import { routeFor, useInvalidateResource, useList } from "@/meta/hooks";
 
 import { ActionButton, actionKind } from "./actions";
 import { ResourceDetail } from "./ResourceDetail";
+import { tr } from "@/i18n";
 
 const RESERVED = new Set(["page", "page_size", "search", "ordering"]);
 const PAGE_SIZES = [25, 50, 100];
@@ -48,13 +49,13 @@ function FilterControl({ filter, params, set }: { filter: FilterMeta; params: UR
   const id = `f-${filter.name}`;
   if (filter.type === "date" && filter.lookups.includes("gte")) {
     return (
-      <div className="field">
+      <div className="ea-field">
         <label htmlFor={id}>{filter.label}</label>
         <div className="row-tight">
-          <input id={id} className="input" type="date" value={params.get(`${filter.name}__gte`) ?? ""}
+          <input id={id} className="form-control" type="date" value={params.get(`${filter.name}__gte`) ?? ""}
             onChange={(e) => set(`${filter.name}__gte`, e.target.value)} aria-label={`${filter.label} ${t.from.toLowerCase()}`} />
           <span className="muted" aria-hidden>–</span>
-          <input className="input" type="date" value={params.get(`${filter.name}__lte`) ?? ""}
+          <input className="form-control" type="date" value={params.get(`${filter.name}__lte`) ?? ""}
             onChange={(e) => set(`${filter.name}__lte`, e.target.value)} aria-label={`${filter.label} ${t.to.toLowerCase()}`} />
         </div>
       </div>
@@ -63,14 +64,14 @@ function FilterControl({ filter, params, set }: { filter: FilterMeta; params: UR
   let control: ReactNode;
   if (filter.choices?.length) {
     control = (
-      <select id={id} className="input" value={params.get(filter.name) ?? ""} onChange={(e) => set(filter.name, e.target.value)}>
+      <select id={id} className="form-control" value={params.get(filter.name) ?? ""} onChange={(e) => set(filter.name, e.target.value)}>
         <option value="">{t.all}</option>
         {filter.choices.map((c) => <option key={String(c.value)} value={String(c.value)}>{c.label}</option>)}
       </select>
     );
   } else if (filter.type === "boolean") {
     control = (
-      <select id={id} className="input" value={params.get(filter.name) ?? ""} onChange={(e) => set(filter.name, e.target.value)}>
+      <select id={id} className="form-control" value={params.get(filter.name) ?? ""} onChange={(e) => set(filter.name, e.target.value)}>
         <option value="">{t.all}</option>
         <option value="true">{t.yes}</option>
         <option value="false">{t.no}</option>
@@ -81,10 +82,10 @@ function FilterControl({ filter, params, set }: { filter: FilterMeta; params: UR
     control = <RelatedSelect id={id} related={filter.related} value={v ? Number(v) : null} placeholder={t.all}
       onChange={(next) => set(filter.name, next ? String(next) : "")} />;
   } else {
-    control = <input id={id} className="input" type={filter.type === "date" ? "date" : "text"}
+    control = <input id={id} className="form-control" type={filter.type === "date" ? "date" : "text"}
       value={params.get(filter.name) ?? ""} onChange={(e) => set(filter.name, e.target.value)} />;
   }
-  return <div className="field"><label htmlFor={id}>{filter.label}</label>{control}</div>;
+  return <div className="ea-field"><label htmlFor={id}>{filter.label}</label>{control}</div>;
 }
 
 function FkLabel({ endpoint, id }: { endpoint: string; id: string }) {
@@ -100,8 +101,8 @@ function chipFor(meta: ResourceMeta, key: string, value: string): { label: React
   const base = key.replace(/__(gte|lte|exact|in|icontains)$/, "");
   const f = meta.filters.find((x) => x.name === base);
   const label = f?.label ?? base;
-  if (key.endsWith("__gte")) return { label: `${label} од`, value: formatDate(value) };
-  if (key.endsWith("__lte")) return { label: `${label} до`, value: formatDate(value) };
+  if (key.endsWith("__gte")) return { label: tr("{0} од", label), value: formatDate(value) };
+  if (key.endsWith("__lte")) return { label: tr("{0} до", label), value: formatDate(value) };
   if (f?.choices?.length) return { label, value: f.choices.find((c) => String(c.value) === value)?.label ?? value };
   if (f?.type === "boolean") return { label, value: value === "true" ? t.yes : t.no };
   if (f?.type === "fk" && f.related?.endpoint) return { label, value: <FkLabel endpoint={f.related.endpoint} id={value} /> };
@@ -116,15 +117,15 @@ function ViewsMenu({ meta, state, apply }: { meta: ResourceMeta; state: URLSearc
   const [views, setViews] = useStored<SavedView[]>(`views.${meta.key}`, []);
   const current = (() => { const s = new URLSearchParams(state); s.delete("page"); return s.toString(); })();
   const items: MenuEntry[] = [
-    ...(views.length ? [{ heading: true, label: "Зачувани прикази" } as MenuEntry] : []),
-    ...views.map((v) => ({ label: v.name, icon: Star, onSelect: () => apply(v.query), hint: v.query === current ? "активен" : undefined })),
-    { label: "Зачувај го овој приказ…", icon: Plus, separatorBefore: views.length > 0, disabled: !current, onSelect: () => {
-      const name = window.prompt("Име на приказот", "");
+    ...(views.length ? [{ heading: true, label: tr("Зачувани прикази") } as MenuEntry] : []),
+    ...views.map((v) => ({ label: v.name, icon: Star, onSelect: () => apply(v.query), hint: v.query === current ? tr("активен") : undefined })),
+    { label: tr("Зачувај го овој приказ…"), icon: Plus, separatorBefore: views.length > 0, disabled: !current, onSelect: () => {
+      const name = window.prompt(tr("Име на приказот"), "");
       if (name?.trim()) setViews((list) => [...list.filter((v) => v.name !== name.trim()), { name: name.trim(), query: current }]);
     } },
-    ...(views.length ? [{ label: "Избриши ги зачуваните прикази", icon: Trash2, danger: true, onSelect: () => setViews([]) } as MenuEntry] : []),
+    ...(views.length ? [{ label: tr("Избриши ги зачуваните прикази"), icon: Trash2, danger: true, onSelect: () => setViews([]) } as MenuEntry] : []),
   ];
-  return <Menu label="Прикази" items={items} trigger={<Button size="sm" icon={Star}>{views.length ? `Прикази (${views.length})` : "Прикази"}</Button>} />;
+  return <Menu label={tr("Прикази")} items={items} trigger={<Button size="sm" icon={Star}>{views.length ? tr("Прикази ({0})", views.length) : tr("Прикази")}</Button>} />;
 }
 
 // ── list ─────────────────────────────────────────────────────────────────────
@@ -212,7 +213,7 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
   const runBulk = async (name: string, label: string) => {
     const ok = await confirm({
       title: `${label}: ${selected.length} ${t.selected}`,
-      text: name === "delete" ? t.confirmDelete : `Акцијата „${label}“ ќе се примени на ${selected.length} записи.`,
+      text: name === "delete" ? t.confirmDelete : tr("Акцијата „{0}“ ќе се примени на {1} записи.", label, selected.length),
       confirmLabel: name === "delete" ? `${t.delete} (${selected.length})` : label,
       danger: name === "delete",
     });
@@ -255,7 +256,7 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
       {meta.search ? (
         <div className="input-icon list-search">
           <Search aria-hidden />
-          <input ref={searchRef} className="input" type="search" placeholder={embedded ? t.searchPlaceholder : `${t.searchPlaceholder}  ( / )`}
+          <input ref={searchRef} className="form-control" type="search" placeholder={embedded ? t.searchPlaceholder : `${t.searchPlaceholder}  ( / )`}
             aria-label={`${t.search}: ${meta.title}`} value={searchText} onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") set("search", searchText.trim()); if (e.key === "Escape") setSearchText(""); }} />
         </div>
@@ -276,7 +277,7 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
         </Popover>
       ) : null}
       <span className="spacer" />
-      {list.isFetching && !list.isLoading ? <span className="spinner" style={{ color: "var(--ink-faint)" }} aria-label={t.loading} /> : null}
+      {list.isFetching && !list.isLoading ? <span className="spinner" style={{ color: "var(--ea-text-3)" }} aria-label={t.loading} /> : null}
       {!embedded ? <ViewsMenu meta={meta} state={state} apply={(q) => setState(new URLSearchParams(q))} /> : null}
       {meta.columns.length > 3 ? (
         <Popover align="end" trigger={<Button size="sm" icon={Columns3} aria-label={t.columns}>{embedded ? null : t.columns}</Button>}>
@@ -325,18 +326,18 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
       ) : (
         <EmptyState compact={embedded} title={`${meta.title}: ${t.noResults.toLowerCase()}`}
           action={meta.permissions.add && !embedded ? <Button variant="primary" icon={Plus} onClick={() => navigate(`${route}/new`)}>{t.add}</Button> : undefined}>
-          {meta.permissions.add && !embedded ? "Креирајте го првиот запис." : undefined}
+          {meta.permissions.add && !embedded ? tr("Креирајте го првиот запис.") : undefined}
         </EmptyState>
       )
     ) : (
-      <div className="table-wrap" style={{ maxHeight: embedded ? 440 : "calc(100vh - 290px)" }}>
-        <table className="table">
+      <div className="table-responsive table-wrap" style={{ maxHeight: embedded ? 440 : "calc(100vh - 290px)" }}>
+        <table className="table ea-table">
           <caption className="sr-only">{meta.title}</caption>
           <thead>
             <tr>
               {bulkAllowed ? (
                 <th className="col-check">
-                  <input type="checkbox" aria-label="Избери ги сите на страната"
+                  <input type="checkbox" aria-label={tr("Избери ги сите на страната")}
                     checked={allIds.length > 0 && allIds.every((id) => selected.includes(id))}
                     ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allIds.every((id) => selected.includes(id)); }}
                     onChange={(e) => setSelected(e.target.checked ? allIds : [])} />
@@ -362,7 +363,7 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
                 onMouseEnter={() => prefetch(row.id)}>
                 {bulkAllowed ? (
                   <td className="col-check">
-                    <input type="checkbox" aria-label={`Избери ${String(row._label ?? row.id)}`} checked={selected.includes(row.id)}
+                    <input type="checkbox" aria-label={tr("Избери {0}", String(row._label ?? row.id))} checked={selected.includes(row.id)}
                       onChange={(e) => setSelected((s) => e.target.checked ? [...s, row.id] : s.filter((x) => x !== row.id))} />
                   </td>
                 ) : null}
@@ -388,7 +389,7 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
       <span className="num">{formatNumber((page - 1) * size + 1, 0)}–{formatNumber(Math.min(page * size, count), 0)} {t.of} {formatNumber(count, 0)}</span>
       {!embedded ? (
         <label className="row-tight" style={{ marginLeft: 8 }}>
-          <select className="input sm" style={{ width: 76 }} value={pageSize} aria-label={t.perPage}
+          <select className="form-control sm" style={{ width: 76 }} value={pageSize} aria-label={t.perPage}
             onChange={(e) => { setPageSize(Number(e.target.value)); set("page", ""); }}>
             {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
@@ -398,9 +399,9 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
       <span className="spacer" />
       {list.data.pages > 1 ? (
         <>
-          <IconButton label="Претходна страна" icon={ChevronLeft} size="sm" variant="default" disabled={page <= 1} onClick={() => set("page", String(page - 1))} />
+          <IconButton label={tr("Претходна страна")} icon={ChevronLeft} size="sm" variant="default" disabled={page <= 1} onClick={() => set("page", String(page - 1))} />
           <span className="num">{t.page} {page} {t.of} {list.data.pages}</span>
-          <IconButton label="Следна страна" icon={ChevronRight} size="sm" variant="default" disabled={page >= list.data.pages} onClick={() => set("page", String(page + 1))} />
+          <IconButton label={tr("Следна страна")} icon={ChevronRight} size="sm" variant="default" disabled={page >= list.data.pages} onClick={() => set("page", String(page + 1))} />
         </>
       ) : null}
     </div>
@@ -425,11 +426,11 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
       {!embedded ? (
         <PageHeader
           title={meta.title}
-          subtitle={list.data ? `${formatNumber(list.data.count, 0)} ${count === 1 ? "запис" : "записи"}${filtered ? " според филтрите" : ""}` : " "}
+          subtitle={list.data ? `${formatNumber(list.data.count, 0)} ${count === 1 ? tr("запис") : tr("записи")}${filtered ? tr(" според филтрите") : ""}` : " "}
           actions={<>
             {operations.slice(0, 2).map((a) => <ActionButton key={a.name} meta={meta} action={a} onDone={invalidate} size="md" />)}
             {reports.length || operations.length > 2 ? (
-              <Menu label={t.moreActions} trigger={<Button>Извештаи и акции</Button>} items={[
+              <Menu label={t.moreActions} trigger={<Button>{tr("Извештаи и акции")}</Button>} items={[
                 ...reports.map((a) => ({ label: a.label, onSelect: () => document.getElementById(`act-${a.name}`)?.click() })),
                 ...operations.slice(2).map((a) => ({ label: a.label, onSelect: () => document.getElementById(`act-${a.name}`)?.click(), separatorBefore: false })),
               ]} />
@@ -457,7 +458,7 @@ export function ResourceList({ meta, baseQuery, embedded, headerExtra }: {
           <span className="small strong">{selected.length} {t.selected}</span>
           {meta.bulk_actions.map((b) => <Button key={b.name} size="sm" onClick={() => runBulk(b.name, b.label)}>{b.label}</Button>)}
           {meta.permissions.delete ? <Button size="sm" variant="danger" icon={Trash2} onClick={() => runBulk("delete", t.delete)}>{t.delete}</Button> : null}
-          <IconButton label="Откажи избор" icon={X} size="sm" onClick={() => setSelected([])} style={{ color: "inherit" }} />
+          <IconButton label={tr("Откажи избор")} icon={X} size="sm" onClick={() => setSelected([])} style={{ color: "inherit" }} />
         </div>
       ) : null}
       {peek !== null ? (

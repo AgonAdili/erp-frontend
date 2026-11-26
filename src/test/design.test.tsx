@@ -66,7 +66,7 @@ describe("StatusBand", () => {
     );
     const pending = screen.getByRole("link", { name: "Чекаат: 2" });
     expect(pending).toHaveAttribute("href", "/x?status=PENDING");
-    expect(pending.className).toContain("attention");
-    expect(screen.getByText("Готови").parentElement?.className).toContain("zero");
+    expect(pending.className).toContain("is-caution");   // FE pipe: someone has to act = caution
+    expect(screen.getByText("Готови").parentElement?.className).toContain("is-zero");
   });
 });

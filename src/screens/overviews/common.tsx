@@ -1,7 +1,7 @@
 /** The frame every module overview shares: title, which legal entity it covers, when it was loaded, refresh,
  * and the quick links to the module's lists. */
 import type { ReactNode } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@/components/icons";
 
 import { useEntity } from "@/app/prefs";
 import { useSession } from "@/auth/session";
@@ -39,7 +39,7 @@ export function Overview<T>({ title, subtitle, actions, q, children, entityScope
   const entity = useEntityName();
   const sub = subtitle ?? (entityScoped && entity ? entity : undefined);
   return (
-    <Page title={title}>
+    <Page title={title} board>
       <PageHeader title={title}
         subtitle={<span className="row-tight" style={{ flexWrap: "wrap" }}>
           {sub ? <span>{sub}</span> : null}

@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, CheckCheck, ChevronLeft, ChevronRight, CornerUpLeft, ExternalLink, Inbox, X } from "lucide-react";
+import { Bell, Check, CheckCheck, ChevronLeft, ChevronRight, CornerUpLeft, ExternalLink, Inbox, X } from "@/components/icons";
 
 import { api, ApiError } from "@/api/client";
 import type { Page as ApiPage, Row } from "@/api/types";
@@ -10,14 +10,15 @@ import { Alert, Badge, Button, EmptyState, ErrorState, Field, IconButton, LinkBu
 import { t } from "@/i18n/mk";
 import { Page } from "@/layout/Page";
 import { formatDateTime, formatMoney, formatNumber, formatRelative } from "@/lib/format";
+import { tr } from "@/i18n";
 
 type Decision = "APPROVE" | "ACCEPT" | "REJECT" | "RETURN";
 
 const DECISION: Record<Decision, { title: string; button: string; done: string }> = {
-  APPROVE: { title: "Одобри", button: "Одобри", done: "Одобрено" },
-  ACCEPT: { title: "Прифати", button: "Прифати", done: "Прифатено" },
-  RETURN: { title: "Врати на дополнување", button: "Врати", done: "Вратено" },
-  REJECT: { title: "Одбиј", button: "Одбиј", done: "Одбиено" },
+  APPROVE: { title: tr("Одобри"), button: tr("Одобри"), done: tr("Одобрено") },
+  ACCEPT: { title: tr("Прифати"), button: tr("Прифати"), done: tr("Прифатено") },
+  RETURN: { title: tr("Врати на дополнување"), button: tr("Врати"), done: tr("Вратено") },
+  REJECT: { title: tr("Одбиј"), button: tr("Одбиј"), done: tr("Одбиено") },
 };
 
 const PAGE = 50;
@@ -27,9 +28,9 @@ function Pager({ page, pages, set }: { page: number; pages: number; set: (p: num
   return (
     <div className="pager">
       <span className="spacer" />
-      <IconButton label="Претходна страна" icon={ChevronLeft} size="sm" variant="default" disabled={page <= 1} onClick={() => set(page - 1)} />
+      <IconButton label={tr("Претходна страна")} icon={ChevronLeft} size="sm" variant="default" disabled={page <= 1} onClick={() => set(page - 1)} />
       <span className="num">{t.page} {page} {t.of} {pages}</span>
-      <IconButton label="Следна страна" icon={ChevronRight} size="sm" variant="default" disabled={page >= pages} onClick={() => set(page + 1)} />
+      <IconButton label={tr("Следна страна")} icon={ChevronRight} size="sm" variant="default" disabled={page >= pages} onClick={() => set(page + 1)} />
     </div>
   );
 }
@@ -47,7 +48,7 @@ export function InboxScreen() {
   const groups = useMemo(() => {
     const m = new Map<string, Row[]>();
     for (const r of rows) {
-      const k = String(r.definition_label ?? r.definition_code ?? "Друго");
+      const k = String(r.definition_label ?? r.definition_code ?? tr("Друго"));
       m.set(k, [...(m.get(k) ?? []), r]);
     }
     return [...m.entries()];
@@ -73,14 +74,14 @@ export function InboxScreen() {
 
   return (
     <Page title={t.inbox}>
-      <PageHeader title={t.inbox} subtitle={q.data ? (q.data.count ? `${formatNumber(q.data.count, 0)} барања чекаат ваша одлука` : "Нема ништо што чека ваша одлука") : " "} />
+      <PageHeader title={t.inbox} subtitle={q.data ? (q.data.count ? tr("{0} барања чекаат ваша одлука", formatNumber(q.data.count, 0)) : tr("Нема ништо што чека ваша одлука")) : " "} />
       {q.isLoading ? <Panel flush><SkeletonRows rows={6} cols={5} /></Panel> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : !rows.length ? (
-        <Panel><EmptyState icon={Inbox} title="Сè е решено">Кога некој ќе побара ваше одобрување, ќе се појави тука и во известувањата.</EmptyState></Panel>
+        <Panel><EmptyState icon={Inbox} title={tr("Сè е решено")}>{tr("Кога некој ќе побара ваше одобрување, ќе се појави тука и во известувањата.")}</EmptyState></Panel>
       ) : groups.map(([flow, list]) => (
-        <Panel key={flow} title={flow} sub={`${list.length} ${list.length === 1 ? "барање" : "барања"}`} flush>
-          <div className="table-wrap">
-            <table className="table">
-              <thead><tr><th>Барање</th><th>Фаза</th><th className="num">Износ</th><th>Поднесено</th><th aria-label={t.actions} /></tr></thead>
+        <Panel key={flow} title={flow} sub={`${list.length} ${list.length === 1 ? tr("барање") : tr("барања")}`} flush>
+          <div className="table-responsive table-wrap">
+            <table className="table ea-table">
+              <thead><tr><th>{tr("Барање")}</th><th>{tr("Фаза")}</th><th className="num">{tr("Износ")}</th><th>{tr("Поднесено")}</th><th aria-label={t.actions} /></tr></thead>
               <tbody>
                 {list.map((r) => (
                   <tr key={r.id}>
@@ -90,14 +91,14 @@ export function InboxScreen() {
                     <td className="small nowrap"><span title={formatDateTime(r.created_at)}>{formatRelative(r.created_at)}</span><div className="xs muted">{String(r.initiated_by_label ?? "")}</div></td>
                     <td className="right nowrap">
                       {r.requires_external_action ? (
-                        r.target_route ? <LinkButton size="sm" icon={ExternalLink} to={String(r.target_route)}>Одлучи во записот</LinkButton> : null
+                        r.target_route ? <LinkButton size="sm" icon={ExternalLink} to={String(r.target_route)}>{tr("Одлучи во записот")}</LinkButton> : null
                       ) : (
                         <div className="row-tight" style={{ justifyContent: "flex-end" }}>
                           <Button size="sm" variant="primary" icon={Check} onClick={() => { setError(""); setActing({ row: r, decision: "APPROVE" }); }}>
-                            {String(r.approve_label || "Одобри")}
+                            {String(r.approve_label || tr("Одобри"))}
                           </Button>
-                          <Button size="sm" icon={CornerUpLeft} onClick={() => { setError(""); setActing({ row: r, decision: "RETURN" }); }}>Врати</Button>
-                          <Button size="sm" variant="danger" icon={X} onClick={() => { setError(""); setActing({ row: r, decision: "REJECT" }); }}>Одбиј</Button>
+                          <Button size="sm" icon={CornerUpLeft} onClick={() => { setError(""); setActing({ row: r, decision: "RETURN" }); }}>{tr("Врати")}</Button>
+                          <Button size="sm" variant="danger" icon={X} onClick={() => { setError(""); setActing({ row: r, decision: "REJECT" }); }}>{tr("Одбиј")}</Button>
                         </div>
                       )}
                     </td>
@@ -111,7 +112,7 @@ export function InboxScreen() {
       {q.data ? <Pager page={page} pages={q.data.pages} set={setPage} /> : null}
       {acting ? (
         <Modal title={`${DECISION[acting.decision].title}: ${String(acting.row.title)}`}
-          description={`${String(acting.row.definition_label ?? "")} · ${String(acting.row.stage_name ?? "")}${acting.row.amount ? ` · ${formatMoney(acting.row.amount)} ден.` : ""}`}
+          description={`${String(acting.row.definition_label ?? "")} · ${String(acting.row.stage_name ?? "")}${acting.row.amount ? ` · ${formatMoney(acting.row.amount)} MKD` : ""}`}
           onClose={() => setActing(null)}
           footer={<>
             <Button onClick={() => setActing(null)}>{t.cancel}</Button>
@@ -122,9 +123,9 @@ export function InboxScreen() {
           </>}>
           <div className="stack">
             {error ? <Alert tone="danger">{error}</Alert> : null}
-            <Field label={needsComment ? "Причина" : "Коментар (незадолжително)"} required={Boolean(needsComment)} htmlFor="wf-comment"
-              help={needsComment ? "Подносителот ќе ја види причината." : undefined}>
-              <textarea id="wf-comment" className="input" value={comment} onChange={(e) => setComment(e.target.value)} />
+            <Field label={needsComment ? tr("Причина") : tr("Коментар (незадолжително)")} required={Boolean(needsComment)} htmlFor="wf-comment"
+              help={needsComment ? tr("Подносителот ќе ја види причината.") : undefined}>
+              <textarea id="wf-comment" className="form-control" value={comment} onChange={(e) => setComment(e.target.value)} />
             </Field>
           </div>
         </Modal>
@@ -156,16 +157,16 @@ export function NotificationsScreen() {
     <Page title={t.notifications} narrow>
       <PageHeader title={t.notifications}
         actions={<>
-          <Segmented label="Прикажи" value={filter} onChange={(v) => { setFilter(v); setPage(1); }}
-            options={[{ value: "unread", label: "Непрочитани" }, { value: "all", label: "Сите" }]} />
+          <Segmented label={tr("Прикажи")} value={filter} onChange={(v) => { setFilter(v); setPage(1); }}
+            options={[{ value: "unread", label: tr("Непрочитани") }, { value: "all", label: tr("Сите") }]} />
           <Button icon={CheckCheck} onClick={async () => {
-            try { await api.post("/workflow/notifications/read-all/"); toast("Сите известувања се означени како прочитани", "success"); refresh(); }
+            try { await api.post("/workflow/notifications/read-all/"); toast(tr("Сите известувања се означени како прочитани"), "success"); refresh(); }
             catch (err) { toast((err as Error).message, "danger"); }
           }}>{t.markAllRead}</Button>
         </>} />
       <Panel flush>
         {q.isLoading ? <SkeletonRows rows={6} cols={3} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : !rows.length ? (
-          <EmptyState icon={Bell} title={filter === "unread" ? "Нема непрочитани известувања" : "Нема известувања"} />
+          <EmptyState icon={Bell} title={filter === "unread" ? tr("Нема непрочитани известувања") : tr("Нема известувања")} />
         ) : (
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {rows.map((n) => (

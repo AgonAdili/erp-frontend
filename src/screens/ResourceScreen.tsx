@@ -17,9 +17,9 @@ export function ResourceScreen({ mode }: { mode: "list" | "new" | "detail" }) {
   const meta = useMeta(endpoint);
   if (meta.isLoading) {
     return (
-      <div className="page">
+      <div className="ea-page">
         <Skeleton width={260} height={30} />
-        <div className="panel"><SkeletonRows rows={8} /></div>
+        <div className="ea-panel"><SkeletonRows rows={8} /></div>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export function ResourceScreen({ mode }: { mode: "list" | "new" | "detail" }) {
     );
   }
   if (mode === "detail" && id) {
-    return <div className="page" key={id}><ResourceDetail meta={m} id={id} /></div>;
+    return <div className="ea-page" key={id}><ResourceDetail meta={m} id={id} /></div>;
   }
   return <Page title={m.title}><ResourceList meta={m} /></Page>;
 }

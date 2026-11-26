@@ -8,6 +8,7 @@ import type { Page } from "@/api/types";
 import { Meter } from "@/components/dashboard";
 import { Alert, Button, EmptyState, Skeleton } from "@/components/ui";
 import { formatDate, formatMoney } from "@/lib/format";
+import { tr } from "@/i18n";
 
 export interface AllocationSpec {
   party: string;        // form field with the partner ("supplier" / "customer")
@@ -21,11 +22,11 @@ export interface AllocationSpec {
 export const ALLOCATIONS: Record<string, AllocationSpec> = {
   "payables.payments": {
     party: "supplier", item: "payable", endpoint: "/payables/open-items/", partyFilter: "supplier",
-    openStatuses: ["OPEN", "PARTIALLY_PAID", "OVERDUE"], partyLabel: "добавувачот",
+    openStatuses: ["OPEN", "PARTIALLY_PAID", "OVERDUE"], partyLabel: tr("добавувачот"),
   },
   "receivables.receipts": {
     party: "customer", item: "receivable", endpoint: "/receivables/open-items/", partyFilter: "customer",
-    openStatuses: ["OPEN", "PARTIALLY_COLLECTED", "OVERDUE"], partyLabel: "купувачот",
+    openStatuses: ["OPEN", "PARTIALLY_COLLECTED", "OVERDUE"], partyLabel: tr("купувачот"),
   },
 };
 
@@ -80,7 +81,7 @@ export function AllocationEditor({
     }),
     enabled: Boolean(party),
   });
-  if (!party) return <p className="muted small" style={{ margin: 0 }}>Изберете го {spec.partyLabel} за да се прикажат отворените ставки.</p>;
+  if (!party) return <p className="muted small" style={{ margin: 0 }}>{tr("Изберете го")}{" "}{spec.partyLabel}{" "}{tr("за да се прикажат отворените ставки.")}</p>;
   if (q.isLoading) return <Skeleton height={120} />;
   const items = q.data?.results ?? [];
   const byItem = new Map(value.map((a) => [Number(a[spec.item]), a]));
@@ -98,24 +99,24 @@ export function AllocationEditor({
   return (
     <div className="stack">
       <div className="row">
-        <span className="small muted">Отворено <strong className="num" style={{ color: "var(--ink)" }}>{formatMoney(amount(openTotal))}</strong></span>
-        <span className="small muted">Распоредено <strong className="num" style={{ color: "var(--ink)" }}>{formatMoney(amount(allocated))}</strong></span>
-        <span className={`small ${left < 0 ? "tone-danger" : "muted"}`}>Нераспоредено <strong className="num">{formatMoney(amount(left))}</strong></span>
+        <span className="small muted">{tr("Отворено")}{" "}<strong className="num" style={{ color: "var(--ea-text)" }}>{formatMoney(amount(openTotal))}</strong></span>
+        <span className="small muted">{tr("Распоредено")}{" "}<strong className="num" style={{ color: "var(--ea-text)" }}>{formatMoney(amount(allocated))}</strong></span>
+        <span className={`small ${left < 0 ? "tone-danger" : "muted"}`}>{tr("Нераспоредено")}{" "}<strong className="num">{formatMoney(amount(left))}</strong></span>
         <span className="spacer" />
         <Button size="sm" variant="primary" disabled={!total || !items.length} onClick={() => onChange(distribute(items, total / 100, spec.item))}>
-          Распореди по најстар рок
+          {tr("Распореди по најстар рок")}
         </Button>
-        <Button size="sm" disabled={!value.length} onClick={() => onChange([])}>Исчисти распоред</Button>
+        <Button size="sm" disabled={!value.length} onClick={() => onChange([])}>{tr("Исчисти распоред")}</Button>
       </div>
-      {total ? <Meter value={allocated} max={total} badAt={100.01} label="Распоредено од износот" /> : null}
-      {left < 0 ? <Alert tone="danger">Распоредениот износ е поголем од износот на плаќањето.</Alert> : null}
+      {total ? <Meter value={allocated} max={total} badAt={100.01} label={tr("Распоредено од износот")} /> : null}
+      {left < 0 ? <Alert tone="danger">{tr("Распоредениот износ е поголем од износот на плаќањето.")}</Alert> : null}
       {errors ? <Alert tone="danger">{Array.isArray(errors) ? errors.map((e) => (typeof e === "string" ? e : JSON.stringify(e))).join(" ") : String(errors)}</Alert> : null}
-      {!items.length ? <EmptyState compact title="Нема отворени ставки" /> : (
-        <div className="table-wrap">
-          <table className="table">
+      {!items.length ? <EmptyState compact title={tr("Нема отворени ставки")} /> : (
+        <div className="table-responsive table-wrap">
+          <table className="table ea-table">
             <thead>
-              <tr><th>Фактура</th><th>Датум</th><th>Рок</th><th className="num">Износ</th><th className="num">Отворено</th>
-                <th className="num">Распореди</th></tr>
+              <tr><th>{tr("Фактура")}</th><th>{tr("Датум")}</th><th>{tr("Рок")}</th><th className="num">{tr("Износ")}</th><th className="num">{tr("Отворено")}</th>
+                <th className="num">{tr("Распореди")}</th></tr>
             </thead>
             <tbody>
               {items.map((item) => {
@@ -129,8 +130,8 @@ export function AllocationEditor({
                     <td className="num">{formatMoney(item.original_amount)}</td>
                     <td className="num">{formatMoney(item.open_amount)}</td>
                     <td className="num" style={{ width: 160 }}>
-                      <input className={`input num${over ? " invalid" : ""}`} type="number" step="0.01" min="0"
-                        aria-label={`Распореди на ${item.invoice_number || item.id}`}
+                      <input className={`form-control num${over ? " invalid" : ""}`} type="number" step="0.01" min="0"
+                        aria-label={tr("Распореди на {0}", item.invoice_number || item.id)}
                         value={a ? String(a.amount) : ""} onChange={(e) => setAmount(item, e.target.value)} />
                     </td>
                   </tr>
@@ -140,7 +141,7 @@ export function AllocationEditor({
           </table>
         </div>
       )}
-      <p className="muted small" style={{ margin: 0 }}>Без распоред, плаќањето се затвора автоматски по најстар рок.</p>
+      <p className="muted small" style={{ margin: 0 }}>{tr("Без распоред, плаќањето се затвора автоматски по најстар рок.")}</p>
     </div>
   );
 }

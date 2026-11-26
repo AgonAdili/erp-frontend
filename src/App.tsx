@@ -2,7 +2,7 @@
  * Each screen file is its own chunk, so the first load carries only the shell. */
 import { Component, lazy, Suspense, type ComponentType, type ErrorInfo, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/components/icons";
 
 import { useSession } from "@/auth/session";
 import { Button, EmptyState, LinkButton, Spinner } from "@/components/ui";
@@ -11,6 +11,7 @@ import { AppShell } from "@/layout/AppShell";
 import { NotFound } from "@/layout/NotFound";
 import { REDIRECTS } from "@/nav/modules";
 import { Login } from "@/screens/Login";
+import { tr } from "@/i18n";
 
 function named<T extends Record<string, ComponentType<never>>>(loader: () => Promise<T>, name: keyof T) {
   return lazy(async () => ({ default: (await loader())[name] as ComponentType }));
@@ -63,13 +64,13 @@ class ErrorBoundary extends Component<{ children: ReactNode; resetKey: string },
     if (!this.state.error) return this.props.children;
     const chunk = /dynamically imported module|Failed to fetch|Loading chunk/i.test(this.state.error.message);
     return (
-      <div className="page">
-        <EmptyState icon={AlertTriangle} title={chunk ? "Достапна е нова верзија" : "Екранот не може да се прикаже"}
+      <div className="ea-page">
+        <EmptyState icon={AlertTriangle} title={chunk ? tr("Достапна е нова верзија") : tr("Екранот не може да се прикаже")}
           action={<div className="row">
-            <Button variant="primary" onClick={() => window.location.reload()}>Вчитај повторно</Button>
+            <Button variant="primary" onClick={() => window.location.reload()}>{tr("Вчитај повторно")}</Button>
             <LinkButton to="/">{t.goHome}</LinkButton>
           </div>}>
-          {chunk ? "Апликацијата е ажурирана. Вчитајте ја страницата повторно." : this.state.error.message}
+          {chunk ? tr("Апликацијата е ажурирана. Вчитајте ја страницата повторно.") : this.state.error.message}
         </EmptyState>
       </div>
     );

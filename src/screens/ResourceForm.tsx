@@ -14,6 +14,7 @@ import { t } from "@/i18n/mk";
 import { routeFor, useSave } from "@/meta/hooks";
 
 import { AllocationEditor, ALLOCATIONS } from "./allocations";
+import { tr } from "@/i18n";
 
 const HIDDEN = new Set(["id", "version", "created_at", "updated_at", "created_by", "updated_by", "_label"]);
 
@@ -37,7 +38,7 @@ function widthOf(f: FieldMeta): string {
 
 type SectionKey = "main" | "dates" | "amounts" | "options" | "files" | "notes";
 const SECTION_TITLES: Record<SectionKey, string> = {
-  main: "Основни податоци", dates: "Датуми и рокови", amounts: "Износи", options: "Опции", files: "Документи", notes: "Опис и белешки",
+  main: tr("Основни податоци"), dates: tr("Датуми и рокови"), amounts: tr("Износи"), options: tr("Опции"), files: tr("Документи"), notes: tr("Опис и белешки"),
 };
 
 function sectionOf(f: FieldMeta): SectionKey {
@@ -115,7 +116,7 @@ function LeaveGuard({ when }: { when: boolean }) {
         <Button autoFocus onClick={() => blocker.reset?.()}>{t.stay}</Button>
         <Button variant="danger-solid" onClick={() => blocker.proceed?.()}>{t.leave}</Button>
       </>}>
-      <p style={{ color: "var(--ink-soft)" }}>{t.leaveText}</p>
+      <p style={{ color: "var(--ea-text-2)" }}>{t.leaveText}</p>
     </Modal>
   );
 }
@@ -225,7 +226,7 @@ export function ResourceForm({
       return (
         <div key={f.name}>
           <Field label={f.label} htmlFor={id} error={err} required>
-            <select id={id} className="input" value={String(values[f.name] ?? session?.access?.default_entity_id ?? "")}
+            <select id={id} className="form-control" value={String(values[f.name] ?? session?.access?.default_entity_id ?? "")}
               onChange={(e) => change(f, Number(e.target.value))}>
               {myEntities.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
             </select>
@@ -251,7 +252,7 @@ export function ResourceForm({
             errors={(error?.errors as Record<string, unknown> | undefined)?.[f.name]}
             onChange={(v) => setRows(f.name, v)} />
           {typeof (error?.errors as Record<string, unknown> | undefined)?.[f.name] === "string" || (Array.isArray(error?.errors?.[f.name]) && typeof error?.errors?.[f.name]?.[0] === "string")
-            ? <div className="field"><span className="error">{String(error?.errors?.[f.name]?.[0] ?? error?.errors?.[f.name])}</span></div> : null}
+            ? <div className="ea-field"><span className="error">{String(error?.errors?.[f.name]?.[0] ?? error?.errors?.[f.name])}</span></div> : null}
         </div>
       );
     }
@@ -264,7 +265,7 @@ export function ResourceForm({
     return (
       <div key={f.name} className={compact ? (["text", "json", "m2m", "file", "upload"].includes(f.type) ? "w-12" : "w-6") : widthOf(f)}>
         {f.type === "boolean" ? (
-          <div className="field">{input}{err ? <span className="error" role="alert">{err}</span> : f.help_text ? <span className="help">{f.help_text}</span> : null}</div>
+          <div className="ea-field">{input}{err ? <span className="error" role="alert">{err}</span> : f.help_text ? <span className="help">{f.help_text}</span> : null}</div>
         ) : (
           <Field label={f.label} required={f.required && !f.nullable} help={f.help_text || undefined} error={err} htmlFor={id}>
             {input}
@@ -286,14 +287,14 @@ export function ResourceForm({
     <form ref={formRef} className="form" onSubmit={submit} noValidate>
       {dataRouter && !compact ? <LeaveGuard when={dirty && !save.isPending} /> : null}
       {error?.status === 409 ? (
-        <Alert tone="warning" title="Записот е изменет во меѓувреме"
-          action={onCancel ? <Button size="sm" onClick={onCancel}>Прикажи ја најновата верзија</Button> : undefined}>
+        <Alert tone="warning" title={tr("Записот е изменет во меѓувреме")}
+          action={onCancel ? <Button size="sm" onClick={onCancel}>{tr("Прикажи ја најновата верзија")}</Button> : undefined}>
           {t.conflict}
         </Alert>
       ) : error && (generalErrors.length || !fieldErrorNames.size) ? (
-        <Alert tone="danger" title="Записот не е зачуван">{generalErrors.length ? generalErrors.join(" ") : error.message}</Alert>
+        <Alert tone="danger" title={tr("Записот не е зачуван")}>{generalErrors.length ? generalErrors.join(" ") : error.message}</Alert>
       ) : error ? (
-        <Alert tone="danger" title="Записот не е зачуван">Поправете ги означените полиња.</Alert>
+        <Alert tone="danger" title={tr("Записот не е зачуван")}>{tr("Поправете ги означените полиња.")}</Alert>
       ) : null}
       {sections.map(([key, list]) => (
         <section key={key} className="form-section" aria-label={useSections ? SECTION_TITLES[key] : undefined}>

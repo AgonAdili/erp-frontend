@@ -1,5 +1,6 @@
-/** Display formatting (Macedonian conventions, as v1: 12.345,67 and dd.mm.yyyy). */
+/** Display formatting (CORE 05, the company format in every UI language: 1.234.567,00 · 08.10.2026 · 08.10.2026 14:30). */
 import type { FieldType } from "@/api/types";
+import { tr } from "@/i18n";
 
 /** Grouping and decimals done here, not by Intl: browsers without Macedonian locale data (Chrome, Edge) would
  * silently fall back to 1,234.56. */
@@ -41,22 +42,29 @@ export function formatDateTime(value: unknown): string {
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** 4.200.000 → "4,2 мил." — for hero figures and axis ticks, never in tables. */
+/** A whole number, grouped: dashboards show money as whole MKD (CORE 05: 4.323.263 MKD). */
+export function formatWhole(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "";
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? group(Math.round(n), 0, 0) : String(value);
+}
+
+/** 4.200.000 → "4,2 мил." — for chart axis ticks only (CORE 05: figures show the whole number). */
 export function formatCompact(value: unknown): string {
   if (value === null || value === undefined || value === "") return "";
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return String(value);
   const a = Math.abs(n);
   if (a < 10_000) return group(n, 0, 0);
-  if (a < 1_000_000) return `${group(n / 1_000, 0, a < 100_000 ? 1 : 0)} илј.`;
-  if (a < 1_000_000_000) return `${group(n / 1_000_000, 0, 1)} мил.`;
-  return `${group(n / 1_000_000_000, 0, 1)} млрд.`;
+  if (a < 1_000_000) return tr("{0} илј.", group(n / 1_000, 0, a < 100_000 ? 1 : 0));
+  if (a < 1_000_000_000) return tr("{0} мил.", group(n / 1_000_000, 0, 1));
+  return tr("{0} млрд.", group(n / 1_000_000_000, 0, 1));
 }
 
 export function formatPercent(value: unknown, places = 1): string {
   if (value === null || value === undefined || value === "") return "";
   const n = Number(value);
-  return Number.isFinite(n) ? `${formatNumber(n, places)}%` : String(value);
+  return Number.isFinite(n) ? `${formatNumber(n, places)} %` : String(value);
 }
 
 /** A number from an API decimal string; 0 for empty. */
@@ -91,10 +99,10 @@ export function formatRelative(value: unknown): string {
   const d = new Date(String(value));
   if (Number.isNaN(d.getTime())) return String(value);
   const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60) return "сега";
-  if (diff < 3600) return `пред ${Math.floor(diff / 60)} мин`;
-  if (diff < 86400 && new Date().getDate() === d.getDate()) return `пред ${Math.floor(diff / 3600)} ч`;
-  if (diff < 172800) return `вчера ${formatDateTime(value).slice(11)}`;
+  if (diff < 60) return tr("сега");
+  if (diff < 3600) return tr("пред {0} мин", Math.floor(diff / 60));
+  if (diff < 86400 && new Date().getDate() === d.getDate()) return tr("пред {0} ч", Math.floor(diff / 3600));
+  if (diff < 172800) return tr("вчера {0}", formatDateTime(value).slice(11));
   return formatDateTime(value);
 }
 
@@ -115,7 +123,7 @@ export function displayValue(row: Record<string, unknown>, name: string, type: F
   if (value === null || value === undefined || value === "") return "";
   switch (type) {
     case "boolean":
-      return value ? "Да" : "Не";
+      return value ? tr("Да") : tr("Не");
     case "date":
       return formatDate(value);
     case "datetime":
@@ -152,8 +160,8 @@ export function isNumericType(type: FieldType): boolean {
   return type === "decimal" || type === "integer";
 }
 
-const WEEKDAYS = ["недела", "понеделник", "вторник", "среда", "четврток", "петок", "сабота"];
-const MONTHS_LOWER = ["јануари", "февруари", "март", "април", "мај", "јуни", "јули", "август", "септември", "октомври", "ноември", "декември"];
+const WEEKDAYS = [tr("недела"), tr("понеделник"), tr("вторник"), tr("среда"), tr("четврток"), tr("петок"), tr("сабота")];
+const MONTHS_LOWER = [tr("јануари"), tr("февруари"), tr("март"), tr("април"), tr("мај"), tr("јуни"), tr("јули"), tr("август"), tr("септември"), tr("октомври"), tr("ноември"), tr("декември")];
 
 export function weekdayName(d: Date): string {
   return WEEKDAYS[d.getDay()];

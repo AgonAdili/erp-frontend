@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/components/icons";
 
 import { api, API_BASE } from "@/api/client";
 import { Kpi, Kpis } from "@/components/dashboard";
@@ -10,10 +10,11 @@ import { RelatedSelect } from "@/components/inputs";
 import { Badge, Button, EmptyState, ErrorState, Field, IconButton, LinkButton, PageHeader, Panel, Segmented, SkeletonRows, Switch } from "@/components/ui";
 import { t } from "@/i18n/mk";
 import { Page } from "@/layout/Page";
-import { formatCompact, formatDate, formatMoney, todayISO } from "@/lib/format";
+import { formatWhole, formatDate, formatMoney, todayISO } from "@/lib/format";
 import { useInvalidateResource, useMeta } from "@/meta/hooks";
 
 import { ActionButton } from "./actions";
+import { tr } from "@/i18n";
 
 type Data = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -30,31 +31,31 @@ export function OfferApprovals() {
   const rows = (q.data?.rows ?? []) as Data[];
   const total = rows.reduce((s, r) => s + Number(r.total || 0), 0);
   return (
-    <Page title="Одобрување понуди">
-      <PageHeader title="Одобрување понуди" subtitle="Понуди што чекаат одобрување пред да се испратат до клиентот"
-        actions={<Switch checked={mine} onChange={setMine} label={`Само тие што јас ги одобрувам (${q.data?.count_mine ?? 0})`} />} />
+    <Page title={tr("Одобрување понуди")}>
+      <PageHeader title={tr("Одобрување понуди")} subtitle={tr("Понуди што чекаат одобрување пред да се испратат до клиентот")}
+        actions={<Switch checked={mine} onChange={setMine} label={tr("Само тие што јас ги одобрувам ({0})", q.data?.count_mine ?? 0)} />} />
       {q.data ? (
         <Kpis>
-          <Kpi label="Чекаат одобрување" value={q.data.count_total} />
-          <Kpi label="Чекаат мене" value={q.data.count_mine} tone={q.data.count_mine ? "attention" : undefined} />
-          <Kpi label="Вкупна вредност" value={formatCompact(total)} unit="ден." />
+          <Kpi label={tr("Чекаат одобрување")} value={q.data.count_total} />
+          <Kpi label={tr("Чекаат мене")} value={q.data.count_mine} tone={q.data.count_mine ? "attention" : undefined} />
+          <Kpi label={tr("Вкупна вредност")} value={formatWhole(total)} unit="MKD" />
         </Kpis>
       ) : null}
       <Panel flush>
         {q.isLoading ? <SkeletonRows rows={6} cols={6} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : !rows.length ? (
-          <EmptyState title="Нема понуди што чекаат одобрување">{mine ? "Исклучете „Само тие што јас ги одобрувам“ за да ги видите сите." : undefined}</EmptyState>
+          <EmptyState title={tr("Нема понуди што чекаат одобрување")}>{mine ? tr("Исклучете „Само тие што јас ги одобрувам“ за да ги видите сите.") : undefined}</EmptyState>
         ) : (
-          <div className="table-wrap">
-            <table className="table">
-              <thead><tr><th>Понуда</th><th>Клиент</th><th>Ниво</th><th>Зошто треба одобрување</th><th className="num">Вкупно</th><th aria-label={t.actions} /></tr></thead>
+          <div className="table-responsive table-wrap">
+            <table className="table ea-table">
+              <thead><tr><th>{tr("Понуда")}</th><th>{tr("Клиент")}</th><th>{tr("Ниво")}</th><th>{tr("Зошто треба одобрување")}</th><th className="num">{tr("Вкупно")}</th><th aria-label={t.actions} /></tr></thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id}>
-                    <td className="nowrap"><Link to={`/offers/offers/${r.id}`}>{r.offer_number || `#${r.id}`}</Link>{r.special ? <> <Badge tone="warning">посебно</Badge></> : null}
+                    <td className="nowrap"><Link to={`/offers/offers/${r.id}`}>{r.offer_number || `#${r.id}`}</Link>{r.special ? <> <Badge tone="warning">{tr("посебно")}</Badge></> : null}
                       {r.prepared_by ? <div className="xs muted">{r.prepared_by}</div> : null}</td>
                     <td>{r.client}</td>
                     <td><Badge tone="info" plain>{r.level_label || r.level}</Badge></td>
-                    <td className="small wrap">{(r.reasons as string[]).length ? (r.reasons as string[]).join("; ") : <span className="muted">според износот</span>}</td>
+                    <td className="small wrap">{(r.reasons as string[]).length ? (r.reasons as string[]).join("; ") : <span className="muted">{tr("според износот")}</span>}</td>
                     <td className="num">{formatMoney(r.total)}</td>
                     <td className="right nowrap">
                       {r.can_approve && meta.data ? (
@@ -64,7 +65,7 @@ export function OfferApprovals() {
                               variant={a.url_path === "approve" ? "primary" : "default"} onDone={() => { void q.refetch(); invalidate(); }} />
                           ))}
                         </div>
-                      ) : <span className="small muted">одобрува друго ниво</span>}
+                      ) : <span className="small muted">{tr("одобрува друго ниво")}</span>}
                     </td>
                   </tr>
                 ))}
@@ -82,7 +83,7 @@ export function OfferApprovals() {
 function Cell({ day }: { day: Data }) {
   if (!day.work_orders.length) return <td className="board-cell" />;
   return (
-    <td className={`board-cell${day.conflict ? " conflict" : " busy"}`} title={day.conflict ? "Ист ресурс на два налози во ист ден" : undefined}>
+    <td className={`board-cell${day.conflict ? " conflict" : " busy"}`} title={day.conflict ? tr("Ист ресурс на два налози во ист ден") : undefined}>
       {day.work_orders.map((w: Data) => (
         <Link key={w.id} to={`/workorders/work-orders/${w.id}`} className="board-item">
           <span className="strong small">{w.wo_number || `#${w.id}`}</span>
@@ -99,36 +100,36 @@ export function ResourceBoard() {
   const d = q.data;
   const conflicts = d ? [...d.vehicles, ...d.workers].reduce((s: number, r: Data) => s + r.days.filter((x: Data) => x.conflict).length, 0) : 0;
   const grid = (title: string, list: Data[]) => (
-    <Panel title={title} sub={`${list.length} распоредени`} flush>
-      <div className="table-wrap">
-        <table className="table board lined">
+    <Panel title={title} sub={tr("{0} распоредени", list.length)} flush>
+      <div className="table-responsive table-wrap">
+        <table className="table ea-table board lined">
           <thead><tr><th className="sticky-col">{title}</th>{d!.days.map((day: Data) => (
             <th key={day.date} className={day.is_today ? "today" : undefined}>{day.label} <span className="muted">{formatDate(day.date).slice(0, 5)}</span></th>
           ))}</tr></thead>
           <tbody>
             {list.length ? list.map((r) => (
               <tr key={r.id}><th scope="row" className="sticky-col">{r.name}</th>{r.days.map((day: Data) => <Cell key={day.date} day={day} />)}</tr>
-            )) : <tr><td colSpan={8}><EmptyState compact title="Нема распоредени оваа недела" /></td></tr>}
+            )) : <tr><td colSpan={8}><EmptyState compact title={tr("Нема распоредени оваа недела")} /></td></tr>}
           </tbody>
         </table>
       </div>
     </Panel>
   );
   return (
-    <Page title="Распоред на ресурси">
-      <PageHeader title="Распоред на ресурси" subtitle={d ? d.label : "Возила, машини и работници по ден"}
+    <Page title={tr("Распоред на ресурси")}>
+      <PageHeader title={tr("Распоред на ресурси")} subtitle={d ? d.label : tr("Возила, машини и работници по ден")}
         actions={d ? <>
-          <IconButton label="Претходна недела" icon={ChevronLeft} variant="default" onClick={() => setWeek(d.prev_week)} />
-          <Button onClick={() => setWeek("")}>Оваа недела</Button>
-          <IconButton label="Следна недела" icon={ChevronRight} variant="default" onClick={() => setWeek(d.next_week)} />
+          <IconButton label={tr("Претходна недела")} icon={ChevronLeft} variant="default" onClick={() => setWeek(d.prev_week)} />
+          <Button onClick={() => setWeek("")}>{tr("Оваа недела")}</Button>
+          <IconButton label={tr("Следна недела")} icon={ChevronRight} variant="default" onClick={() => setWeek(d.next_week)} />
         </> : null} />
       {q.isLoading ? <SkeletonRows rows={8} cols={8} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : d ? <>
         <div className="legend">
-          <span><span className="swatch" style={{ background: "var(--success-soft)", border: "1px solid var(--success)" }} />распореден</span>
-          <span><span className="swatch" style={{ background: "var(--danger-soft)", border: "1px solid var(--danger)" }} />двојно резервиран{conflicts ? <strong className="tone-danger"> ({conflicts})</strong> : null}</span>
+          <span><span className="swatch" style={{ background: "var(--ea-subtle)", border: "1px solid var(--ea-go)" }} />{tr("распореден")}</span>
+          <span><span className="swatch" style={{ background: "var(--ea-subtle)", border: "1px solid var(--ea-stop)" }} />{tr("двојно резервиран")}{conflicts ? <strong className="tone-danger"> ({conflicts})</strong> : null}</span>
         </div>
-        {grid("Возила и машини", d.vehicles)}
-        {grid("Работници", d.workers)}
+        {grid(tr("Возила и машини"), d.vehicles)}
+        {grid(tr("Работници"), d.workers)}
       </> : null}
     </Page>
   );
@@ -136,7 +137,7 @@ export function ResourceBoard() {
 
 // ── leave timeline ─────────────────────────────────────────────────────────
 
-const SCALES = [{ value: "month", label: "Месец" }, { value: "quarter", label: "Квартал" }, { value: "year", label: "Година" }, { value: "range", label: "Период" }];
+const SCALES = [{ value: "month", label: tr("Месец") }, { value: "quarter", label: tr("Квартал") }, { value: "year", label: tr("Година") }, { value: "range", label: tr("Период") }];
 
 export function LeaveTimeline() {
   const today = todayISO();
@@ -159,46 +160,46 @@ export function LeaveTimeline() {
     else setAnchor(dir > 0 ? d.next_anchor : d.prev_anchor);
   };
   return (
-    <Page title="Распоред на отсуства">
-      <PageHeader title="Распоред на отсуства" subtitle={d?.period_label ?? "Кој е отсутен и кога"}
-        actions={<LinkButton to="/hr/leaves/new" variant="primary">Ново отсуство</LinkButton>} />
+    <Page title={tr("Распоред на отсуства")}>
+      <PageHeader title={tr("Распоред на отсуства")} subtitle={d?.period_label ?? tr("Кој е отсутен и кога")}
+        actions={<LinkButton to="/hr/leaves/new" variant="primary">{tr("Ново отсуство")}</LinkButton>} />
       <Panel>
         <div className="toolbar">
-          <div className="field"><span className="label">Приказ</span><Segmented label="Приказ" value={scale} onChange={setScale} options={SCALES} /></div>
+          <div className="ea-field"><span className="label">{tr("Приказ")}</span><Segmented label={tr("Приказ")} value={scale} onChange={setScale} options={SCALES} /></div>
           {scale === "range" ? <>
-            <Field label={t.from} htmlFor="lt-from"><input id="lt-from" type="date" className="input" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} /></Field>
-            <Field label={t.to} htmlFor="lt-to"><input id="lt-to" type="date" className="input" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} /></Field>
+            <Field label={t.from} htmlFor="lt-from"><input id="lt-from" type="date" className="form-control" value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} /></Field>
+            <Field label={t.to} htmlFor="lt-to"><input id="lt-to" type="date" className="form-control" value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} /></Field>
           </> : (
-            <div className="field"><span className="label">{t.period}</span>
+            <div className="ea-field"><span className="label">{t.period}</span>
               <div className="row-tight">
-                <IconButton label="Претходен период" icon={ChevronLeft} variant="default" disabled={!d} onClick={() => move(-1)} />
+                <IconButton label={tr("Претходен период")} icon={ChevronLeft} variant="default" disabled={!d} onClick={() => move(-1)} />
                 <Button onClick={() => setAnchor(today)}>{t.today}</Button>
-                <IconButton label="Следен период" icon={ChevronRight} variant="default" disabled={!d} onClick={() => move(1)} />
+                <IconButton label={tr("Следен период")} icon={ChevronRight} variant="default" disabled={!d} onClick={() => move(1)} />
               </div>
             </div>
           )}
           <div style={{ minWidth: 220 }}>
-            <Field label="Оддел" htmlFor="lt-dept">
-              <RelatedSelect id="lt-dept" related={{ endpoint: `${API_BASE}/org/departments/` }} value={department} onChange={(v) => setDepartment(v)} placeholder="Сите оддели" />
+            <Field label={tr("Оддел")} htmlFor="lt-dept">
+              <RelatedSelect id="lt-dept" related={{ endpoint: `${API_BASE}/org/departments/` }} value={department} onChange={(v) => setDepartment(v)} placeholder={tr("Сите оддели")} />
             </Field>
           </div>
-          <div className="field" style={{ justifyContent: "flex-end", paddingBottom: 6 }}>
-            <Switch checked={everyone} onChange={setEveryone} label="И вработените без отсуство" />
+          <div className="ea-field" style={{ justifyContent: "flex-end", paddingBottom: 6 }}>
+            <Switch checked={everyone} onChange={setEveryone} label={tr("И вработените без отсуство")} />
           </div>
         </div>
       </Panel>
-      {scale === "range" && !(range.from && range.to) ? <Panel><EmptyState title="Изберете период">Најмногу 186 дена.</EmptyState></Panel> : null}
+      {scale === "range" && !(range.from && range.to) ? <Panel><EmptyState title={tr("Изберете период")}>{tr("Најмногу 186 дена.")}</EmptyState></Panel> : null}
       {q.isLoading ? <SkeletonRows rows={8} cols={10} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : d ? <>
         <div className="legend">
           {d.legend.map((l: Data) => <span key={l.category}><span className={`swatch leave-${String(l.category).toLowerCase()}`} />{l.label}</span>)}
         </div>
-        {!d.rows.length ? <Panel><EmptyState title="Нема отсуства во периодот" /></Panel> : (
+        {!d.rows.length ? <Panel><EmptyState title={tr("Нема отсуства во периодот")} /></Panel> : (
           <Panel flush>
-            <div className="table-wrap">
-              <table className="table timeline">
+            <div className="table-responsive table-wrap">
+              <table className="table ea-table timeline">
                 <thead>
                   {d.month_groups.length ? <tr><th className="sticky-col" />{d.month_groups.map((g: Data, i: number) => <th key={i} colSpan={g.span} className="month-group">{g.label}</th>)}</tr> : null}
-                  <tr><th className="sticky-col">Вработен</th>{d.columns.map((c: Data, i: number) => (
+                  <tr><th className="sticky-col">{tr("Вработен")}</th>{d.columns.map((c: Data, i: number) => (
                     <th key={i} className={`${c.is_weekend ? "weekend" : ""}${c.is_current ? " today" : ""}`}>{c.label}</th>
                   ))}</tr>
                 </thead>

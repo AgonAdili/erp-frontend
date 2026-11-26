@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Command } from "cmdk";
 import { Dialog } from "radix-ui";
-import { Clock, FileText, LayoutGrid, LogOut, Moon, Plus, Search, Sun, Bell, Inbox, Monitor } from "lucide-react";
+import { Clock, FileText, LayoutGrid, LogOut, Moon, Plus, Search, Sun, Bell, Inbox, Monitor } from "@/components/icons";
 
 import { api } from "@/api/client";
 import { useSession } from "@/auth/session";
@@ -13,6 +13,7 @@ import { usePrefs } from "@/app/prefs";
 import { Kbd } from "@/components/ui";
 import { t } from "@/i18n/mk";
 import { useNav } from "@/nav/useNav";
+import { tr } from "@/i18n";
 
 interface SearchRow {
   group: string;
@@ -62,7 +63,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             <div className="cmdk-input-wrap">
               <Search aria-hidden />
               <Command.Input value={text} onValueChange={setText} placeholder={t.searchEverywhere} autoFocus />
-              {search.isFetching ? <span className="spinner" aria-hidden style={{ color: "var(--ink-faint)" }} /> : <Kbd>Esc</Kbd>}
+              {search.isFetching ? <span className="spinner" aria-hidden style={{ color: "var(--ea-text-3)" }} /> : <Kbd>Esc</Kbd>}
             </div>
             <Command.List>
               <Command.Empty>{query.length >= 2 && search.isFetching ? t.loading : t.noResults}</Command.Empty>
@@ -90,9 +91,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                 </Command.Group>
               ) : null}
               <Command.Group heading={t.screens}>
-                <Command.Item value="Почетна home" onSelect={() => go("/")}><LayoutGrid aria-hidden />{t.home}</Command.Item>
-                <Command.Item value="Одобрувања inbox" onSelect={() => go("/inbox")}><Inbox aria-hidden />{t.inbox}</Command.Item>
-                <Command.Item value="Известувања notifications" onSelect={() => go("/notifications")}><Bell aria-hidden />{t.notifications}</Command.Item>
+                <Command.Item value={tr("Почетна home")} onSelect={() => go("/")}><LayoutGrid aria-hidden />{t.home}</Command.Item>
+                <Command.Item value={tr("Одобрувања inbox")} onSelect={() => go("/inbox")}><Inbox aria-hidden />{t.inbox}</Command.Item>
+                <Command.Item value={tr("Известувања notifications")} onSelect={() => go("/notifications")}><Bell aria-hidden />{t.notifications}</Command.Item>
                 {groups.flatMap((g) => g.links.map((l) => (
                   <Command.Item key={l.to} value={`${g.group.label} ${l.label} ${l.to}`} onSelect={() => go(l.to)}>
                     <g.group.icon aria-hidden />
@@ -111,7 +112,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
               {text ? (
                 <Command.Group heading={t.create}>
                   {resources.filter((r) => r.entry.permissions.add).map((r) => (
-                    <Command.Item key={`new-${r.route}`} value={`нов креирај ${r.title} ${r.path}`} onSelect={() => go(`${r.route}/new`)}>
+                    <Command.Item key={`new-${r.route}`} value={tr("нов креирај {0} {1}", r.title, r.path)} onSelect={() => go(`${r.route}/new`)}>
                       <Plus aria-hidden />
                       <span>{t.addNew}: {r.title}</span>
                     </Command.Item>
@@ -119,22 +120,22 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                 </Command.Group>
               ) : null}
               <Command.Group heading={t.actions}>
-                <Command.Item value="тема изглед темен светол theme" onSelect={() => { setTheme(resolvedTheme === "dark" ? "light" : "dark"); onOpenChange(false); }}>
+                <Command.Item value={tr("тема изглед темен светол theme")} onSelect={() => { setTheme(resolvedTheme === "dark" ? "light" : "dark"); onOpenChange(false); }}>
                   {resolvedTheme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
                   {resolvedTheme === "dark" ? t.themeLight : t.themeDark}
                 </Command.Item>
-                <Command.Item value="тема систем theme system" onSelect={() => { setTheme("system"); onOpenChange(false); }}>
+                <Command.Item value={tr("тема систем theme system")} onSelect={() => { setTheme("system"); onOpenChange(false); }}>
                   <Monitor aria-hidden />{t.theme}: {t.themeSystem.toLowerCase()}
                 </Command.Item>
-                <Command.Item value="одјава sign out logout" onSelect={() => { onOpenChange(false); void logout(); }}>
+                <Command.Item value={tr("одјава sign out logout")} onSelect={() => { onOpenChange(false); void logout(); }}>
                   <LogOut aria-hidden />{t.signOut}
                 </Command.Item>
               </Command.Group>
             </Command.List>
             <div className="cmdk-foot">
-              <span><Kbd>↑</Kbd><Kbd>↓</Kbd> избор</span>
-              <span><Kbd>Enter</Kbd> отвори</span>
-              <span><Kbd>Esc</Kbd> затвори</span>
+              <span><Kbd>↑</Kbd><Kbd>↓</Kbd>{" "}{tr("избор")}</span>
+              <span><Kbd>Enter</Kbd>{" "}{tr("отвори")}</span>
+              <span><Kbd>Esc</Kbd>{" "}{tr("затвори")}</span>
             </div>
           </Command>
         </Dialog.Content>

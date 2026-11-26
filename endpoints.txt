@@ -1,0 +1,1238 @@
+POST                  /api/v1/auth/keepalive/
+POST                  /api/v1/auth/language/
+POST                  /api/v1/auth/login/
+POST                  /api/v1/auth/logout/
+GET                   /api/v1/auth/me/permissions/
+GET                   /api/v1/auth/mfa/
+POST                  /api/v1/auth/mfa/confirm/
+POST                  /api/v1/auth/mfa/disable/
+POST                  /api/v1/auth/mfa/recovery-codes/
+POST                  /api/v1/auth/mfa/setup/
+POST                  /api/v1/auth/mfa/verify/
+POST                  /api/v1/auth/password-reset/
+POST                  /api/v1/auth/password-reset/confirm/
+POST                  /api/v1/auth/password/change/
+GET                   /api/v1/auth/password/rules/
+GET                   /api/v1/auth/session/
+GET                   /api/v1/schema/
+ANY                   /api/v1/health/live/
+ANY                   /api/v1/health/ready/
+POST                  /api/v1/files/
+GET                   /api/v1/tasks/
+GET                   /api/v1/tasks/<uuid:pk>/
+GET                   /api/v1/search/
+GET                   /api/v1/search/results/
+ANY                   /api/v1/events/stream
+ANY                   /api/v1/events/stream/
+GET                   /api/v1/meta/resources/
+GET                   /api/v1/audit/
+GET POST              /api/v1/records/<str:content_type>/<str:object_id>/attachments/
+GET POST              /api/v1/records/<str:content_type>/<str:object_id>/comments/
+DELETE                /api/v1/attachments/<int:pk>/
+
+### identity (45)
+GET POST              /api/v1/identity/access-reviews/
+GET PUT PATCH DELETE  /api/v1/identity/access-reviews/<pk>/
+POST                  /api/v1/identity/access-reviews/<pk>/apply/
+POST                  /api/v1/identity/access-reviews/<pk>/close/
+GET                   /api/v1/identity/access-reviews/<pk>/export_csv/
+GET                   /api/v1/identity/access-reviews/<pk>/history/
+GET                   /api/v1/identity/access-reviews/<pk>/items/
+POST                  /api/v1/identity/access-reviews/<pk>/items/<item_pk>/decide/
+POST                  /api/v1/identity/access-reviews/bulk/
+GET                   /api/v1/identity/access-reviews/export/
+GET                   /api/v1/identity/access-reviews/meta/
+GET POST              /api/v1/identity/auth-events/
+GET PUT PATCH DELETE  /api/v1/identity/auth-events/<pk>/
+GET                   /api/v1/identity/auth-events/<pk>/history/
+POST                  /api/v1/identity/auth-events/bulk/
+GET                   /api/v1/identity/auth-events/export/
+GET                   /api/v1/identity/auth-events/meta/
+GET POST              /api/v1/identity/entity-access/
+GET PUT PATCH DELETE  /api/v1/identity/entity-access/<pk>/
+GET                   /api/v1/identity/entity-access/<pk>/history/
+POST                  /api/v1/identity/entity-access/bulk/
+GET                   /api/v1/identity/entity-access/export/
+GET                   /api/v1/identity/entity-access/meta/
+GET POST              /api/v1/identity/idp-groups/
+GET PUT PATCH DELETE  /api/v1/identity/idp-groups/<pk>/
+GET                   /api/v1/identity/idp-groups/<pk>/history/
+POST                  /api/v1/identity/idp-groups/bulk/
+GET                   /api/v1/identity/idp-groups/export/
+GET                   /api/v1/identity/idp-groups/meta/
+GET POST              /api/v1/identity/roles/
+GET PUT PATCH DELETE  /api/v1/identity/roles/<pk>/
+POST                  /api/v1/identity/roles/<pk>/clone/
+GET                   /api/v1/identity/roles/<pk>/history/
+POST                  /api/v1/identity/roles/bulk/
+GET                   /api/v1/identity/roles/export/
+GET                   /api/v1/identity/roles/meta/
+GET                   /api/v1/identity/roles/registry/
+GET POST              /api/v1/identity/users/
+GET PUT PATCH DELETE  /api/v1/identity/users/<pk>/
+GET                   /api/v1/identity/users/<pk>/history/
+POST                  /api/v1/identity/users/<pk>/reset_mfa/
+POST                  /api/v1/identity/users/<pk>/toggle_active/
+POST                  /api/v1/identity/users/bulk/
+GET                   /api/v1/identity/users/export/
+GET                   /api/v1/identity/users/meta/
+
+### org (14)
+GET POST              /api/v1/org/departments/
+GET PUT PATCH DELETE  /api/v1/org/departments/<pk>/
+GET                   /api/v1/org/departments/<pk>/history/
+POST                  /api/v1/org/departments/bulk/
+GET                   /api/v1/org/departments/export/
+GET                   /api/v1/org/departments/meta/
+GET POST              /api/v1/org/legal-entities/
+GET PUT PATCH DELETE  /api/v1/org/legal-entities/<pk>/
+GET                   /api/v1/org/legal-entities/<pk>/history/
+POST                  /api/v1/org/legal-entities/bulk/
+GET                   /api/v1/org/legal-entities/export/
+GET                   /api/v1/org/legal-entities/meta/
+GET                   /api/v1/org/legal-entities/primary/
+GET                   /api/v1/org/legal-entities/suggest-code/
+
+### partners (53)
+GET POST              /api/v1/partners/business-roles/
+GET PUT PATCH DELETE  /api/v1/partners/business-roles/<pk>/
+GET                   /api/v1/partners/business-roles/<pk>/history/
+POST                  /api/v1/partners/business-roles/bulk/
+GET                   /api/v1/partners/business-roles/export/
+GET                   /api/v1/partners/business-roles/meta/
+GET POST              /api/v1/partners/categories/
+GET PUT PATCH DELETE  /api/v1/partners/categories/<pk>/
+GET                   /api/v1/partners/categories/<pk>/history/
+POST                  /api/v1/partners/categories/bulk/
+GET                   /api/v1/partners/categories/export/
+GET                   /api/v1/partners/categories/meta/
+GET POST              /api/v1/partners/importance-levels/
+GET PUT PATCH DELETE  /api/v1/partners/importance-levels/<pk>/
+GET                   /api/v1/partners/importance-levels/<pk>/history/
+POST                  /api/v1/partners/importance-levels/bulk/
+GET                   /api/v1/partners/importance-levels/export/
+GET                   /api/v1/partners/importance-levels/meta/
+GET POST              /api/v1/partners/legal-types/
+GET PUT PATCH DELETE  /api/v1/partners/legal-types/<pk>/
+GET                   /api/v1/partners/legal-types/<pk>/history/
+POST                  /api/v1/partners/legal-types/bulk/
+GET                   /api/v1/partners/legal-types/export/
+GET                   /api/v1/partners/legal-types/meta/
+GET POST              /api/v1/partners/partners/
+GET PUT PATCH DELETE  /api/v1/partners/partners/<pk>/
+POST                  /api/v1/partners/partners/<pk>/activate/
+POST                  /api/v1/partners/partners/<pk>/approve/
+POST                  /api/v1/partners/partners/<pk>/bank-accounts/
+POST                  /api/v1/partners/partners/<pk>/bank-accounts/<account_pk>/block/
+POST                  /api/v1/partners/partners/<pk>/bank-accounts/<account_pk>/change/
+POST                  /api/v1/partners/partners/<pk>/bank-accounts/<account_pk>/verify/
+POST                  /api/v1/partners/partners/<pk>/blacklist/
+POST                  /api/v1/partners/partners/<pk>/block/
+POST                  /api/v1/partners/partners/<pk>/deactivate/
+POST                  /api/v1/partners/partners/<pk>/documents/<doc_pk>/verify/
+GET                   /api/v1/partners/partners/<pk>/gate-uses/
+GET                   /api/v1/partners/partners/<pk>/history/
+GET                   /api/v1/partners/partners/<pk>/overview/
+POST                  /api/v1/partners/partners/<pk>/submit/
+POST                  /api/v1/partners/partners/bulk/
+GET                   /api/v1/partners/partners/category-rules/
+POST                  /api/v1/partners/partners/check-duplicates/
+GET                   /api/v1/partners/partners/document-alerts/
+GET                   /api/v1/partners/partners/export/
+GET                   /api/v1/partners/partners/meta/
+GET                   /api/v1/partners/partners/summary/
+GET POST              /api/v1/partners/risk-statuses/
+GET PUT PATCH DELETE  /api/v1/partners/risk-statuses/<pk>/
+GET                   /api/v1/partners/risk-statuses/<pk>/history/
+POST                  /api/v1/partners/risk-statuses/bulk/
+GET                   /api/v1/partners/risk-statuses/export/
+GET                   /api/v1/partners/risk-statuses/meta/
+
+### people (13)
+GET POST              /api/v1/people/employees/
+GET PUT PATCH DELETE  /api/v1/people/employees/<pk>/
+GET                   /api/v1/people/employees/<pk>/experience/
+GET                   /api/v1/people/employees/<pk>/history/
+POST                  /api/v1/people/employees/bulk/
+GET                   /api/v1/people/employees/export/
+GET                   /api/v1/people/employees/meta/
+GET POST              /api/v1/people/employment-records/
+GET PUT PATCH DELETE  /api/v1/people/employment-records/<pk>/
+GET                   /api/v1/people/employment-records/<pk>/history/
+POST                  /api/v1/people/employment-records/bulk/
+GET                   /api/v1/people/employment-records/export/
+GET                   /api/v1/people/employment-records/meta/
+
+### projects (76)
+GET POST              /api/v1/projects/boq-items/
+GET PUT PATCH DELETE  /api/v1/projects/boq-items/<pk>/
+GET                   /api/v1/projects/boq-items/<pk>/history/
+POST                  /api/v1/projects/boq-items/bulk/
+GET                   /api/v1/projects/boq-items/export/
+GET                   /api/v1/projects/boq-items/meta/
+GET POST              /api/v1/projects/boqs/
+GET PUT PATCH DELETE  /api/v1/projects/boqs/<pk>/
+GET                   /api/v1/projects/boqs/<pk>/history/
+POST                  /api/v1/projects/boqs/bulk/
+GET                   /api/v1/projects/boqs/export/
+GET                   /api/v1/projects/boqs/meta/
+GET POST              /api/v1/projects/certificate-items/
+GET PUT PATCH DELETE  /api/v1/projects/certificate-items/<pk>/
+GET                   /api/v1/projects/certificate-items/<pk>/history/
+POST                  /api/v1/projects/certificate-items/bulk/
+GET                   /api/v1/projects/certificate-items/export/
+GET                   /api/v1/projects/certificate-items/meta/
+GET POST              /api/v1/projects/certificates/
+GET PUT PATCH DELETE  /api/v1/projects/certificates/<pk>/
+POST                  /api/v1/projects/certificates/<pk>/fill-from-book/
+GET                   /api/v1/projects/certificates/<pk>/history/
+POST                  /api/v1/projects/certificates/<pk>/mark-paid/
+POST                  /api/v1/projects/certificates/<pk>/mark-sent/
+GET                   /api/v1/projects/certificates/<pk>/pdf/
+GET                   /api/v1/projects/certificates/<pk>/rows/
+POST                  /api/v1/projects/certificates/bulk/
+GET                   /api/v1/projects/certificates/export/
+GET                   /api/v1/projects/certificates/meta/
+GET POST              /api/v1/projects/diary-books/
+GET PUT PATCH DELETE  /api/v1/projects/diary-books/<pk>/
+GET                   /api/v1/projects/diary-books/<pk>/history/
+POST                  /api/v1/projects/diary-books/bulk/
+GET                   /api/v1/projects/diary-books/export/
+GET                   /api/v1/projects/diary-books/meta/
+GET POST              /api/v1/projects/diary-entries/
+GET PUT PATCH DELETE  /api/v1/projects/diary-entries/<pk>/
+GET                   /api/v1/projects/diary-entries/<pk>/history/
+GET                   /api/v1/projects/diary-entries/<pk>/pdf/
+POST                  /api/v1/projects/diary-entries/bulk/
+GET                   /api/v1/projects/diary-entries/export/
+GET                   /api/v1/projects/diary-entries/meta/
+GET                   /api/v1/projects/diary-entries/next-page/
+GET POST              /api/v1/projects/engineers/
+GET PUT PATCH DELETE  /api/v1/projects/engineers/<pk>/
+GET                   /api/v1/projects/engineers/<pk>/history/
+POST                  /api/v1/projects/engineers/bulk/
+GET                   /api/v1/projects/engineers/export/
+GET                   /api/v1/projects/engineers/meta/
+GET POST              /api/v1/projects/measurement-books/
+GET PUT PATCH DELETE  /api/v1/projects/measurement-books/<pk>/
+GET                   /api/v1/projects/measurement-books/<pk>/history/
+POST                  /api/v1/projects/measurement-books/bulk/
+GET                   /api/v1/projects/measurement-books/export/
+GET                   /api/v1/projects/measurement-books/meta/
+GET POST              /api/v1/projects/measurement-pages/
+GET PUT PATCH DELETE  /api/v1/projects/measurement-pages/<pk>/
+GET                   /api/v1/projects/measurement-pages/<pk>/history/
+GET                   /api/v1/projects/measurement-pages/<pk>/pdf/
+POST                  /api/v1/projects/measurement-pages/bulk/
+GET                   /api/v1/projects/measurement-pages/export/
+GET                   /api/v1/projects/measurement-pages/meta/
+GET                   /api/v1/projects/measurement-pages/next-page/
+GET POST              /api/v1/projects/projects/
+GET PUT PATCH DELETE  /api/v1/projects/projects/<pk>/
+GET                   /api/v1/projects/projects/<pk>/boq/
+GET                   /api/v1/projects/projects/<pk>/certificate-defaults/
+GET                   /api/v1/projects/projects/<pk>/history/
+POST                  /api/v1/projects/projects/<pk>/import-boq/
+GET                   /api/v1/projects/projects/<pk>/measurement-carry-over/
+GET                   /api/v1/projects/projects/<pk>/next-numbers/
+GET                   /api/v1/projects/projects/<pk>/overview/
+POST                  /api/v1/projects/projects/bulk/
+GET                   /api/v1/projects/projects/export/
+GET                   /api/v1/projects/projects/meta/
+GET                   /api/v1/projects/projects/portfolio/
+
+### assets (99)
+GET POST              /api/v1/assets/classes/
+GET PUT PATCH DELETE  /api/v1/assets/classes/<pk>/
+GET                   /api/v1/assets/classes/<pk>/history/
+POST                  /api/v1/assets/classes/bulk/
+GET                   /api/v1/assets/classes/export/
+GET                   /api/v1/assets/classes/meta/
+GET POST              /api/v1/assets/depreciation-entries/
+GET PUT PATCH DELETE  /api/v1/assets/depreciation-entries/<pk>/
+GET                   /api/v1/assets/depreciation-entries/<pk>/history/
+POST                  /api/v1/assets/depreciation-entries/<pk>/post/
+POST                  /api/v1/assets/depreciation-entries/bulk/
+GET                   /api/v1/assets/depreciation-entries/export/
+GET                   /api/v1/assets/depreciation-entries/meta/
+GET POST              /api/v1/assets/depreciation-groups/
+GET PUT PATCH DELETE  /api/v1/assets/depreciation-groups/<pk>/
+GET                   /api/v1/assets/depreciation-groups/<pk>/history/
+POST                  /api/v1/assets/depreciation-groups/bulk/
+GET                   /api/v1/assets/depreciation-groups/export/
+GET                   /api/v1/assets/depreciation-groups/meta/
+GET POST              /api/v1/assets/depreciation-runs/
+GET PUT PATCH DELETE  /api/v1/assets/depreciation-runs/<pk>/
+POST                  /api/v1/assets/depreciation-runs/<pk>/cancel/
+GET                   /api/v1/assets/depreciation-runs/<pk>/history/
+POST                  /api/v1/assets/depreciation-runs/<pk>/post/
+POST                  /api/v1/assets/depreciation-runs/bulk/
+GET                   /api/v1/assets/depreciation-runs/export/
+GET                   /api/v1/assets/depreciation-runs/meta/
+GET POST              /api/v1/assets/disposals/
+GET PUT PATCH DELETE  /api/v1/assets/disposals/<pk>/
+GET                   /api/v1/assets/disposals/<pk>/history/
+POST                  /api/v1/assets/disposals/<pk>/post/
+POST                  /api/v1/assets/disposals/bulk/
+GET                   /api/v1/assets/disposals/export/
+GET                   /api/v1/assets/disposals/meta/
+GET POST              /api/v1/assets/documents/
+GET PUT PATCH DELETE  /api/v1/assets/documents/<pk>/
+GET                   /api/v1/assets/documents/<pk>/history/
+POST                  /api/v1/assets/documents/bulk/
+GET                   /api/v1/assets/documents/export/
+GET                   /api/v1/assets/documents/meta/
+GET POST              /api/v1/assets/fixed-assets/
+GET PUT PATCH DELETE  /api/v1/assets/fixed-assets/<pk>/
+POST                  /api/v1/assets/fixed-assets/<pk>/activate/
+POST                  /api/v1/assets/fixed-assets/<pk>/deactivate/
+GET                   /api/v1/assets/fixed-assets/<pk>/history/
+GET                   /api/v1/assets/fixed-assets/<pk>/ledger/
+GET                   /api/v1/assets/fixed-assets/attention/
+POST                  /api/v1/assets/fixed-assets/bulk/
+GET                   /api/v1/assets/fixed-assets/export/
+GET                   /api/v1/assets/fixed-assets/meta/
+GET                   /api/v1/assets/fixed-assets/next-code/
+GET                   /api/v1/assets/fixed-assets/summary/
+GET POST              /api/v1/assets/ledger/
+GET PUT PATCH DELETE  /api/v1/assets/ledger/<pk>/
+GET                   /api/v1/assets/ledger/<pk>/history/
+POST                  /api/v1/assets/ledger/bulk/
+GET                   /api/v1/assets/ledger/export/
+GET                   /api/v1/assets/ledger/meta/
+GET POST              /api/v1/assets/locations/
+GET PUT PATCH DELETE  /api/v1/assets/locations/<pk>/
+GET                   /api/v1/assets/locations/<pk>/history/
+POST                  /api/v1/assets/locations/bulk/
+GET                   /api/v1/assets/locations/export/
+GET                   /api/v1/assets/locations/meta/
+GET POST              /api/v1/assets/maintenance-links/
+GET PUT PATCH DELETE  /api/v1/assets/maintenance-links/<pk>/
+GET                   /api/v1/assets/maintenance-links/<pk>/history/
+POST                  /api/v1/assets/maintenance-links/bulk/
+GET                   /api/v1/assets/maintenance-links/export/
+GET                   /api/v1/assets/maintenance-links/meta/
+GET POST              /api/v1/assets/stocktake-lines/
+GET PUT PATCH DELETE  /api/v1/assets/stocktake-lines/<pk>/
+GET                   /api/v1/assets/stocktake-lines/<pk>/history/
+POST                  /api/v1/assets/stocktake-lines/bulk/
+GET                   /api/v1/assets/stocktake-lines/export/
+GET                   /api/v1/assets/stocktake-lines/meta/
+GET POST              /api/v1/assets/stocktakes/
+GET PUT PATCH DELETE  /api/v1/assets/stocktakes/<pk>/
+POST                  /api/v1/assets/stocktakes/<pk>/close/
+POST                  /api/v1/assets/stocktakes/<pk>/generate/
+GET                   /api/v1/assets/stocktakes/<pk>/history/
+GET                   /api/v1/assets/stocktakes/<pk>/summary/
+POST                  /api/v1/assets/stocktakes/bulk/
+GET                   /api/v1/assets/stocktakes/export/
+GET                   /api/v1/assets/stocktakes/meta/
+GET POST              /api/v1/assets/transfers/
+GET PUT PATCH DELETE  /api/v1/assets/transfers/<pk>/
+POST                  /api/v1/assets/transfers/<pk>/confirm/
+GET                   /api/v1/assets/transfers/<pk>/history/
+POST                  /api/v1/assets/transfers/bulk/
+GET                   /api/v1/assets/transfers/export/
+GET                   /api/v1/assets/transfers/meta/
+GET POST              /api/v1/assets/vehicles/
+GET PUT PATCH DELETE  /api/v1/assets/vehicles/<pk>/
+GET                   /api/v1/assets/vehicles/<pk>/history/
+GET                   /api/v1/assets/vehicles/<pk>/metrics/
+POST                  /api/v1/assets/vehicles/bulk/
+GET                   /api/v1/assets/vehicles/export/
+GET                   /api/v1/assets/vehicles/meta/
+
+### catalog (19)
+GET POST              /api/v1/catalog/categories/
+GET PUT PATCH DELETE  /api/v1/catalog/categories/<pk>/
+GET                   /api/v1/catalog/categories/<pk>/history/
+POST                  /api/v1/catalog/categories/bulk/
+GET                   /api/v1/catalog/categories/export/
+GET                   /api/v1/catalog/categories/meta/
+GET POST              /api/v1/catalog/items/
+GET PUT PATCH DELETE  /api/v1/catalog/items/<pk>/
+GET                   /api/v1/catalog/items/<pk>/history/
+POST                  /api/v1/catalog/items/bulk/
+GET                   /api/v1/catalog/items/export/
+GET                   /api/v1/catalog/items/meta/
+GET                   /api/v1/catalog/items/next-code/
+GET POST              /api/v1/catalog/warehouses/
+GET PUT PATCH DELETE  /api/v1/catalog/warehouses/<pk>/
+GET                   /api/v1/catalog/warehouses/<pk>/history/
+POST                  /api/v1/catalog/warehouses/bulk/
+GET                   /api/v1/catalog/warehouses/export/
+GET                   /api/v1/catalog/warehouses/meta/
+
+### accounting (92)
+GET POST              /api/v1/accounting/accounts/
+GET PUT PATCH DELETE  /api/v1/accounting/accounts/<pk>/
+GET                   /api/v1/accounting/accounts/<pk>/history/
+POST                  /api/v1/accounting/accounts/bulk/
+GET                   /api/v1/accounting/accounts/export/
+GET                   /api/v1/accounting/accounts/meta/
+GET                   /api/v1/accounting/accounts/used/
+GET POST              /api/v1/accounting/close-tasks/
+GET PUT PATCH DELETE  /api/v1/accounting/close-tasks/<pk>/
+GET                   /api/v1/accounting/close-tasks/<pk>/history/
+POST                  /api/v1/accounting/close-tasks/<pk>/set-status/
+POST                  /api/v1/accounting/close-tasks/bulk/
+GET                   /api/v1/accounting/close-tasks/export/
+GET                   /api/v1/accounting/close-tasks/meta/
+GET POST              /api/v1/accounting/cost-centers/
+GET PUT PATCH DELETE  /api/v1/accounting/cost-centers/<pk>/
+GET                   /api/v1/accounting/cost-centers/<pk>/history/
+POST                  /api/v1/accounting/cost-centers/bulk/
+GET                   /api/v1/accounting/cost-centers/export/
+GET                   /api/v1/accounting/cost-centers/meta/
+GET POST              /api/v1/accounting/dimensions/
+GET PUT PATCH DELETE  /api/v1/accounting/dimensions/<pk>/
+GET                   /api/v1/accounting/dimensions/<pk>/history/
+POST                  /api/v1/accounting/dimensions/bulk/
+GET                   /api/v1/accounting/dimensions/export/
+GET                   /api/v1/accounting/dimensions/meta/
+GET POST              /api/v1/accounting/fiscal-periods/
+GET PUT PATCH DELETE  /api/v1/accounting/fiscal-periods/<pk>/
+POST                  /api/v1/accounting/fiscal-periods/<pk>/close-tasks/
+POST                  /api/v1/accounting/fiscal-periods/<pk>/close/
+GET                   /api/v1/accounting/fiscal-periods/<pk>/history/
+POST                  /api/v1/accounting/fiscal-periods/<pk>/reopen/
+POST                  /api/v1/accounting/fiscal-periods/bulk/
+GET                   /api/v1/accounting/fiscal-periods/export/
+GET                   /api/v1/accounting/fiscal-periods/meta/
+GET POST              /api/v1/accounting/fiscal-years/
+GET PUT PATCH DELETE  /api/v1/accounting/fiscal-years/<pk>/
+GET                   /api/v1/accounting/fiscal-years/<pk>/history/
+POST                  /api/v1/accounting/fiscal-years/bulk/
+POST                  /api/v1/accounting/fiscal-years/ensure/
+GET                   /api/v1/accounting/fiscal-years/export/
+GET                   /api/v1/accounting/fiscal-years/meta/
+GET POST              /api/v1/accounting/journal-entries/
+GET PUT PATCH DELETE  /api/v1/accounting/journal-entries/<pk>/
+POST                  /api/v1/accounting/journal-entries/<pk>/cancel/
+GET                   /api/v1/accounting/journal-entries/<pk>/history/
+POST                  /api/v1/accounting/journal-entries/<pk>/post/
+POST                  /api/v1/accounting/journal-entries/<pk>/reverse/
+POST                  /api/v1/accounting/journal-entries/<pk>/submit/
+POST                  /api/v1/accounting/journal-entries/bulk/
+GET                   /api/v1/accounting/journal-entries/export/
+GET                   /api/v1/accounting/journal-entries/meta/
+GET POST              /api/v1/accounting/ledger/
+GET PUT PATCH DELETE  /api/v1/accounting/ledger/<pk>/
+GET                   /api/v1/accounting/ledger/<pk>/history/
+POST                  /api/v1/accounting/ledger/bulk/
+GET                   /api/v1/accounting/ledger/dashboard/
+GET                   /api/v1/accounting/ledger/export/
+GET                   /api/v1/accounting/ledger/meta/
+GET                   /api/v1/accounting/ledger/trial-balance/
+GET POST              /api/v1/accounting/project-costs/
+GET PUT PATCH DELETE  /api/v1/accounting/project-costs/<pk>/
+GET                   /api/v1/accounting/project-costs/<pk>/history/
+POST                  /api/v1/accounting/project-costs/bulk/
+GET                   /api/v1/accounting/project-costs/export/
+GET                   /api/v1/accounting/project-costs/meta/
+GET POST              /api/v1/accounting/settings/
+GET PUT PATCH DELETE  /api/v1/accounting/settings/<pk>/
+GET                   /api/v1/accounting/settings/<pk>/history/
+POST                  /api/v1/accounting/settings/bulk/
+GET                   /api/v1/accounting/settings/export/
+GET                   /api/v1/accounting/settings/meta/
+GET POST              /api/v1/accounting/tax-periods/
+GET PUT PATCH DELETE  /api/v1/accounting/tax-periods/<pk>/
+GET                   /api/v1/accounting/tax-periods/<pk>/history/
+POST                  /api/v1/accounting/tax-periods/bulk/
+GET                   /api/v1/accounting/tax-periods/export/
+GET                   /api/v1/accounting/tax-periods/meta/
+GET POST              /api/v1/accounting/vat-codes/
+GET PUT PATCH DELETE  /api/v1/accounting/vat-codes/<pk>/
+GET                   /api/v1/accounting/vat-codes/<pk>/history/
+POST                  /api/v1/accounting/vat-codes/bulk/
+GET                   /api/v1/accounting/vat-codes/export/
+GET                   /api/v1/accounting/vat-codes/meta/
+GET POST              /api/v1/accounting/vat-entries/
+GET PUT PATCH DELETE  /api/v1/accounting/vat-entries/<pk>/
+GET                   /api/v1/accounting/vat-entries/<pk>/history/
+GET                   /api/v1/accounting/vat-entries/book/
+POST                  /api/v1/accounting/vat-entries/bulk/
+GET                   /api/v1/accounting/vat-entries/export/
+GET                   /api/v1/accounting/vat-entries/meta/
+GET                   /api/v1/accounting/vat-entries/position/
+
+### payables (27)
+GET POST              /api/v1/payables/invoices/
+GET PUT PATCH DELETE  /api/v1/payables/invoices/<pk>/
+POST                  /api/v1/payables/invoices/<pk>/approve/
+POST                  /api/v1/payables/invoices/<pk>/dispute/
+GET                   /api/v1/payables/invoices/<pk>/history/
+POST                  /api/v1/payables/invoices/<pk>/open-item/
+POST                  /api/v1/payables/invoices/<pk>/post/
+POST                  /api/v1/payables/invoices/<pk>/reject/
+POST                  /api/v1/payables/invoices/<pk>/reverse-posting/
+POST                  /api/v1/payables/invoices/bulk/
+GET                   /api/v1/payables/invoices/export/
+GET                   /api/v1/payables/invoices/meta/
+GET POST              /api/v1/payables/open-items/
+GET PUT PATCH DELETE  /api/v1/payables/open-items/<pk>/
+GET                   /api/v1/payables/open-items/<pk>/history/
+GET                   /api/v1/payables/open-items/aging/
+POST                  /api/v1/payables/open-items/bulk/
+GET                   /api/v1/payables/open-items/export/
+GET                   /api/v1/payables/open-items/meta/
+GET                   /api/v1/payables/open-items/supplier-balance/
+GET POST              /api/v1/payables/payments/
+GET PUT PATCH DELETE  /api/v1/payables/payments/<pk>/
+GET                   /api/v1/payables/payments/<pk>/history/
+POST                  /api/v1/payables/payments/<pk>/reverse/
+POST                  /api/v1/payables/payments/bulk/
+GET                   /api/v1/payables/payments/export/
+GET                   /api/v1/payables/payments/meta/
+
+### receivables (24)
+GET POST              /api/v1/receivables/invoices/
+GET PUT PATCH DELETE  /api/v1/receivables/invoices/<pk>/
+POST                  /api/v1/receivables/invoices/<pk>/cancel/
+GET                   /api/v1/receivables/invoices/<pk>/history/
+POST                  /api/v1/receivables/invoices/<pk>/issue/
+POST                  /api/v1/receivables/invoices/<pk>/post/
+POST                  /api/v1/receivables/invoices/<pk>/reverse-posting/
+POST                  /api/v1/receivables/invoices/bulk/
+GET                   /api/v1/receivables/invoices/export/
+GET                   /api/v1/receivables/invoices/meta/
+GET POST              /api/v1/receivables/open-items/
+GET PUT PATCH DELETE  /api/v1/receivables/open-items/<pk>/
+GET                   /api/v1/receivables/open-items/<pk>/history/
+GET                   /api/v1/receivables/open-items/aging/
+POST                  /api/v1/receivables/open-items/bulk/
+GET                   /api/v1/receivables/open-items/export/
+GET                   /api/v1/receivables/open-items/meta/
+GET POST              /api/v1/receivables/receipts/
+GET PUT PATCH DELETE  /api/v1/receivables/receipts/<pk>/
+GET                   /api/v1/receivables/receipts/<pk>/history/
+POST                  /api/v1/receivables/receipts/<pk>/reverse/
+POST                  /api/v1/receivables/receipts/bulk/
+GET                   /api/v1/receivables/receipts/export/
+GET                   /api/v1/receivables/receipts/meta/
+
+### finance (58)
+GET POST              /api/v1/finance/banks/
+GET PUT PATCH DELETE  /api/v1/finance/banks/<pk>/
+GET                   /api/v1/finance/banks/<pk>/history/
+POST                  /api/v1/finance/banks/bulk/
+GET                   /api/v1/finance/banks/export/
+GET                   /api/v1/finance/banks/meta/
+GET POST              /api/v1/finance/cashbook/
+GET PUT PATCH DELETE  /api/v1/finance/cashbook/<pk>/
+GET                   /api/v1/finance/cashbook/<pk>/history/
+POST                  /api/v1/finance/cashbook/bulk/
+GET                   /api/v1/finance/cashbook/cashflow/
+GET                   /api/v1/finance/cashbook/dashboard/
+GET                   /api/v1/finance/cashbook/export/
+GET                   /api/v1/finance/cashbook/meta/
+GET                   /api/v1/finance/cashbook/monthly-report/
+GET                   /api/v1/finance/cashbook/monthly-totals/
+GET                   /api/v1/finance/cashbook/project-analysis/
+GET                   /api/v1/finance/cashbook/project-totals/
+GET POST              /api/v1/finance/expense-types/
+GET PUT PATCH DELETE  /api/v1/finance/expense-types/<pk>/
+GET                   /api/v1/finance/expense-types/<pk>/history/
+POST                  /api/v1/finance/expense-types/bulk/
+GET                   /api/v1/finance/expense-types/export/
+GET                   /api/v1/finance/expense-types/meta/
+GET POST              /api/v1/finance/forecasts/
+GET PUT PATCH DELETE  /api/v1/finance/forecasts/<pk>/
+GET                   /api/v1/finance/forecasts/<pk>/history/
+POST                  /api/v1/finance/forecasts/bulk/
+GET                   /api/v1/finance/forecasts/export/
+GET                   /api/v1/finance/forecasts/meta/
+GET                   /api/v1/finance/forecasts/summary/
+POST                  /api/v1/finance/forecasts/sync/
+GET POST              /api/v1/finance/gl-mappings/
+GET PUT PATCH DELETE  /api/v1/finance/gl-mappings/<pk>/
+GET                   /api/v1/finance/gl-mappings/<pk>/history/
+POST                  /api/v1/finance/gl-mappings/bulk/
+GET                   /api/v1/finance/gl-mappings/export/
+GET                   /api/v1/finance/gl-mappings/meta/
+GET POST              /api/v1/finance/loan-payments/
+GET PUT PATCH DELETE  /api/v1/finance/loan-payments/<pk>/
+GET                   /api/v1/finance/loan-payments/<pk>/history/
+POST                  /api/v1/finance/loan-payments/bulk/
+GET                   /api/v1/finance/loan-payments/export/
+GET                   /api/v1/finance/loan-payments/meta/
+GET POST              /api/v1/finance/loans/
+GET PUT PATCH DELETE  /api/v1/finance/loans/<pk>/
+GET                   /api/v1/finance/loans/<pk>/history/
+POST                  /api/v1/finance/loans/<pk>/pay/
+POST                  /api/v1/finance/loans/bulk/
+GET                   /api/v1/finance/loans/export/
+GET                   /api/v1/finance/loans/meta/
+GET                   /api/v1/finance/loans/summary/
+GET POST              /api/v1/finance/payment-types/
+GET PUT PATCH DELETE  /api/v1/finance/payment-types/<pk>/
+GET                   /api/v1/finance/payment-types/<pk>/history/
+POST                  /api/v1/finance/payment-types/bulk/
+GET                   /api/v1/finance/payment-types/export/
+GET                   /api/v1/finance/payment-types/meta/
+
+### budget (34)
+GET POST              /api/v1/budget/alerts/
+GET PUT PATCH DELETE  /api/v1/budget/alerts/<pk>/
+GET                   /api/v1/budget/alerts/<pk>/history/
+POST                  /api/v1/budget/alerts/bulk/
+GET                   /api/v1/budget/alerts/export/
+GET                   /api/v1/budget/alerts/meta/
+GET POST              /api/v1/budget/budgets/
+GET PUT PATCH DELETE  /api/v1/budget/budgets/<pk>/
+GET                   /api/v1/budget/budgets/<pk>/history/
+GET                   /api/v1/budget/budgets/<pk>/summary/
+POST                  /api/v1/budget/budgets/bulk/
+GET                   /api/v1/budget/budgets/export/
+GET                   /api/v1/budget/budgets/meta/
+GET                   /api/v1/budget/budgets/portfolio/
+GET                   /api/v1/budget/budgets/project/
+GET POST              /api/v1/budget/costs/
+GET PUT PATCH DELETE  /api/v1/budget/costs/<pk>/
+GET                   /api/v1/budget/costs/<pk>/history/
+POST                  /api/v1/budget/costs/bulk/
+GET                   /api/v1/budget/costs/export/
+GET                   /api/v1/budget/costs/meta/
+GET POST              /api/v1/budget/labour/
+GET PUT PATCH DELETE  /api/v1/budget/labour/<pk>/
+GET                   /api/v1/budget/labour/<pk>/history/
+POST                  /api/v1/budget/labour/bulk/
+GET                   /api/v1/budget/labour/export/
+GET                   /api/v1/budget/labour/meta/
+POST                  /api/v1/budget/labour/rebuild/
+GET POST              /api/v1/budget/lines/
+GET PUT PATCH DELETE  /api/v1/budget/lines/<pk>/
+GET                   /api/v1/budget/lines/<pk>/history/
+POST                  /api/v1/budget/lines/bulk/
+GET                   /api/v1/budget/lines/export/
+GET                   /api/v1/budget/lines/meta/
+
+### inventory (48)
+GET POST              /api/v1/inventory/document-costs/
+GET PUT PATCH DELETE  /api/v1/inventory/document-costs/<pk>/
+GET                   /api/v1/inventory/document-costs/<pk>/history/
+POST                  /api/v1/inventory/document-costs/bulk/
+GET                   /api/v1/inventory/document-costs/export/
+GET                   /api/v1/inventory/document-costs/meta/
+GET POST              /api/v1/inventory/document-lines/
+GET PUT PATCH DELETE  /api/v1/inventory/document-lines/<pk>/
+GET                   /api/v1/inventory/document-lines/<pk>/history/
+POST                  /api/v1/inventory/document-lines/bulk/
+GET                   /api/v1/inventory/document-lines/export/
+GET                   /api/v1/inventory/document-lines/meta/
+GET POST              /api/v1/inventory/document-type-accounts/
+GET PUT PATCH DELETE  /api/v1/inventory/document-type-accounts/<pk>/
+GET                   /api/v1/inventory/document-type-accounts/<pk>/history/
+POST                  /api/v1/inventory/document-type-accounts/bulk/
+GET                   /api/v1/inventory/document-type-accounts/export/
+GET                   /api/v1/inventory/document-type-accounts/meta/
+GET POST              /api/v1/inventory/document-types/
+GET PUT PATCH DELETE  /api/v1/inventory/document-types/<pk>/
+GET                   /api/v1/inventory/document-types/<pk>/history/
+POST                  /api/v1/inventory/document-types/bulk/
+GET                   /api/v1/inventory/document-types/export/
+GET                   /api/v1/inventory/document-types/meta/
+POST                  /api/v1/inventory/document-types/seed/
+GET POST              /api/v1/inventory/documents/
+GET PUT PATCH DELETE  /api/v1/inventory/documents/<pk>/
+POST                  /api/v1/inventory/documents/<pk>/build-stocktake/
+POST                  /api/v1/inventory/documents/<pk>/cancel/
+GET                   /api/v1/inventory/documents/<pk>/chain/
+POST                  /api/v1/inventory/documents/<pk>/confirm/
+POST                  /api/v1/inventory/documents/<pk>/copy-lines/
+GET                   /api/v1/inventory/documents/<pk>/history/
+POST                  /api/v1/inventory/documents/<pk>/post/
+POST                  /api/v1/inventory/documents/<pk>/reverse/
+POST                  /api/v1/inventory/documents/bulk/
+GET                   /api/v1/inventory/documents/export/
+GET                   /api/v1/inventory/documents/meta/
+GET POST              /api/v1/inventory/movements/
+GET PUT PATCH DELETE  /api/v1/inventory/movements/<pk>/
+GET                   /api/v1/inventory/movements/<pk>/history/
+POST                  /api/v1/inventory/movements/bulk/
+GET                   /api/v1/inventory/movements/export/
+GET                   /api/v1/inventory/movements/levels/
+GET                   /api/v1/inventory/movements/meta/
+POST                  /api/v1/inventory/movements/reorder/
+GET                   /api/v1/inventory/movements/trend/
+GET                   /api/v1/inventory/movements/valuation/
+
+### procurement (81)
+GET POST              /api/v1/procurement/approval-history/
+GET PUT PATCH DELETE  /api/v1/procurement/approval-history/<pk>/
+GET                   /api/v1/procurement/approval-history/<pk>/history/
+POST                  /api/v1/procurement/approval-history/bulk/
+GET                   /api/v1/procurement/approval-history/export/
+GET                   /api/v1/procurement/approval-history/meta/
+GET POST              /api/v1/procurement/goods-receipts/
+GET PUT PATCH DELETE  /api/v1/procurement/goods-receipts/<pk>/
+GET                   /api/v1/procurement/goods-receipts/<pk>/history/
+POST                  /api/v1/procurement/goods-receipts/<pk>/quality-issue/
+POST                  /api/v1/procurement/goods-receipts/bulk/
+GET                   /api/v1/procurement/goods-receipts/export/
+GET                   /api/v1/procurement/goods-receipts/meta/
+GET POST              /api/v1/procurement/invoices/
+GET PUT PATCH DELETE  /api/v1/procurement/invoices/<pk>/
+GET                   /api/v1/procurement/invoices/<pk>/history/
+POST                  /api/v1/procurement/invoices/<pk>/match/
+POST                  /api/v1/procurement/invoices/bulk/
+GET                   /api/v1/procurement/invoices/export/
+GET                   /api/v1/procurement/invoices/meta/
+GET POST              /api/v1/procurement/purchase-orders/
+GET PUT PATCH DELETE  /api/v1/procurement/purchase-orders/<pk>/
+POST                  /api/v1/procurement/purchase-orders/<pk>/cancel/
+POST                  /api/v1/procurement/purchase-orders/<pk>/confirm/
+GET                   /api/v1/procurement/purchase-orders/<pk>/history/
+GET                   /api/v1/procurement/purchase-orders/<pk>/pdf/
+POST                  /api/v1/procurement/purchase-orders/<pk>/receive/
+GET                   /api/v1/procurement/purchase-orders/<pk>/received/
+POST                  /api/v1/procurement/purchase-orders/<pk>/register-invoice/
+POST                  /api/v1/procurement/purchase-orders/<pk>/send/
+POST                  /api/v1/procurement/purchase-orders/bulk/
+GET                   /api/v1/procurement/purchase-orders/export/
+GET                   /api/v1/procurement/purchase-orders/meta/
+GET POST              /api/v1/procurement/quotations/
+GET PUT PATCH DELETE  /api/v1/procurement/quotations/<pk>/
+GET                   /api/v1/procurement/quotations/<pk>/history/
+POST                  /api/v1/procurement/quotations/<pk>/select/
+POST                  /api/v1/procurement/quotations/bulk/
+GET                   /api/v1/procurement/quotations/export/
+GET                   /api/v1/procurement/quotations/meta/
+GET POST              /api/v1/procurement/requests/
+GET PUT PATCH DELETE  /api/v1/procurement/requests/<pk>/
+POST                  /api/v1/procurement/requests/<pk>/approve/
+POST                  /api/v1/procurement/requests/<pk>/cancel/
+POST                  /api/v1/procurement/requests/<pk>/create-po/
+POST                  /api/v1/procurement/requests/<pk>/create-rfq/
+POST                  /api/v1/procurement/requests/<pk>/final-approve/
+POST                  /api/v1/procurement/requests/<pk>/finance-approve/
+POST                  /api/v1/procurement/requests/<pk>/finance-reject/
+GET                   /api/v1/procurement/requests/<pk>/history/
+GET                   /api/v1/procurement/requests/<pk>/history/    <- duplicate route, never reached
+POST                  /api/v1/procurement/requests/<pk>/reject/
+POST                  /api/v1/procurement/requests/<pk>/return/
+POST                  /api/v1/procurement/requests/<pk>/stock-check/
+POST                  /api/v1/procurement/requests/<pk>/submit/
+POST                  /api/v1/procurement/requests/bulk/
+GET                   /api/v1/procurement/requests/dashboard/
+GET                   /api/v1/procurement/requests/export/
+GET                   /api/v1/procurement/requests/meta/
+GET                   /api/v1/procurement/requests/reports/
+GET POST              /api/v1/procurement/rfq-suppliers/
+GET PUT PATCH DELETE  /api/v1/procurement/rfq-suppliers/<pk>/
+GET                   /api/v1/procurement/rfq-suppliers/<pk>/history/
+POST                  /api/v1/procurement/rfq-suppliers/bulk/
+GET                   /api/v1/procurement/rfq-suppliers/export/
+GET                   /api/v1/procurement/rfq-suppliers/meta/
+GET POST              /api/v1/procurement/rfqs/
+GET PUT PATCH DELETE  /api/v1/procurement/rfqs/<pk>/
+POST                  /api/v1/procurement/rfqs/<pk>/add-suppliers/
+GET                   /api/v1/procurement/rfqs/<pk>/compare/
+GET                   /api/v1/procurement/rfqs/<pk>/history/
+POST                  /api/v1/procurement/rfqs/<pk>/send/
+POST                  /api/v1/procurement/rfqs/bulk/
+GET                   /api/v1/procurement/rfqs/export/
+GET                   /api/v1/procurement/rfqs/meta/
+GET POST              /api/v1/procurement/settings/
+GET PUT PATCH DELETE  /api/v1/procurement/settings/<pk>/
+GET                   /api/v1/procurement/settings/<pk>/history/
+POST                  /api/v1/procurement/settings/bulk/
+GET                   /api/v1/procurement/settings/export/
+GET                   /api/v1/procurement/settings/meta/
+
+### offers (115)
+GET POST              /api/v1/offers/approval-log/
+GET PUT PATCH DELETE  /api/v1/offers/approval-log/<pk>/
+GET                   /api/v1/offers/approval-log/<pk>/history/
+POST                  /api/v1/offers/approval-log/bulk/
+GET                   /api/v1/offers/approval-log/export/
+GET                   /api/v1/offers/approval-log/meta/
+GET POST              /api/v1/offers/approval-rules/
+GET PUT PATCH DELETE  /api/v1/offers/approval-rules/<pk>/
+GET                   /api/v1/offers/approval-rules/<pk>/history/
+POST                  /api/v1/offers/approval-rules/bulk/
+GET                   /api/v1/offers/approval-rules/export/
+GET                   /api/v1/offers/approval-rules/meta/
+GET POST              /api/v1/offers/boq-rows/
+GET PUT PATCH DELETE  /api/v1/offers/boq-rows/<pk>/
+GET                   /api/v1/offers/boq-rows/<pk>/history/
+POST                  /api/v1/offers/boq-rows/bulk/
+GET                   /api/v1/offers/boq-rows/export/
+GET                   /api/v1/offers/boq-rows/meta/
+GET POST              /api/v1/offers/boqs/
+GET PUT PATCH DELETE  /api/v1/offers/boqs/<pk>/
+GET                   /api/v1/offers/boqs/<pk>/history/
+POST                  /api/v1/offers/boqs/bulk/
+GET                   /api/v1/offers/boqs/export/
+GET                   /api/v1/offers/boqs/meta/
+GET POST              /api/v1/offers/followups/
+GET PUT PATCH DELETE  /api/v1/offers/followups/<pk>/
+POST                  /api/v1/offers/followups/<pk>/complete/
+GET                   /api/v1/offers/followups/<pk>/history/
+POST                  /api/v1/offers/followups/bulk/
+GET                   /api/v1/offers/followups/export/
+GET                   /api/v1/offers/followups/meta/
+GET POST              /api/v1/offers/master-price-list/
+GET PUT PATCH DELETE  /api/v1/offers/master-price-list/<pk>/
+GET                   /api/v1/offers/master-price-list/<pk>/history/
+POST                  /api/v1/offers/master-price-list/bulk/
+GET                   /api/v1/offers/master-price-list/export/
+GET                   /api/v1/offers/master-price-list/meta/
+GET POST              /api/v1/offers/offers/
+GET PUT PATCH DELETE  /api/v1/offers/offers/<pk>/
+GET                   /api/v1/offers/offers/<pk>/approval-log/
+POST                  /api/v1/offers/offers/<pk>/approve/
+POST                  /api/v1/offers/offers/<pk>/boq-import/
+POST                  /api/v1/offers/offers/<pk>/boq-reorder/
+POST                  /api/v1/offers/offers/<pk>/cancel/
+POST                  /api/v1/offers/offers/<pk>/convert/
+GET                   /api/v1/offers/offers/<pk>/history/
+PUT                   /api/v1/offers/offers/<pk>/items/
+POST                  /api/v1/offers/offers/<pk>/mark-accepted/
+POST                  /api/v1/offers/offers/<pk>/mark-negotiation/
+POST                  /api/v1/offers/offers/<pk>/mark-rejected/
+POST                  /api/v1/offers/offers/<pk>/mark-sent/
+GET                   /api/v1/offers/offers/<pk>/pdf/
+POST                  /api/v1/offers/offers/<pk>/reject/
+POST                  /api/v1/offers/offers/<pk>/return/
+POST                  /api/v1/offers/offers/<pk>/submit-approval/
+POST                  /api/v1/offers/offers/<pk>/submit-financial/
+POST                  /api/v1/offers/offers/<pk>/submit-technical/
+POST                  /api/v1/offers/offers/<pk>/technical-review/
+GET                   /api/v1/offers/offers/approval-inbox/
+POST                  /api/v1/offers/offers/bulk/
+POST                  /api/v1/offers/offers/calculate-line/
+GET                   /api/v1/offers/offers/dashboard/
+GET                   /api/v1/offers/offers/export/
+GET                   /api/v1/offers/offers/meta/
+GET                   /api/v1/offers/offers/weekly/
+GET POST              /api/v1/offers/price-list-versions/
+GET PUT PATCH DELETE  /api/v1/offers/price-list-versions/<pk>/
+POST                  /api/v1/offers/price-list-versions/<pk>/activate/
+GET                   /api/v1/offers/price-list-versions/<pk>/history/
+POST                  /api/v1/offers/price-list-versions/bulk/
+GET                   /api/v1/offers/price-list-versions/export/
+POST                  /api/v1/offers/price-list-versions/import/
+GET                   /api/v1/offers/price-list-versions/meta/
+GET                   /api/v1/offers/price-list-versions/overview/
+GET POST              /api/v1/offers/price-parameters/
+GET PUT PATCH DELETE  /api/v1/offers/price-parameters/<pk>/
+GET                   /api/v1/offers/price-parameters/<pk>/history/
+POST                  /api/v1/offers/price-parameters/bulk/
+GET                   /api/v1/offers/price-parameters/export/
+GET                   /api/v1/offers/price-parameters/meta/
+GET POST              /api/v1/offers/requests/
+GET PUT PATCH DELETE  /api/v1/offers/requests/<pk>/
+POST                  /api/v1/offers/requests/<pk>/classify/
+POST                  /api/v1/offers/requests/<pk>/create-offer/
+GET                   /api/v1/offers/requests/<pk>/history/
+GET                   /api/v1/offers/requests/<pk>/pdf/
+POST                  /api/v1/offers/requests/bulk/
+GET                   /api/v1/offers/requests/export/
+GET                   /api/v1/offers/requests/meta/
+GET POST              /api/v1/offers/service-categories/
+GET PUT PATCH DELETE  /api/v1/offers/service-categories/<pk>/
+GET                   /api/v1/offers/service-categories/<pk>/history/
+POST                  /api/v1/offers/service-categories/bulk/
+GET                   /api/v1/offers/service-categories/export/
+GET                   /api/v1/offers/service-categories/meta/
+GET POST              /api/v1/offers/service-items/
+GET PUT PATCH DELETE  /api/v1/offers/service-items/<pk>/
+POST                  /api/v1/offers/service-items/<pk>/duplicate/
+GET                   /api/v1/offers/service-items/<pk>/history/
+POST                  /api/v1/offers/service-items/bulk/
+GET                   /api/v1/offers/service-items/export/
+GET                   /api/v1/offers/service-items/meta/
+GET POST              /api/v1/offers/site-visits/
+GET PUT PATCH DELETE  /api/v1/offers/site-visits/<pk>/
+GET                   /api/v1/offers/site-visits/<pk>/history/
+GET                   /api/v1/offers/site-visits/<pk>/pdf/
+POST                  /api/v1/offers/site-visits/bulk/
+GET                   /api/v1/offers/site-visits/export/
+GET                   /api/v1/offers/site-visits/meta/
+GET POST              /api/v1/offers/standard-texts/
+GET PUT PATCH DELETE  /api/v1/offers/standard-texts/<pk>/
+GET                   /api/v1/offers/standard-texts/<pk>/history/
+POST                  /api/v1/offers/standard-texts/bulk/
+GET                   /api/v1/offers/standard-texts/export/
+GET                   /api/v1/offers/standard-texts/meta/
+
+### workorders (47)
+GET POST              /api/v1/workorders/daily-reports/
+GET PUT PATCH DELETE  /api/v1/workorders/daily-reports/<pk>/
+POST                  /api/v1/workorders/daily-reports/<pk>/approve/
+GET                   /api/v1/workorders/daily-reports/<pk>/history/
+POST                  /api/v1/workorders/daily-reports/bulk/
+GET                   /api/v1/workorders/daily-reports/export/
+GET                   /api/v1/workorders/daily-reports/meta/
+GET POST              /api/v1/workorders/erp-logs/
+GET PUT PATCH DELETE  /api/v1/workorders/erp-logs/<pk>/
+GET                   /api/v1/workorders/erp-logs/<pk>/history/
+POST                  /api/v1/workorders/erp-logs/bulk/
+GET                   /api/v1/workorders/erp-logs/export/
+GET                   /api/v1/workorders/erp-logs/meta/
+GET POST              /api/v1/workorders/materials/
+GET PUT PATCH DELETE  /api/v1/workorders/materials/<pk>/
+GET                   /api/v1/workorders/materials/<pk>/history/
+POST                  /api/v1/workorders/materials/bulk/
+GET                   /api/v1/workorders/materials/export/
+GET                   /api/v1/workorders/materials/meta/
+GET POST              /api/v1/workorders/resources/
+GET PUT PATCH DELETE  /api/v1/workorders/resources/<pk>/
+GET                   /api/v1/workorders/resources/<pk>/history/
+POST                  /api/v1/workorders/resources/bulk/
+GET                   /api/v1/workorders/resources/export/
+GET                   /api/v1/workorders/resources/meta/
+GET POST              /api/v1/workorders/work-orders/
+GET PUT PATCH DELETE  /api/v1/workorders/work-orders/<pk>/
+GET                   /api/v1/workorders/work-orders/<pk>/approvals/
+POST                  /api/v1/workorders/work-orders/<pk>/cancel/
+POST                  /api/v1/workorders/work-orders/<pk>/confirm-logistics/
+POST                  /api/v1/workorders/work-orders/<pk>/confirm-materials/
+GET                   /api/v1/workorders/work-orders/<pk>/conflicts/
+POST                  /api/v1/workorders/work-orders/<pk>/export-erp/
+POST                  /api/v1/workorders/work-orders/<pk>/final-approve/
+GET                   /api/v1/workorders/work-orders/<pk>/history/
+POST                  /api/v1/workorders/work-orders/<pk>/hse-review/
+POST                  /api/v1/workorders/work-orders/<pk>/operational-review/
+POST                  /api/v1/workorders/work-orders/<pk>/request-materials/
+POST                  /api/v1/workorders/work-orders/<pk>/submit/
+GET                   /api/v1/workorders/work-orders/boq-progress/
+POST                  /api/v1/workorders/work-orders/bulk/
+GET                   /api/v1/workorders/work-orders/check-conflict/
+GET                   /api/v1/workorders/work-orders/dashboard/
+GET                   /api/v1/workorders/work-orders/export/
+GET                   /api/v1/workorders/work-orders/meta/
+GET                   /api/v1/workorders/work-orders/missing-reports/
+GET                   /api/v1/workorders/work-orders/resource-board/
+
+### fleet (69)
+GET POST              /api/v1/fleet/daily-reports/
+GET PUT PATCH DELETE  /api/v1/fleet/daily-reports/<pk>/
+POST                  /api/v1/fleet/daily-reports/<pk>/approve/
+GET                   /api/v1/fleet/daily-reports/<pk>/history/
+POST                  /api/v1/fleet/daily-reports/<pk>/verify/
+POST                  /api/v1/fleet/daily-reports/bulk/
+POST                  /api/v1/fleet/daily-reports/create-inactive/
+GET                   /api/v1/fleet/daily-reports/dashboard/
+GET                   /api/v1/fleet/daily-reports/efficiency/
+GET                   /api/v1/fleet/daily-reports/export/
+GET                   /api/v1/fleet/daily-reports/meta/
+GET                   /api/v1/fleet/daily-reports/missing/
+GET                   /api/v1/fleet/daily-reports/project-resources/
+GET POST              /api/v1/fleet/documents/
+GET PUT PATCH DELETE  /api/v1/fleet/documents/<pk>/
+GET                   /api/v1/fleet/documents/<pk>/history/
+POST                  /api/v1/fleet/documents/bulk/
+GET                   /api/v1/fleet/documents/export/
+GET                   /api/v1/fleet/documents/meta/
+GET POST              /api/v1/fleet/drivers/
+GET PUT PATCH DELETE  /api/v1/fleet/drivers/<pk>/
+GET                   /api/v1/fleet/drivers/<pk>/history/
+POST                  /api/v1/fleet/drivers/bulk/
+GET                   /api/v1/fleet/drivers/export/
+GET                   /api/v1/fleet/drivers/meta/
+GET POST              /api/v1/fleet/expenses/
+GET PUT PATCH DELETE  /api/v1/fleet/expenses/<pk>/
+GET                   /api/v1/fleet/expenses/<pk>/history/
+POST                  /api/v1/fleet/expenses/<pk>/mark-paid/
+POST                  /api/v1/fleet/expenses/<pk>/mark-pending/
+POST                  /api/v1/fleet/expenses/bulk/
+GET                   /api/v1/fleet/expenses/export/
+GET                   /api/v1/fleet/expenses/meta/
+GET POST              /api/v1/fleet/fines/
+GET PUT PATCH DELETE  /api/v1/fleet/fines/<pk>/
+GET                   /api/v1/fleet/fines/<pk>/history/
+POST                  /api/v1/fleet/fines/bulk/
+GET                   /api/v1/fleet/fines/export/
+GET                   /api/v1/fleet/fines/meta/
+GET POST              /api/v1/fleet/maintenance/
+GET PUT PATCH DELETE  /api/v1/fleet/maintenance/<pk>/
+GET                   /api/v1/fleet/maintenance/<pk>/history/
+POST                  /api/v1/fleet/maintenance/<pk>/to-invoice/
+POST                  /api/v1/fleet/maintenance/bulk/
+GET                   /api/v1/fleet/maintenance/export/
+GET                   /api/v1/fleet/maintenance/meta/
+GET POST              /api/v1/fleet/schedules/
+GET PUT PATCH DELETE  /api/v1/fleet/schedules/<pk>/
+GET                   /api/v1/fleet/schedules/<pk>/history/
+POST                  /api/v1/fleet/schedules/<pk>/serviced/
+POST                  /api/v1/fleet/schedules/bulk/
+GET                   /api/v1/fleet/schedules/export/
+GET                   /api/v1/fleet/schedules/meta/
+GET POST              /api/v1/fleet/travel-orders/
+GET PUT PATCH DELETE  /api/v1/fleet/travel-orders/<pk>/
+POST                  /api/v1/fleet/travel-orders/<pk>/complete/
+GET                   /api/v1/fleet/travel-orders/<pk>/history/
+GET                   /api/v1/fleet/travel-orders/<pk>/pdf/
+POST                  /api/v1/fleet/travel-orders/bulk/
+GET                   /api/v1/fleet/travel-orders/compliance/
+GET                   /api/v1/fleet/travel-orders/export/
+GET                   /api/v1/fleet/travel-orders/meta/
+GET POST              /api/v1/fleet/wheels/
+GET PUT PATCH DELETE  /api/v1/fleet/wheels/<pk>/
+GET                   /api/v1/fleet/wheels/<pk>/history/
+POST                  /api/v1/fleet/wheels/<pk>/to-invoice/
+POST                  /api/v1/fleet/wheels/bulk/
+GET                   /api/v1/fleet/wheels/export/
+GET                   /api/v1/fleet/wheels/meta/
+
+### hr (106)
+GET POST              /api/v1/hr/attendance/
+GET PUT PATCH DELETE  /api/v1/hr/attendance/<pk>/
+GET                   /api/v1/hr/attendance/<pk>/history/
+POST                  /api/v1/hr/attendance/bulk/
+GET                   /api/v1/hr/attendance/dashboard/
+GET POST              /api/v1/hr/attendance/day/
+GET                   /api/v1/hr/attendance/export/
+GET                   /api/v1/hr/attendance/meta/
+GET POST              /api/v1/hr/attendance/month/
+GET POST              /api/v1/hr/bailiffs/
+GET PUT PATCH DELETE  /api/v1/hr/bailiffs/<pk>/
+POST                  /api/v1/hr/bailiffs/<pk>/activate/
+POST                  /api/v1/hr/bailiffs/<pk>/cancel/
+GET                   /api/v1/hr/bailiffs/<pk>/history/
+POST                  /api/v1/hr/bailiffs/bulk/
+GET                   /api/v1/hr/bailiffs/export/
+GET                   /api/v1/hr/bailiffs/meta/
+GET POST              /api/v1/hr/contribution-rates/
+GET PUT PATCH DELETE  /api/v1/hr/contribution-rates/<pk>/
+GET                   /api/v1/hr/contribution-rates/<pk>/history/
+POST                  /api/v1/hr/contribution-rates/bulk/
+GET                   /api/v1/hr/contribution-rates/export/
+GET                   /api/v1/hr/contribution-rates/meta/
+GET POST              /api/v1/hr/disciplinary-actions/
+GET PUT PATCH DELETE  /api/v1/hr/disciplinary-actions/<pk>/
+GET                   /api/v1/hr/disciplinary-actions/<pk>/history/
+GET                   /api/v1/hr/disciplinary-actions/available/
+POST                  /api/v1/hr/disciplinary-actions/bulk/
+GET                   /api/v1/hr/disciplinary-actions/export/
+GET                   /api/v1/hr/disciplinary-actions/meta/
+GET POST              /api/v1/hr/employee-documents/
+GET PUT PATCH DELETE  /api/v1/hr/employee-documents/<pk>/
+GET                   /api/v1/hr/employee-documents/<pk>/history/
+POST                  /api/v1/hr/employee-documents/bulk/
+GET                   /api/v1/hr/employee-documents/export/
+GET                   /api/v1/hr/employee-documents/meta/
+GET POST              /api/v1/hr/holidays/
+GET PUT PATCH DELETE  /api/v1/hr/holidays/<pk>/
+GET                   /api/v1/hr/holidays/<pk>/history/
+POST                  /api/v1/hr/holidays/bulk/
+GET                   /api/v1/hr/holidays/export/
+GET                   /api/v1/hr/holidays/meta/
+GET POST              /api/v1/hr/kpi/
+GET PUT PATCH DELETE  /api/v1/hr/kpi/<pk>/
+GET                   /api/v1/hr/kpi/<pk>/history/
+POST                  /api/v1/hr/kpi/bulk/
+POST                  /api/v1/hr/kpi/calculate/
+GET                   /api/v1/hr/kpi/export/
+GET                   /api/v1/hr/kpi/meta/
+GET                   /api/v1/hr/kpi/month/
+GET                   /api/v1/hr/kpi/period/
+GET POST              /api/v1/hr/leaves/
+GET PUT PATCH DELETE  /api/v1/hr/leaves/<pk>/
+GET                   /api/v1/hr/leaves/<pk>/history/
+GET                   /api/v1/hr/leaves/balance/
+POST                  /api/v1/hr/leaves/bulk/
+GET                   /api/v1/hr/leaves/crossings/
+GET                   /api/v1/hr/leaves/export/
+GET                   /api/v1/hr/leaves/meta/
+GET                   /api/v1/hr/leaves/timeline/
+GET POST              /api/v1/hr/loans/
+GET PUT PATCH DELETE  /api/v1/hr/loans/<pk>/
+POST                  /api/v1/hr/loans/<pk>/activate/
+POST                  /api/v1/hr/loans/<pk>/approve/
+POST                  /api/v1/hr/loans/<pk>/cancel/
+GET                   /api/v1/hr/loans/<pk>/history/
+POST                  /api/v1/hr/loans/bulk/
+GET                   /api/v1/hr/loans/export/
+GET                   /api/v1/hr/loans/meta/
+GET POST              /api/v1/hr/mpin/
+GET PUT PATCH DELETE  /api/v1/hr/mpin/<pk>/
+POST                  /api/v1/hr/mpin/<pk>/finalise/
+GET                   /api/v1/hr/mpin/<pk>/history/
+GET                   /api/v1/hr/mpin/<pk>/txt/
+GET                   /api/v1/hr/mpin/<pk>/xml/
+POST                  /api/v1/hr/mpin/build/
+POST                  /api/v1/hr/mpin/bulk/
+GET                   /api/v1/hr/mpin/export/
+GET                   /api/v1/hr/mpin/meta/
+GET POST              /api/v1/hr/payroll/
+GET PUT PATCH DELETE  /api/v1/hr/payroll/<pk>/
+POST                  /api/v1/hr/payroll/<pk>/approve/
+GET                   /api/v1/hr/payroll/<pk>/history/
+POST                  /api/v1/hr/payroll/<pk>/mark-paid/
+GET                   /api/v1/hr/payroll/<pk>/pdf/
+POST                  /api/v1/hr/payroll/<pk>/recalculate/
+GET                   /api/v1/hr/payroll/<pk>/statutory/
+POST                  /api/v1/hr/payroll/bulk/
+POST                  /api/v1/hr/payroll/export-pdf/
+GET                   /api/v1/hr/payroll/export/
+POST                  /api/v1/hr/payroll/generate/
+GET                   /api/v1/hr/payroll/meta/
+GET                   /api/v1/hr/payroll/preview/
+GET POST              /api/v1/hr/rate-sets/
+GET PUT PATCH DELETE  /api/v1/hr/rate-sets/<pk>/
+GET                   /api/v1/hr/rate-sets/<pk>/history/
+POST                  /api/v1/hr/rate-sets/bulk/
+GET                   /api/v1/hr/rate-sets/export/
+GET                   /api/v1/hr/rate-sets/meta/
+POST                  /api/v1/hr/rate-sets/seed/
+GET POST              /api/v1/hr/work-experience/
+GET PUT PATCH DELETE  /api/v1/hr/work-experience/<pk>/
+GET                   /api/v1/hr/work-experience/<pk>/history/
+POST                  /api/v1/hr/work-experience/bulk/
+GET                   /api/v1/hr/work-experience/export/
+GET                   /api/v1/hr/work-experience/meta/
+
+### dms (102)
+GET POST              /api/v1/dms/audit/
+GET PUT PATCH DELETE  /api/v1/dms/audit/<pk>/
+GET                   /api/v1/dms/audit/<pk>/history/
+POST                  /api/v1/dms/audit/bulk/
+GET                   /api/v1/dms/audit/export/
+GET                   /api/v1/dms/audit/meta/
+GET                   /api/v1/dms/audit/verify/
+GET POST              /api/v1/dms/center/
+GET PUT PATCH DELETE  /api/v1/dms/center/<pk>/
+POST                  /api/v1/dms/center/<pk>/add-version/
+POST                  /api/v1/dms/center/<pk>/archive/
+GET                   /api/v1/dms/center/<pk>/audit/
+GET                   /api/v1/dms/center/<pk>/download/
+POST                  /api/v1/dms/center/<pk>/finalize/
+GET                   /api/v1/dms/center/<pk>/history/
+POST                  /api/v1/dms/center/<pk>/transition/
+POST                  /api/v1/dms/center/<pk>/unarchive/
+GET                   /api/v1/dms/center/archive-book/
+POST                  /api/v1/dms/center/bulk/
+GET                   /api/v1/dms/center/expiring/
+GET                   /api/v1/dms/center/export/
+GET                   /api/v1/dms/center/meta/
+GET                   /api/v1/dms/center/summary/
+GET POST              /api/v1/dms/classifications/
+GET PUT PATCH DELETE  /api/v1/dms/classifications/<pk>/
+GET                   /api/v1/dms/classifications/<pk>/history/
+POST                  /api/v1/dms/classifications/bulk/
+GET                   /api/v1/dms/classifications/export/
+GET                   /api/v1/dms/classifications/meta/
+POST                  /api/v1/dms/classifications/seed/
+GET POST              /api/v1/dms/documents/
+GET PUT PATCH DELETE  /api/v1/dms/documents/<pk>/
+POST                  /api/v1/dms/documents/<pk>/add-version/
+GET                   /api/v1/dms/documents/<pk>/audit/
+GET                   /api/v1/dms/documents/<pk>/download/
+POST                  /api/v1/dms/documents/<pk>/finalize/
+GET                   /api/v1/dms/documents/<pk>/history/
+POST                  /api/v1/dms/documents/<pk>/transition/
+POST                  /api/v1/dms/documents/bulk/
+GET                   /api/v1/dms/documents/expiring/
+GET                   /api/v1/dms/documents/export/
+GET                   /api/v1/dms/documents/meta/
+GET                   /api/v1/dms/documents/summary/
+GET POST              /api/v1/dms/file-links/
+GET PUT PATCH DELETE  /api/v1/dms/file-links/<pk>/
+GET                   /api/v1/dms/file-links/<pk>/history/
+POST                  /api/v1/dms/file-links/bulk/
+GET                   /api/v1/dms/file-links/export/
+GET                   /api/v1/dms/file-links/meta/
+POST                  /api/v1/dms/file-links/rebuild/
+GET POST              /api/v1/dms/ledger/
+GET PUT PATCH DELETE  /api/v1/dms/ledger/<pk>/
+GET                   /api/v1/dms/ledger/<pk>/history/
+POST                  /api/v1/dms/ledger/<pk>/void/
+POST                  /api/v1/dms/ledger/bulk/
+GET                   /api/v1/dms/ledger/export/
+GET                   /api/v1/dms/ledger/meta/
+GET POST              /api/v1/dms/links/
+GET PUT PATCH DELETE  /api/v1/dms/links/<pk>/
+GET                   /api/v1/dms/links/<pk>/history/
+POST                  /api/v1/dms/links/bulk/
+GET                   /api/v1/dms/links/export/
+GET                   /api/v1/dms/links/meta/
+GET POST              /api/v1/dms/locations/
+GET PUT PATCH DELETE  /api/v1/dms/locations/<pk>/
+GET                   /api/v1/dms/locations/<pk>/history/
+POST                  /api/v1/dms/locations/bulk/
+GET                   /api/v1/dms/locations/export/
+GET                   /api/v1/dms/locations/meta/
+GET POST              /api/v1/dms/record-types/
+GET PUT PATCH DELETE  /api/v1/dms/record-types/<pk>/
+GET                   /api/v1/dms/record-types/<pk>/history/
+POST                  /api/v1/dms/record-types/bulk/
+GET                   /api/v1/dms/record-types/export/
+GET                   /api/v1/dms/record-types/meta/
+GET POST              /api/v1/dms/registers/
+GET PUT PATCH DELETE  /api/v1/dms/registers/<pk>/
+GET                   /api/v1/dms/registers/<pk>/history/
+GET                   /api/v1/dms/registers/<pk>/peek/
+POST                  /api/v1/dms/registers/bulk/
+GET                   /api/v1/dms/registers/export/
+GET                   /api/v1/dms/registers/meta/
+POST                  /api/v1/dms/registers/seed/
+GET POST              /api/v1/dms/relations/
+GET PUT PATCH DELETE  /api/v1/dms/relations/<pk>/
+GET                   /api/v1/dms/relations/<pk>/history/
+POST                  /api/v1/dms/relations/bulk/
+GET                   /api/v1/dms/relations/export/
+GET                   /api/v1/dms/relations/meta/
+GET POST              /api/v1/dms/retention-rules/
+GET PUT PATCH DELETE  /api/v1/dms/retention-rules/<pk>/
+GET                   /api/v1/dms/retention-rules/<pk>/history/
+POST                  /api/v1/dms/retention-rules/bulk/
+GET                   /api/v1/dms/retention-rules/export/
+GET                   /api/v1/dms/retention-rules/for-classification/
+GET                   /api/v1/dms/retention-rules/meta/
+GET POST              /api/v1/dms/versions/
+GET PUT PATCH DELETE  /api/v1/dms/versions/<pk>/
+GET                   /api/v1/dms/versions/<pk>/history/
+POST                  /api/v1/dms/versions/bulk/
+GET                   /api/v1/dms/versions/export/
+GET                   /api/v1/dms/versions/meta/
+
+### workflow (35)
+GET POST              /api/v1/workflow/definitions/
+GET PUT PATCH DELETE  /api/v1/workflow/definitions/<pk>/
+GET                   /api/v1/workflow/definitions/<pk>/history/
+POST                  /api/v1/workflow/definitions/bulk/
+GET                   /api/v1/workflow/definitions/export/
+GET                   /api/v1/workflow/definitions/meta/
+POST                  /api/v1/workflow/definitions/seed/
+GET POST              /api/v1/workflow/inbox/
+GET PUT PATCH DELETE  /api/v1/workflow/inbox/<pk>/
+POST                  /api/v1/workflow/inbox/<pk>/act/
+GET                   /api/v1/workflow/inbox/<pk>/history/
+POST                  /api/v1/workflow/inbox/bulk/
+GET                   /api/v1/workflow/inbox/export/
+GET                   /api/v1/workflow/inbox/meta/
+GET POST              /api/v1/workflow/instances/
+GET PUT PATCH DELETE  /api/v1/workflow/instances/<pk>/
+GET                   /api/v1/workflow/instances/<pk>/history/
+POST                  /api/v1/workflow/instances/bulk/
+GET                   /api/v1/workflow/instances/export/
+GET                   /api/v1/workflow/instances/meta/
+GET POST              /api/v1/workflow/notifications/
+GET PUT PATCH DELETE  /api/v1/workflow/notifications/<pk>/
+GET                   /api/v1/workflow/notifications/<pk>/history/
+POST                  /api/v1/workflow/notifications/<pk>/read/
+POST                  /api/v1/workflow/notifications/bulk/
+GET                   /api/v1/workflow/notifications/export/
+GET                   /api/v1/workflow/notifications/meta/
+POST                  /api/v1/workflow/notifications/read-all/
+GET                   /api/v1/workflow/notifications/unread/
+GET POST              /api/v1/workflow/stages/
+GET PUT PATCH DELETE  /api/v1/workflow/stages/<pk>/
+GET                   /api/v1/workflow/stages/<pk>/history/
+POST                  /api/v1/workflow/stages/bulk/
+GET                   /api/v1/workflow/stages/export/
+GET                   /api/v1/workflow/stages/meta/
+
+### analytics (2)
+GET                   /api/v1/analytics/operations/
+GET                   /api/v1/analytics/profitability/
+
+### files (outside /api) (1)
+ANY                   /files/<str:token>/
+
+### docs (1)
+GET                   /api/v1/docs/    (only when DEBUG is on)

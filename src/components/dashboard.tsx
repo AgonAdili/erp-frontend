@@ -1,15 +1,17 @@
-/** Building blocks of the module overviews: the status band, KPI tiles, ranked bars, bullet bars, meters,
- * sparklines, and a table described by columns. Plain HTML/SVG — no chart library needed for these. */
-import type { ReactNode } from "react";
+/*! @license © 2026 Mia Spasovska. EACore design system (CORE) and front-end specification (FE) — author: Mia Spasovska. All rights reserved unless agreed otherwise in writing. Fingerprint EAC-MS-C226E467F1A53502. */
+/** Building blocks of the module overviews in FE markup: the flow (`.ea-pipe`), figures (`.ea-figures`, GA scorecard: bold
+ * number, colour only in the change), sorted bars (`.ea-hbars`), bullets (`.ea-bullet`), a meter, a part-of-whole split and a
+ * table described by columns (`.ea-table`). Plain HTML; values go to CSS only as custom properties (--v, --t). */
+import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 import { api, type Query } from "@/api/client";
 import { useEntity } from "@/app/prefs";
-import { formatCompact, formatDate, formatDateTime, formatMoney, formatNumber, num } from "@/lib/format";
+import { formatDate, formatDateTime, formatMoney, formatNumber, formatWhole, num } from "@/lib/format";
 
 import { Badge, EmptyState, statusTone } from "./ui";
+import { tr } from "@/i18n";
 
 // ── data ──────────────────────────────────────────────────────────────────────
 
@@ -56,36 +58,33 @@ export interface BandStage {
   danger?: boolean;
 }
 
-/** The module's workflow as a lane: one segment per stage, its count, the road marking telling its state. */
+/** The module's workflow (FE pipe): one cell per stage with its count; a click opens the list with the same filter.
+ * Stages someone has to act on are caution, problems stop (CORE status colours, only as status). */
 export function StatusBand({ title, stages, total }: { title: string; stages: BandStage[]; total?: ReactNode }) {
   return (
-    <section className="band" aria-label={title}>
-      <div className="band-head">
-        <h2>{title}</h2>
-        {total !== undefined ? <span className="band-total">{total}</span> : null}
+    <section className="ea-panel ea-band" aria-label={title}>
+      <div className="ea-panel-head">
+        <div className="ea-panel-ht"><h2 className="ea-panel-title">{title}</h2>{total !== undefined ? <span className="ea-panel-meta">{total}</span> : null}</div>
       </div>
-      <ol className="band-lane" style={{ listStyle: "none", margin: 0 }}>
+      <ol className="ea-pipe">
         {stages.map((s) => {
           const n = s.count ?? 0;
-          const cls = `band-stage${n === 0 ? " zero" : ""}${s.attention && n > 0 ? " attention" : ""}${s.done ? " done" : ""}${s.danger && n > 0 ? " danger" : ""}`;
+          const tone = s.danger && n > 0 ? " is-stop" : s.attention && n > 0 ? " is-caution" : "";
+          const cls = `${n === 0 ? "is-zero" : ""}${tone}${s.done ? " is-done" : ""}`.trim();
           const body = (
             <>
-              <span className="b-count">{s.count === null || s.count === undefined ? "–" : formatNumber(n, 0)}</span>
-              <span className="b-label">{s.label}</span>
-              {s.sub ? <span className="b-sub">{s.sub}</span> : null}
+              <b className="num">{s.count === null || s.count === undefined ? "–" : formatNumber(n, 0)}</b>
+              <span>{s.label}</span>
+              {s.sub ? <span className="ea-pipe-sub">{s.sub}</span> : null}
             </>
           );
           return (
-            <li key={s.key} style={{ display: "contents" }}>
-              {s.to ? <Link to={s.to} className={cls} aria-label={`${s.label}: ${n}`}>{body}</Link> : <div className={cls}>{body}</div>}
+            <li key={s.key}>
+              {s.to ? <Link to={s.to} className={cls || undefined} aria-label={`${s.label}: ${n}`}>{body}</Link> : <span className={`ea-pipe-cell ${cls}`.trim()}>{body}</span>}
             </li>
           );
         })}
       </ol>
-      <div className="band-foot" aria-hidden>
-        <span><span className="legend-dash" />во тек</span>
-        <span><span className="legend-amber" />чека нечија одлука</span>
-      </div>
     </section>
   );
 }
@@ -93,11 +92,12 @@ export function StatusBand({ title, stages, total }: { title: string; stages: Ba
 // ── KPI tiles ─────────────────────────────────────────────────────────────────
 
 export function Kpis({ children }: { children: ReactNode }) {
-  return <div className="kpis">{children}</div>;
+  return <div className="ea-figures" role="list">{children}</div>;
 }
 
-/** One figure: label, value (+unit), what it covers, an optional change and trend. */
-export function Kpi({ label, value, unit, sub, delta, goodWhenUp = true, trend, to, tone }: {
+/** One figure (FE figure.html): label (mono eyebrow), value with its unit, context, the change against the previous period
+ * coloured by meaning (good/bad), never by sign. No sparkline: CORE allows a day tracker only where a rule exists. */
+export function Kpi({ label, value, unit, sub, delta, goodWhenUp = true, to, tone }: {
   label: string;
   value: ReactNode;
   unit?: string;
@@ -105,88 +105,80 @@ export function Kpi({ label, value, unit, sub, delta, goodWhenUp = true, trend, 
   /** Change in percent vs the previous period. */
   delta?: number | null;
   goodWhenUp?: boolean;
+  /** Kept for callers; not drawn (CORE v5.3: no sparklines on figures). */
   trend?: number[];
   to?: string;
   tone?: "attention" | "alarm" | "good";
 }) {
+  const hasDelta = delta !== undefined && delta !== null && Number.isFinite(delta);
   const body = (
     <>
-      <span className="k-label">{label}</span>
-      <span className="k-value">{value ?? "–"}{unit ? <span className="unit">{unit}</span> : null}</span>
-      {delta !== undefined && delta !== null && Number.isFinite(delta) ? (
-        <span className={`k-delta ${delta === 0 ? "" : (delta > 0) === goodWhenUp ? "good" : "bad"}`}>
-          {delta > 0 ? <ArrowUpRight aria-hidden /> : delta < 0 ? <ArrowDownRight aria-hidden /> : null}
-          {delta > 0 ? "+" : ""}{formatNumber(delta, 1)}%
-          <span className="muted" style={{ fontWeight: 400, marginLeft: 4 }}>{sub}</span>
+      <span className="ea-figure-l">{label}</span>
+      <span className="ea-figure-n">{value ?? "–"}{unit ? <span className="ea-figure-u"> {unit}</span> : null}</span>
+      {hasDelta ? (
+        <span className="ea-figure-foot">
+          <span className={`ea-figure-chg ${delta === 0 ? "" : (delta! > 0) === goodWhenUp ? "is-good" : "is-bad"}`}>
+            {delta! > 0 ? "↑ +" : delta! < 0 ? "↓ " : ""}{formatNumber(delta, 1)} %
+          </span>
+          {sub ? <span className="ea-figure-s">{sub}</span> : null}
         </span>
-      ) : sub ? <span className="k-sub">{sub}</span> : null}
-      {trend && trend.length > 1 && trend.some((v) => v !== 0) ? <Sparkline values={trend} className="k-spark" /> : null}
+      ) : sub ? <span className="ea-figure-s">{sub}</span> : null}
     </>
   );
-  const cls = `kpi${tone ? ` ${tone}` : ""}`;
-  return to ? <Link to={to} className={cls}>{body}</Link> : <div className={cls}>{body}</div>;
+  const cls = `ea-figure${tone === "alarm" ? " is-stop" : tone === "good" ? " is-go" : tone === "attention" ? " is-caution" : ""}`;
+  return to ? <Link to={to} className={cls} role="listitem">{body}</Link> : <div className={cls} role="listitem">{body}</div>;
 }
 
-/** Money as a compact figure with the currency. */
+/** Money on a dashboard: whole number with the ISO code (CORE 05: 4.323.263 MKD). */
 export function money(v: unknown) {
-  return formatCompact(v);
+  return formatWhole(v);
 }
 
 // ── small charts ──────────────────────────────────────────────────────────────
 
-export function Sparkline({ values, className, height = 28 }: { values: number[]; className?: string; height?: number }) {
-  const w = 120;
-  const max = Math.max(...values), min = Math.min(...values, 0);
-  const span = max - min || 1;
-  const pts = values.map((v, i) => [(i / (values.length - 1)) * w, height - 2 - ((v - min) / span) * (height - 4)]);
-  const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  const last = pts[pts.length - 1];
-  return (
-    <svg className={className} viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" width="100%" height={height} aria-hidden>
-      <path d={d} fill="none" stroke="var(--series-muted)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r={2.5} fill="var(--accent)" />
-    </svg>
-  );
-}
-
-/** Ranked horizontal bars: label, bar scaled to the largest, value. */
-export function HBars({ rows, unit = "money", color, empty }: {
+/** Sorted bars (FE hbars): label, value, share of the total and a bar scaled to the largest. Brand colour; red only
+ * when the row breaks a rule (`over`). */
+export function HBars({ rows, unit = "money", empty }: {
   rows: { label: ReactNode; value: unknown; to?: string; over?: boolean; key?: string | number; note?: ReactNode }[];
   unit?: "money" | "number" | "percent";
+  /** Ignored: CORE draws sorted bars in the brand colour. */
   color?: string;
   empty?: ReactNode;
 }) {
-  if (!rows.length) return <EmptyState compact title={empty ?? "Нема податоци"} />;
+  if (!rows.length) return <EmptyState compact title={empty ?? tr("Нема податоци")} />;
   const max = Math.max(...rows.map((r) => Math.abs(num(r.value))), 1);
+  const total = rows.reduce((a, r) => a + Math.abs(num(r.value)), 0);
   return (
-    <div className="bars">
+    <ol className="ea-hbars">
       {rows.map((r, i) => {
         const v = num(r.value);
-        return (
-          <div key={r.key ?? i} className={`hbar${r.over ? " over" : ""}`}>
-            <span className="hb-label" title={typeof r.label === "string" ? r.label : undefined}>
-              {r.to ? <Link to={r.to}>{r.label}</Link> : r.label}
-            </span>
-            <span className="hb-track"><span className="hb-fill" style={{ width: `${(Math.abs(v) / max) * 100}%`, background: r.over ? undefined : color }} /></span>
-            <span className="hb-value">{unit === "money" ? formatMoney(v) : unit === "percent" ? `${formatNumber(v, 1)}%` : formatNumber(v)}{r.note}</span>
-          </div>
+        const inner = (
+          <>
+            <span className="ea-hbars-l" title={typeof r.label === "string" ? r.label : undefined}>{r.label}</span>
+            <b>{unit === "money" ? `${formatWhole(v)} MKD` : unit === "percent" ? `${formatNumber(v, 1)} %` : formatNumber(v)}{r.note}</b>
+            <span className="ea-meta">{unit !== "percent" && total ? `${formatNumber((Math.abs(v) / total) * 100, 0)} %` : ""}</span>
+            <span className="ea-hbars-t" aria-hidden><i className={r.over ? "is-stop" : undefined} style={{ "--v": (Math.abs(v) / max).toFixed(3) } as CSSProperties} /></span>
+          </>
         );
+        return <li key={r.key ?? i}>{r.to ? <Link to={r.to}>{inner}</Link> : <span className="ea-hbars-row">{inner}</span>}</li>;
       })}
-    </div>
+    </ol>
   );
 }
 
 /** Budget-style bar: actual (dark), committed (light, behind), budget (target tick). */
+/** Budget bullet (FE bullet): actual (brand, red when over budget), committed behind it, the budget as the target tick. */
 export function Bullet({ budget, actual, committed = 0 }: { budget: number; actual: number; committed?: number }) {
   const scale = Math.max(budget, actual + committed, actual, 1);
-  const pct = (v: number) => `${Math.min(100, (v / scale) * 100)}%`;
+  const share = (v: number) => Math.min(1, Math.max(0, v / scale)).toFixed(3);
   return (
-    <div className="bullet" role="img" aria-label={`Остварено ${formatMoney(actual)}, нарачано ${formatMoney(committed)}, буџет ${formatMoney(budget)}`}>
-      <div className="bullet-track">
-        <span className="bullet-committed" style={{ width: pct(actual + committed) }} />
-        <span className={`bullet-actual${actual > budget && budget > 0 ? " over" : ""}`} style={{ width: pct(actual) }} />
-        {budget > 0 ? <span className="bullet-target" style={{ left: `calc(${pct(budget)} - 1px)` }} /> : null}
-      </div>
+    <div className={`ea-bullet${actual > budget && budget > 0 ? " is-stop" : ""}`} role="img"
+      aria-label={tr("Остварено {0} MKD, нарачано {1} MKD, буџет {2} MKD", formatMoney(actual), formatMoney(committed), formatMoney(budget))}>
+      <span className="ea-bullet-track">
+        <span className="ea-bullet-committed" style={{ "--v": share(actual + committed) } as CSSProperties} />
+        <span className="ea-bullet-bar" style={{ "--v": share(actual) } as CSSProperties} />
+        {budget > 0 ? <span className="ea-bullet-target" style={{ "--t": share(budget) } as CSSProperties} /> : null}
+      </span>
     </div>
   );
 }
@@ -196,34 +188,36 @@ export function Meter({ value, max = 100, warnAt, badAt, label }: { value: numbe
   const tone = badAt !== undefined && p >= badAt ? " bad" : warnAt !== undefined && p >= warnAt ? " warn" : "";
   return (
     <div className={`meter${tone}`} role="meter" aria-valuenow={Math.round(p)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-      <span style={{ width: `${p}%` }} />
+      <span style={{ "--v": (p / 100).toFixed(3) } as CSSProperties} />
     </div>
   );
 }
 
-/** A single 100% bar split into parts, with a legend (status mix, cost structure). */
+/** Part of a whole (FE split): at most 4 parts in ink, taupe, blue and grey (CORE 22, charts v3); more parts become
+ * sorted bars, because a bar with many colours can't be read. */
 export function ShareBar({ parts, unit = "number" }: { parts: { label: string; value: unknown; color?: string }[]; unit?: "money" | "number" }) {
   const total = parts.reduce((s, p) => s + Math.max(0, num(p.value)), 0);
-  const colors = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--series-5)", "var(--series-6)", "var(--series-muted)"];
-  if (!total) return <EmptyState compact title="Нема податоци" />;
+  if (!total) return <EmptyState compact title={tr("Нема податоци")} />;
+  if (parts.filter((p) => num(p.value) > 0).length > 4) {
+    return <HBars unit={unit} rows={[...parts].sort((a, b) => num(b.value) - num(a.value)).map((p) => ({ key: p.label, label: p.label, value: p.value }))} />;
+  }
+  const fmt = (v: unknown) => (unit === "money" ? `${formatWhole(v)} MKD` : formatNumber(v));
+  const shown = parts.filter((p) => num(p.value) > 0);
   return (
-    <div className="stack-sm">
-      <div style={{ display: "flex", height: 14, borderRadius: 4, overflow: "hidden", gap: 2, background: "var(--surface)" }} role="img"
-        aria-label={parts.map((p) => `${p.label}: ${unit === "money" ? formatMoney(p.value) : formatNumber(p.value)}`).join(", ")}>
-        {parts.map((p, i) => num(p.value) > 0 ? (
-          <span key={p.label} title={`${p.label}: ${unit === "money" ? formatMoney(p.value) : formatNumber(p.value)}`}
-            style={{ flex: `${num(p.value)} 0 0`, background: p.color ?? colors[i % colors.length], minWidth: 3 }} />
-        ) : null)}
-      </div>
-      <div className="legend" style={{ marginBottom: 0 }}>
-        {parts.map((p, i) => (
-          <span key={p.label}>
-            <span className="swatch" style={{ background: p.color ?? colors[i % colors.length] }} aria-hidden />{p.label}
-            <span className="lv">{unit === "money" ? formatCompact(p.value) : formatNumber(p.value)}</span>
-            <span className="muted xs">{formatNumber((num(p.value) / total) * 100, 0)}%</span>
-          </span>
+    <div className="ea-split">
+      <div className="ea-split-bar" role="img" aria-label={shown.map((p) => `${p.label}: ${fmt(p.value)}`).join(", ")}>
+        {shown.map((p, i) => (
+          <span key={p.label} className={`is-s${i + 1}`} title={`${p.label}: ${fmt(p.value)}`} style={{ "--v": (num(p.value) / total).toFixed(4) } as CSSProperties} />
         ))}
       </div>
+      <ul className="ea-legend">
+        {shown.map((p, i) => (
+          <li key={p.label}>
+            <span className={`ea-sw is-s${i + 1}`} aria-hidden />{p.label} <b>{fmt(p.value)}</b>
+            <span className="ea-meta">{formatNumber((num(p.value) / total) * 100, 0)} %</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -245,14 +239,14 @@ export interface Column {
 function cell(row: Row, col: Column): ReactNode {
   if (col.render) return col.render(row);
   const v = row[col.key];
-  if (v === null || v === undefined || v === "") return <span className="muted-cell">—</span>;
+  if (v === null || v === undefined || v === "") return <span className="muted-cell">{tr("нема податоци")}</span>;
   switch (col.kind) {
     case "money": return formatMoney(v);
     case "number": return formatNumber(v);
-    case "percent": return `${formatNumber(v, 1)}%`;
+    case "percent": return `${formatNumber(v, 1)} %`;
     case "date": return formatDate(v);
     case "datetime": return formatDateTime(v);
-    case "badge": return <Badge tone={statusTone(String(v))}>{String(v)}</Badge>;
+    case "badge": return <Badge plain tone={statusTone(String(v))}>{String(v)}</Badge>;
     default: return String(v);
   }
 }
@@ -262,18 +256,18 @@ const numeric = (c: Column) => c.kind === "money" || c.kind === "number" || c.ki
 export function DataTable({ rows, columns, empty, maxHeight, footer }: {
   rows: Row[]; columns: Column[]; empty?: ReactNode; maxHeight?: number; footer?: ReactNode;
 }) {
-  if (!rows.length) return <EmptyState compact title={empty ?? "Нема записи"} />;
+  if (!rows.length) return <EmptyState compact title={empty ?? tr("Нема записи")} />;
   return (
-    <div className="table-wrap" style={maxHeight ? { maxHeight } : undefined}>
-      <table className="table">
-        <thead><tr>{columns.map((c) => <th key={c.key} className={numeric(c) ? "num" : undefined}>{c.label}</th>)}</tr></thead>
+    <div className="table-responsive table-wrap" style={maxHeight ? { maxHeight } : undefined}>
+      <table className="table ea-table">
+        <thead><tr>{columns.map((c) => <th key={c.key} className={numeric(c) ? "num ea-num" : undefined}>{c.label}</th>)}</tr></thead>
         <tbody>
           {rows.map((row, i) => (
             <tr key={String(row.id ?? i)}>
               {columns.map((c) => {
                 const content = cell(row, c);
                 const to = c.to?.(row);
-                return <td key={c.key} className={[numeric(c) ? "num" : "", c.className ?? ""].join(" ").trim() || undefined}>{to ? <Link to={to}>{content}</Link> : content}</td>;
+                return <td key={c.key} className={[numeric(c) ? "num ea-num" : "", c.className ?? ""].join(" ").trim() || undefined}>{to ? <Link to={to}>{content}</Link> : content}</td>;
               })}
             </tr>
           ))}

@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, setCsrfToken, setUnauthorizedHandler } from "@/api/client";
 import type { Session } from "@/api/types";
+import { isLang, lang, storeLang, type Lang } from "@/i18n";
 
 interface SessionContextValue {
   session: Session | null;
@@ -18,6 +19,8 @@ interface SessionContextValue {
   can: (code: string) => boolean;
   idleWarning: boolean;
   keepAlive: () => void;
+  /** Save the UI language on the server (Django i18n), then reload so every label and server string follows. */
+  setLanguage: (code: Lang) => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -92,6 +95,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const can = useCallback((code: string) => hasCode(session, code), [session]);
 
+  // The account's language is the source of truth: when the server reports another one than this page loaded with,
+  // remember it and reload once (the catalogue loads before the app starts, main.tsx).
+  const serverLang = session?.language?.slice(0, 2);
+  useEffect(() => {
+    if (isLang(serverLang) && serverLang !== lang()) {
+      storeLang(serverLang);
+      window.location.reload();
+    }
+  }, [serverLang]);
+
+  const setLanguage = useCallback(async (code: Lang) => {
+    // TODO(back end): confirm the field name of POST /api/v1/auth/language/ (endpoints.txt lists only the path).
+    if (session?.authenticated) await api.post("/auth/language/", { language: code });
+    storeLang(code);
+    window.location.reload();
+  }, [session?.authenticated]);
+
   // ── idle timeout: warn before the server's idle limit, keep alive on activity ──
   const [idleWarning, setIdleWarning] = useState(false);
   const lastActivity = useRef(Date.now());
@@ -134,8 +154,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [signedIn, session, logout]);
 
   const value = useMemo<SessionContextValue>(
-    () => ({ session, loading: query.isLoading, refresh, login, verifyMfa, logout, can, idleWarning, keepAlive }),
-    [session, query.isLoading, refresh, login, verifyMfa, logout, can, idleWarning, keepAlive],
+    () => ({ session, loading: query.isLoading, refresh, login, verifyMfa, logout, can, idleWarning, keepAlive, setLanguage }),
+    [session, query.isLoading, refresh, login, verifyMfa, logout, can, idleWarning, keepAlive, setLanguage],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
@@ -150,6 +170,7 @@ const NO_SESSION: SessionContextValue = {
   can: () => false,
   idleWarning: false,
   keepAlive: () => undefined,
+  setLanguage: async () => undefined,
 };
 
 /** The session; outside the provider (isolated component tests) an empty, signed-out one. */

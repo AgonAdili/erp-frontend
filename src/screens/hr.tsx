@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Clock, Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Save } from "@/components/icons";
 
 import { api, ApiError, API_BASE } from "@/api/client";
 import { HBars, Kpi, Kpis } from "@/components/dashboard";
@@ -12,6 +12,7 @@ import { Alert, Button, EmptyState, ErrorState, Field, IconButton, PageHeader, P
 import { MONTHS, t } from "@/i18n/mk";
 import { Page } from "@/layout/Page";
 import { addDays, formatDate, formatNumber, num, todayISO, weekdayName } from "@/lib/format";
+import { tr } from "@/i18n";
 
 interface DayRow {
   employee: number;
@@ -28,8 +29,8 @@ interface DayRow {
 }
 
 const REASONS: [string, string][] = [
-  ["PAID_LEAVE", "Платено отсуство"], ["SICK_LEAVE", "Боледување"], ["MATERNITY_LEAVE", "Породилно"],
-  ["FUNERAL_LEAVE", "Погреб"], ["UNPAID_LEAVE", "Неплатено"], ["UNANNOUNCED", "Неоправдано"],
+  ["PAID_LEAVE", tr("Платено отсуство")], ["SICK_LEAVE", tr("Боледување")], ["MATERNITY_LEAVE", tr("Породилно")],
+  ["FUNERAL_LEAVE", tr("Погреб")], ["UNPAID_LEAVE", tr("Неплатено")], ["UNANNOUNCED", tr("Неоправдано")],
 ];
 
 const DEFAULT_IN = "07:00";
@@ -37,8 +38,8 @@ const DEFAULT_OUT = "15:00";
 
 function SaveBar({ dirty, saving, onSave, children }: { dirty: boolean; saving: boolean; onSave: () => void; children?: React.ReactNode }) {
   return (
-    <div className="save-bar" style={{ margin: 0, borderRadius: "0 0 var(--r-lg) var(--r-lg)" }}>
-      {dirty ? <span className="dirty">{t.unsaved}</span> : <span className="xs muted">Сите промени се зачувани</span>}
+    <div className="save-bar" style={{ margin: 0, borderRadius: "0 0 var(--ea-r-card) var(--ea-r-card)" }}>
+      {dirty ? <span className="dirty">{t.unsaved}</span> : <span className="xs muted">{tr("Сите промени се зачувани")}</span>}
       {children}
       <span className="spacer" />
       <Button variant="primary" icon={Save} busy={saving} disabled={!dirty} onClick={onSave}>{t.save}</Button>
@@ -78,7 +79,7 @@ export function AttendanceDay() {
         meal_amount: r.meal_amount || null, project: r.project, disciplinary_action: r.disciplinary_action || null,
       }));
       const res = await api.post<{ saved: number; deleted: number; skipped_leave: number }>("/hr/attendance/day/", { date, rows: payload });
-      toast(`Присуството за ${formatDate(date)} е зачувано`, "success", { description: `${res.saved} зачувани · ${res.deleted} отстранети` });
+      toast(tr("Присуството за {0} е зачувано", formatDate(date)), "success", { description: tr("{0} зачувани · {1} отстранети", res.saved, res.deleted) });
       setDirty(false);
       void q.refetch();
     } catch (err) {
@@ -95,51 +96,51 @@ export function AttendanceDay() {
   const weekday = weekdayName(new Date(`${date}T12:00:00`));
 
   return (
-    <Page title="Присуство по ден">
-      <PageHeader title="Присуство по ден" subtitle={`${weekday}, ${formatDate(date)}`}
+    <Page title={tr("Присуство по ден")}>
+      <PageHeader title={tr("Присуство по ден")} subtitle={`${weekday}, ${formatDate(date)}`}
         actions={<>
-          <IconButton label="Претходен ден" icon={ChevronLeft} variant="default" onClick={() => go(-1)} />
-          <input type="date" className="input" aria-label={t.date} value={date} onChange={(e) => setDate(e.target.value)} style={{ width: 160 }} />
-          <IconButton label="Следен ден" icon={ChevronRight} variant="default" onClick={() => go(1)} />
+          <IconButton label={tr("Претходен ден")} icon={ChevronLeft} variant="default" onClick={() => go(-1)} />
+          <input type="date" className="form-control" aria-label={t.date} value={date} onChange={(e) => setDate(e.target.value)} style={{ width: 160 }} />
+          <IconButton label={tr("Следен ден")} icon={ChevronRight} variant="default" onClick={() => go(1)} />
           <Button onClick={() => setDate(todayISO())}>{t.today}</Button>
         </>} />
       <Kpis>
-        <Kpi label="Присутни" value={formatNumber(present, 0)} />
-        <Kpi label="Отсутни" value={formatNumber(absent, 0)} tone={rows.some((r) => r.is_missing && r.missing_reason === "UNANNOUNCED") ? "alarm" : undefined} />
-        <Kpi label="На отсуство (одобрено)" value={formatNumber(leave, 0)} />
-        <Kpi label="Без внес" value={formatNumber(empty, 0)} tone={empty ? "attention" : undefined} />
+        <Kpi label={tr("Присутни")} value={formatNumber(present, 0)} />
+        <Kpi label={tr("Отсутни")} value={formatNumber(absent, 0)} tone={rows.some((r) => r.is_missing && r.missing_reason === "UNANNOUNCED") ? "alarm" : undefined} />
+        <Kpi label={tr("На отсуство (одобрено)")} value={formatNumber(leave, 0)} />
+        <Kpi label={tr("Без внес")} value={formatNumber(empty, 0)} tone={empty ? "attention" : undefined} />
       </Kpis>
-      {error ? <Alert tone="danger" title="Присуството не е зачувано">{error}</Alert> : null}
-      <Panel flush title="Вработени" sub="Вработените на одобрено отсуство се пополнуваат автоматски"
-        actions={<Button size="sm" icon={Clock} disabled={!empty} onClick={fillDefaults}>Пополни {DEFAULT_IN}–{DEFAULT_OUT} за {empty} без внес</Button>}>
+      {error ? <Alert tone="danger" title={tr("Присуството не е зачувано")}>{error}</Alert> : null}
+      <Panel flush title={tr("Вработени")} sub={tr("Вработените на одобрено отсуство се пополнуваат автоматски")}
+        actions={<Button size="sm" icon={Clock} disabled={!empty} onClick={fillDefaults}>{tr("Пополни")}{" "}{DEFAULT_IN}–{DEFAULT_OUT}{" "}{tr("за")}{" "}{empty}{" "}{tr("без внес")}</Button>}>
         {q.isLoading ? <SkeletonRows rows={10} cols={6} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : !rows.length ? (
-          <EmptyState title="Нема активни вработени" />
+          <EmptyState title={tr("Нема активни вработени")} />
         ) : (
-          <div className="table-wrap" style={{ maxHeight: "calc(100vh - 420px)" }}>
-            <table className="table compact">
+          <div className="table-responsive table-wrap" style={{ maxHeight: "calc(100vh - 420px)" }}>
+            <table className="table ea-table compact">
               <thead>
-                <tr><th className="sticky-col">Вработен</th><th>Доаѓање</th><th>Заминување</th><th>Отсутен</th><th>Причина</th><th>Мерка</th><th>Проект</th><th className="num">Оброк</th></tr>
+                <tr><th className="sticky-col">{tr("Вработен")}</th><th>{tr("Доаѓање")}</th><th>{tr("Заминување")}</th><th>{tr("Отсутен")}</th><th>{tr("Причина")}</th><th>{tr("Мерка")}</th><th>{tr("Проект")}</th><th className="num">{tr("Оброк")}</th></tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={r.employee} style={r.from_leave ? { opacity: 0.6 } : undefined}>
-                    <td className="sticky-col nowrap">{r.employee_name}{r.from_leave ? <div className="xs muted">на отсуство</div> : null}</td>
-                    <td><input type="time" className="input sm" disabled={r.from_leave || r.is_missing} value={r.check_in?.slice(0, 5) ?? ""}
-                      onChange={(e) => update(i, { check_in: e.target.value })} aria-label={`${r.employee_name}: доаѓање`} /></td>
-                    <td><input type="time" className="input sm" disabled={r.from_leave || r.is_missing} value={r.check_out?.slice(0, 5) ?? ""}
-                      onChange={(e) => update(i, { check_out: e.target.value })} aria-label={`${r.employee_name}: заминување`} /></td>
+                    <td className="sticky-col nowrap">{r.employee_name}{r.from_leave ? <div className="xs muted">{tr("на отсуство")}</div> : null}</td>
+                    <td><input type="time" className="form-control sm" disabled={r.from_leave || r.is_missing} value={r.check_in?.slice(0, 5) ?? ""}
+                      onChange={(e) => update(i, { check_in: e.target.value })} aria-label={tr("{0}: доаѓање", r.employee_name)} /></td>
+                    <td><input type="time" className="form-control sm" disabled={r.from_leave || r.is_missing} value={r.check_out?.slice(0, 5) ?? ""}
+                      onChange={(e) => update(i, { check_out: e.target.value })} aria-label={tr("{0}: заминување", r.employee_name)} /></td>
                     <td className="center-text"><input type="checkbox" disabled={r.from_leave} checked={r.is_missing}
-                      onChange={(e) => update(i, { is_missing: e.target.checked })} aria-label={`${r.employee_name}: отсутен`} /></td>
+                      onChange={(e) => update(i, { is_missing: e.target.checked })} aria-label={tr("{0}: отсутен", r.employee_name)} /></td>
                     <td>
-                      <select className="input sm" disabled={r.from_leave || !r.is_missing} value={r.missing_reason}
-                        onChange={(e) => update(i, { missing_reason: e.target.value })} aria-label={`${r.employee_name}: причина`}>
+                      <select className="form-control sm" disabled={r.from_leave || !r.is_missing} value={r.missing_reason}
+                        onChange={(e) => update(i, { missing_reason: e.target.value })} aria-label={tr("{0}: причина", r.employee_name)}>
                         <option value="">{t.none}</option>
                         {REASONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
                     </td>
                     <td>
                       {r.is_missing && r.missing_reason === "UNANNOUNCED" ? (
-                        <select className="input sm" value={r.disciplinary_action ?? ""} aria-label={`${r.employee_name}: дисциплинска мерка`}
+                        <select className="form-control sm" value={r.disciplinary_action ?? ""} aria-label={tr("{0}: дисциплинска мерка", r.employee_name)}
                           onChange={(e) => update(i, { disciplinary_action: e.target.value })}>
                           <option value="">{t.none}</option>
                           {r.disciplinary_actions.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
@@ -150,8 +151,8 @@ export function AttendanceDay() {
                       <RelatedSelect related={{ endpoint: `${API_BASE}/projects/projects/` }} value={r.project}
                         disabled={r.from_leave || r.is_missing} onChange={(v) => update(i, { project: v })} />
                     </td>
-                    <td><input className="input sm num" inputMode="decimal" style={{ width: 90 }} disabled={r.from_leave || r.is_missing}
-                      value={r.meal_amount ?? ""} onChange={(e) => update(i, { meal_amount: e.target.value })} aria-label={`${r.employee_name}: оброк`} /></td>
+                    <td><input className="form-control sm num" inputMode="decimal" style={{ width: 90 }} disabled={r.from_leave || r.is_missing}
+                      value={r.meal_amount ?? ""} onChange={(e) => update(i, { meal_amount: e.target.value })} aria-label={tr("{0}: оброк", r.employee_name)} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -218,7 +219,7 @@ export function AttendanceMonth() {
         meal_amount: d.meal_amount || null, project: d.project,
       }));
       const res = await api.post<{ saved: number; deleted: number }>("/hr/attendance/month/", { employee, year, month, days: payload });
-      toast(`Присуството за ${MONTHS[month - 1].toLowerCase()} е зачувано`, "success", { description: `${res.saved} дена` });
+      toast(tr("Присуството за {0} е зачувано", MONTHS[month - 1].toLowerCase()), "success", { description: tr("{0} дена", res.saved) });
       setDirty(false);
       void q.refetch();
     } catch (err) {
@@ -232,55 +233,55 @@ export function AttendanceMonth() {
   const missing = days.filter((d) => d.is_missing).length;
   const unfilled = days.filter((d) => d.is_working_day && !d.is_holiday && !d.from_leave && !d.is_missing && !d.check_in && !d.check_out).length;
   return (
-    <Page title="Присуство по месец">
-      <PageHeader title="Присуство по месец" subtitle="Целиот месец за еден вработен"
+    <Page title={tr("Присуство по месец")}>
+      <PageHeader title={tr("Присуство по месец")} subtitle={tr("Целиот месец за еден вработен")}
         actions={<>
           <div style={{ minWidth: 280 }}>
-            <Field label="Вработен" htmlFor="am-emp">
-              <RelatedSelect id="am-emp" related={{ endpoint: `${API_BASE}/people/employees/` }} value={employee} onChange={(v) => setEmployee(v)} placeholder="Изберете вработен" />
+            <Field label={tr("Вработен")} htmlFor="am-emp">
+              <RelatedSelect id="am-emp" related={{ endpoint: `${API_BASE}/people/employees/` }} value={employee} onChange={(v) => setEmployee(v)} placeholder={tr("Изберете вработен")} />
             </Field>
           </div>
           <Field label={t.month} htmlFor="am-month">
             <div className="row-tight">
-              <IconButton label="Претходен месец" icon={ChevronLeft} variant="default" onClick={() => shift(-1)} />
-              <input id="am-month" type="month" className="input" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} style={{ width: 160 }} />
-              <IconButton label="Следен месец" icon={ChevronRight} variant="default" onClick={() => shift(1)} />
+              <IconButton label={tr("Претходен месец")} icon={ChevronLeft} variant="default" onClick={() => shift(-1)} />
+              <input id="am-month" type="month" className="form-control" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} style={{ width: 160 }} />
+              <IconButton label={tr("Следен месец")} icon={ChevronRight} variant="default" onClick={() => shift(1)} />
             </div>
           </Field>
         </>} />
-      {error ? <Alert tone="danger" title="Присуството не е зачувано">{error}</Alert> : null}
+      {error ? <Alert tone="danger" title={tr("Присуството не е зачувано")}>{error}</Alert> : null}
       {employee === null ? (
-        <Panel><EmptyState title="Изберете вработен">Ќе се прикаже секој ден од месецот за внес или поправка.</EmptyState></Panel>
+        <Panel><EmptyState title={tr("Изберете вработен")}>{tr("Ќе се прикаже секој ден од месецот за внес или поправка.")}</EmptyState></Panel>
       ) : (
         <>
           <Kpis>
-            <Kpi label="Работни денови" value={formatNumber(workdays, 0)} sub={`${MONTHS[month - 1]} ${year}`} />
-            <Kpi label="Одработени" value={formatNumber(worked, 0)} />
-            <Kpi label="Отсуства" value={formatNumber(missing, 0)} />
-            <Kpi label="Без внес" value={formatNumber(unfilled, 0)} tone={unfilled ? "attention" : undefined} />
+            <Kpi label={tr("Работни денови")} value={formatNumber(workdays, 0)} sub={`${MONTHS[month - 1]} ${year}`} />
+            <Kpi label={tr("Одработени")} value={formatNumber(worked, 0)} />
+            <Kpi label={tr("Отсуства")} value={formatNumber(missing, 0)} />
+            <Kpi label={tr("Без внес")} value={formatNumber(unfilled, 0)} tone={unfilled ? "attention" : undefined} />
           </Kpis>
           <Panel flush title={`${MONTHS[month - 1]} ${year}`}
-            actions={<Button size="sm" icon={Clock} disabled={!unfilled} onClick={fillWorkdays}>Пополни {DEFAULT_IN}–{DEFAULT_OUT} за {unfilled} работни дена</Button>}>
+            actions={<Button size="sm" icon={Clock} disabled={!unfilled} onClick={fillWorkdays}>{tr("Пополни")}{" "}{DEFAULT_IN}–{DEFAULT_OUT}{" "}{tr("за")}{" "}{unfilled}{" "}{tr("работни дена")}</Button>}>
             {q.isLoading ? <SkeletonRows rows={10} cols={6} /> : q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : (
-              <div className="table-wrap" style={{ maxHeight: "calc(100vh - 420px)" }}>
-                <table className="table compact">
-                  <thead><tr><th>Датум</th><th>Ден</th><th>Доаѓање</th><th>Заминување</th><th>Отсутен</th><th>Причина</th><th>Проект</th><th className="num">Оброк</th></tr></thead>
+              <div className="table-responsive table-wrap" style={{ maxHeight: "calc(100vh - 420px)" }}>
+                <table className="table ea-table compact">
+                  <thead><tr><th>{tr("Датум")}</th><th>{tr("Ден")}</th><th>{tr("Доаѓање")}</th><th>{tr("Заминување")}</th><th>{tr("Отсутен")}</th><th>{tr("Причина")}</th><th>{tr("Проект")}</th><th className="num">{tr("Оброк")}</th></tr></thead>
                   <tbody>
                     {days.map((d, i) => {
                       const off = !d.is_working_day || d.is_holiday;
                       return (
                         <tr key={d.date} className={off ? "off-day" : undefined} style={d.from_leave ? { opacity: 0.6 } : undefined}>
                           <td className="nowrap num">{formatDate(d.date)}</td>
-                          <td className="small">{d.day_name}{d.is_holiday ? <span className="tone-warning"> · празник</span> : null}{d.from_leave ? <span className="muted"> · отсуство</span> : null}</td>
-                          <td><input type="time" className="input sm" disabled={d.from_leave || d.is_missing} value={d.check_in?.slice(0, 5) ?? ""}
-                            onChange={(e) => update(i, { check_in: e.target.value })} aria-label={`${formatDate(d.date)}: доаѓање`} /></td>
-                          <td><input type="time" className="input sm" disabled={d.from_leave || d.is_missing} value={d.check_out?.slice(0, 5) ?? ""}
-                            onChange={(e) => update(i, { check_out: e.target.value })} aria-label={`${formatDate(d.date)}: заминување`} /></td>
+                          <td className="small">{d.day_name}{d.is_holiday ? <span className="tone-warning">{" "}{tr("· празник")}</span> : null}{d.from_leave ? <span className="muted">{" "}{tr("· отсуство")}</span> : null}</td>
+                          <td><input type="time" className="form-control sm" disabled={d.from_leave || d.is_missing} value={d.check_in?.slice(0, 5) ?? ""}
+                            onChange={(e) => update(i, { check_in: e.target.value })} aria-label={tr("{0}: доаѓање", formatDate(d.date))} /></td>
+                          <td><input type="time" className="form-control sm" disabled={d.from_leave || d.is_missing} value={d.check_out?.slice(0, 5) ?? ""}
+                            onChange={(e) => update(i, { check_out: e.target.value })} aria-label={tr("{0}: заминување", formatDate(d.date))} /></td>
                           <td className="center-text"><input type="checkbox" disabled={d.from_leave} checked={d.is_missing}
-                            onChange={(e) => update(i, { is_missing: e.target.checked })} aria-label={`${formatDate(d.date)}: отсутен`} /></td>
+                            onChange={(e) => update(i, { is_missing: e.target.checked })} aria-label={tr("{0}: отсутен", formatDate(d.date))} /></td>
                           <td>
-                            <select className="input sm" disabled={d.from_leave || !d.is_missing} value={d.missing_reason}
-                              onChange={(e) => update(i, { missing_reason: e.target.value })} aria-label={`${formatDate(d.date)}: причина`}>
+                            <select className="form-control sm" disabled={d.from_leave || !d.is_missing} value={d.missing_reason}
+                              onChange={(e) => update(i, { missing_reason: e.target.value })} aria-label={tr("{0}: причина", formatDate(d.date))}>
                               <option value="">{t.none}</option>
                               {REASONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                             </select>
@@ -289,8 +290,8 @@ export function AttendanceMonth() {
                             <RelatedSelect related={{ endpoint: `${API_BASE}/projects/projects/` }} value={d.project}
                               disabled={d.from_leave || d.is_missing} onChange={(v) => update(i, { project: v })} />
                           </td>
-                          <td><input className="input sm num" inputMode="decimal" style={{ width: 90 }} disabled={d.from_leave || d.is_missing}
-                            value={d.meal_amount ?? ""} onChange={(e) => update(i, { meal_amount: e.target.value })} aria-label={`${formatDate(d.date)}: оброк`} /></td>
+                          <td><input className="form-control sm num" inputMode="decimal" style={{ width: 90 }} disabled={d.from_leave || d.is_missing}
+                            value={d.meal_amount ?? ""} onChange={(e) => update(i, { meal_amount: e.target.value })} aria-label={tr("{0}: оброк", formatDate(d.date))} /></td>
                         </tr>
                       );
                     })}
@@ -320,14 +321,14 @@ interface KpiRow {
 }
 
 const KPI_COLS: [keyof KpiRow, string][] = [
-  ["expected_working_days", "Работни дена"], ["actual_working_days", "Одработени"], ["attendance_percentage", "Присуство"],
-  ["missing_days", "Отсуства"], ["total_overtime_hours", "Прекувремено (ч)"], ["approved_overtime_hours", "Одобрено (ч)"],
-  ["total_late_hours", "Доцнење (ч)"], ["total_early_leave_hours", "Порано заминување (ч)"],
+  ["expected_working_days", tr("Работни дена")], ["actual_working_days", tr("Одработени")], ["attendance_percentage", tr("Присуство")],
+  ["missing_days", tr("Отсуства")], ["total_overtime_hours", tr("Прекувремено (ч)")], ["approved_overtime_hours", tr("Одобрено (ч)")],
+  ["total_late_hours", tr("Доцнење (ч)")], ["total_early_leave_hours", tr("Порано заминување (ч)")],
 ];
 
 const BANDS: [string, (p: number) => boolean][] = [
-  ["100% и повеќе", (p) => p >= 100], ["95–99%", (p) => p >= 95 && p < 100], ["90–94%", (p) => p >= 90 && p < 95],
-  ["80–89%", (p) => p >= 80 && p < 90], ["Под 80%", (p) => p < 80],
+  [tr("100% и повеќе"), (p) => p >= 100], ["95–99%", (p) => p >= 95 && p < 100], ["90–94%", (p) => p >= 90 && p < 95],
+  ["80–89%", (p) => p >= 80 && p < 90], [tr("Под 80%"), (p) => p < 80],
 ];
 
 /** Live KPIs of a month for everyone (v1 KPI dashboard): sortable, low attendance marked, store a row. */
@@ -362,7 +363,7 @@ export function KpiMonth() {
     setStoring(employee);
     try {
       await api.post("/hr/kpi/calculate/", { employee, year, month });
-      toast(`Показателите за ${name} се зачувани`, "success");
+      toast(tr("Показателите за {0} се зачувани", name), "success");
     } catch (err) {
       toast(err instanceof ApiError ? err.message : String(err), "danger");
     } finally {
@@ -371,13 +372,13 @@ export function KpiMonth() {
   };
   const low = rows.filter((r) => num(r.attendance_percentage) < 90);
   return (
-    <Page title="Показатели по месец">
-      <PageHeader title="Показатели по месец" subtitle="Пресметано од присуството во живо; „Зачувај“ го запишува месецот во показателите"
+    <Page title={tr("Показатели по месец")}>
+      <PageHeader title={tr("Показатели по месец")} subtitle={tr("Пресметано од присуството во живо; „Зачувај“ го запишува месецот во показателите")}
         actions={<>
-          <Field label={t.month} htmlFor="kpi-month"><input id="kpi-month" type="month" className="input" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} /></Field>
+          <Field label={t.month} htmlFor="kpi-month"><input id="kpi-month" type="month" className="form-control" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} /></Field>
           <div style={{ minWidth: 220 }}>
-            <Field label="Оддел" htmlFor="kpi-dept">
-              <RelatedSelect id="kpi-dept" related={{ endpoint: `${API_BASE}/org/departments/` }} value={department} onChange={(v) => setDepartment(v)} placeholder="Сите оддели" />
+            <Field label={tr("Оддел")} htmlFor="kpi-dept">
+              <RelatedSelect id="kpi-dept" related={{ endpoint: `${API_BASE}/org/departments/` }} value={department} onChange={(v) => setDepartment(v)} placeholder={tr("Сите оддели")} />
             </Field>
           </div>
         </>} />
@@ -385,23 +386,23 @@ export function KpiMonth() {
       {rows.length ? (
         <>
           <Kpis>
-            <Kpi label="Просечно присуство" value={formatNumber(avg("attendance_percentage"), 1)} unit="%" sub={`${rows.length} вработени`} />
-            <Kpi label="Под 90% присуство" value={formatNumber(low.length, 0)} tone={low.length ? "attention" : undefined} />
-            <Kpi label="Прекувремено" value={formatNumber(sum("total_overtime_hours"), 0)} unit="ч" sub={`одобрено ${formatNumber(sum("approved_overtime_hours"), 0)} ч`} />
-            <Kpi label="Доцнење" value={formatNumber(sum("total_late_hours"), 0)} unit="ч" />
+            <Kpi label={tr("Просечно присуство")} value={formatNumber(avg("attendance_percentage"), 1)} unit="%" sub={tr("{0} вработени", rows.length)} />
+            <Kpi label={tr("Под 90% присуство")} value={formatNumber(low.length, 0)} tone={low.length ? "attention" : undefined} />
+            <Kpi label={tr("Прекувремено")} value={formatNumber(sum("total_overtime_hours"), 0)} unit={tr("ч")} sub={tr("одобрено {0} ч", formatNumber(sum("approved_overtime_hours"), 0))} />
+            <Kpi label={tr("Доцнење")} value={formatNumber(sum("total_late_hours"), 0)} unit={tr("ч")} />
           </Kpis>
-          <Panel title="Распределба на присуството" sub="Број на вработени по процент на присуство">
+          <Panel title={tr("Распределба на присуството")} sub={tr("Број на вработени по процент на присуство")}>
             <HBars unit="number" rows={BANDS.map(([label, test]) => ({ key: label, label, value: rows.filter((r) => test(num(r.attendance_percentage))).length,
-              over: label === "Под 80%" }))} />
+              over: label === tr("Под 80%") }))} />
           </Panel>
         </>
       ) : null}
-      <Panel flush title="Вработени">
-        {q.isLoading ? <SkeletonRows rows={10} cols={7} /> : !rows.length ? <EmptyState title="Нема активни вработени" /> : (
-          <div className="table-wrap" style={{ maxHeight: "calc(100vh - 300px)" }}>
-            <table className="table">
+      <Panel flush title={tr("Вработени")}>
+        {q.isLoading ? <SkeletonRows rows={10} cols={7} /> : !rows.length ? <EmptyState title={tr("Нема активни вработени")} /> : (
+          <div className="table-responsive table-wrap" style={{ maxHeight: "calc(100vh - 300px)" }}>
+            <table className="table ea-table">
               <thead>
-                <tr>{header("employee_name", "Вработен", false)}{KPI_COLS.map(([k, label]) => <React.Fragment key={k}>{header(k, label)}</React.Fragment>)}<th /></tr>
+                <tr>{header("employee_name", tr("Вработен"), false)}{KPI_COLS.map(([k, label]) => <React.Fragment key={k}>{header(k, label)}</React.Fragment>)}<th /></tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
@@ -409,19 +410,19 @@ export function KpiMonth() {
                     <td><Link to={`/people/employees/${r.employee}`}>{r.employee_name}</Link></td>
                     {KPI_COLS.map(([k]) => (
                       <td key={k} className={`num${k === "attendance_percentage" && num(r[k]) < 90 ? " tone-danger strong" : ""}`}>
-                        {k === "attendance_percentage" ? `${formatNumber(r[k], 1)}%` : formatNumber(r[k], k.endsWith("days") ? 0 : 2)}
+                        {k === "attendance_percentage" ? `${formatNumber(r[k], 1)} %` : formatNumber(r[k], k.endsWith("days") ? 0 : 2)}
                       </td>
                     ))}
                     <td className="right"><Button size="sm" busy={storing === r.employee} onClick={() => void store(r.employee, r.employee_name)}
-                      title="Пресметај и зачувај го месецот">Зачувај</Button></td>
+                      title={tr("Пресметај и зачувај го месецот")}>{tr("Зачувај")}</Button></td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
-                  <td>Вкупно / просек ({rows.length})</td>
+                  <td>{tr("Вкупно / просек (")}{rows.length})</td>
                   {KPI_COLS.map(([k]) => (
-                    <td key={k} className="num">{k === "attendance_percentage" ? `${formatNumber(avg(k), 1)}%` : formatNumber(sum(k), k.endsWith("days") ? 0 : 2)}</td>
+                    <td key={k} className="num">{k === "attendance_percentage" ? `${formatNumber(avg(k), 1)} %` : formatNumber(sum(k), k.endsWith("days") ? 0 : 2)}</td>
                   ))}
                   <td />
                 </tr>

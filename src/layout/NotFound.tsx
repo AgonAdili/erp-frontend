@@ -1,4 +1,4 @@
-import { Compass, Lock } from "lucide-react";
+import { Compass, Lock } from "@/components/icons";
 
 import { EmptyState, LinkButton } from "@/components/ui";
 import { t } from "@/i18n/mk";

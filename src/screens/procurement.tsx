@@ -11,6 +11,7 @@ import { formatDate, formatMoney, formatNumber } from "@/lib/format";
 import { useInvalidateResource, useMeta } from "@/meta/hooks";
 
 import { ActionButton } from "./actions";
+import { tr } from "@/i18n";
 
 interface Quote {
   id: number;
@@ -66,36 +67,36 @@ export function QuotationCompare({ meta, row }: { meta: ResourceMeta; row: Row }
   );
 
   return (
-    <Panel title="Споредба на понуди" sub={`${quotes.length} понуди, од најевтина`}>
+    <Panel title={tr("Споредба на понуди")} sub={tr("{0} понуди, од најевтина", quotes.length)}>
      <div className="stack">
       {q.data.below_minimum ? (
-        <Alert tone="warning" title="Недоволно понуди">
-          Потребни се најмалку {q.data.minimum_quotations} понуди за оваа вредност; евидентирани: {quotes.length}.
+        <Alert tone="warning" title={tr("Недоволно понуди")}>
+          {tr("Потребни се најмалку")}{" "}{q.data.minimum_quotations}{" "}{tr("понуди за оваа вредност; евидентирани:")}{" "}{quotes.length}.
         </Alert>
       ) : null}
-      {!quotes.length ? <EmptyState title="Сè уште нема понуди">Додајте ги понудите од добавувачите во табот „Понуди“.</EmptyState> : (
+      {!quotes.length ? <EmptyState title={tr("Сè уште нема понуди")}>{tr("Додајте ги понудите од добавувачите во табот „Понуди“.")}</EmptyState> : (
         <>
           <Kpis>
             {quotes.map((quote, i) => (
               <Kpi key={quote.id} label={`${i + 1}. ${quote.supplier}`} value={formatMoney(quote.total)} unit={quote.currency}
                 tone={quote.is_selected ? "good" : undefined}
-                sub={`${quote.is_selected ? "избрана · " : ""}${i === 0 && quotes.length > 1 ? "најниска цена" : i > 0 ? `+${formatMoney(quote.gap)} од најниската` : ""}`} />
+                sub={`${quote.is_selected ? tr("избрана · ") : ""}${i === 0 && quotes.length > 1 ? tr("најниска цена") : i > 0 ? tr("+{0} од најниската", formatMoney(quote.gap)) : ""}`} />
             ))}
           </Kpis>
-          <div className="table-wrap">
-            <table className="table compare">
+          <div className="table-responsive table-wrap">
+            <table className="table ea-table compare">
               <thead>
                 <tr>
-                  <th scope="col">Ставка / критериум</th>
+                  <th scope="col">{tr("Ставка / критериум")}</th>
                   {quotes.map((quote) => (
                     <th key={quote.id} scope="col" {...sel(quote)}>
-                      {quote.supplier} {quote.is_selected ? <Badge tone="success">избрана</Badge> : null}
+                      {quote.supplier} {quote.is_selected ? <Badge tone="success">{tr("избрана")}</Badge> : null}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {group("Цени по ставка")}
+                {group(tr("Цени по ставка"))}
                 {matrix.length ? matrix.map((m) => (
                   <tr key={m.id}>
                     <th scope="row">{m.material}<div className="small muted">{formatNumber(m.quantity)} {m.unit}</div></th>
@@ -104,35 +105,35 @@ export function QuotationCompare({ meta, row }: { meta: ResourceMeta; row: Row }
                         {c.unit_price === null ? <span className="muted">—</span> : (
                           <>
                             {formatMoney(c.unit_price)} / {m.unit}
-                            <div className="small muted">вкупно {formatMoney(c.total)}</div>
+                            <div className="small muted">{tr("вкупно")}{" "}{formatMoney(c.total)}</div>
                           </>
                         )}
                       </td>
                     ))}
                   </tr>
-                )) : line("Барањето нема ставки", () => null)}
-                {group("Финансии")}
-                {line("Без ДДВ", (x) => formatMoney(x.total_without_vat))}
-                {line("ДДВ", (x) => formatMoney(x.vat))}
-                {line("Вкупно со ДДВ", (x) => <strong>{formatMoney(x.total)}</strong>, "total")}
-                {group("Услови и испорака")}
-                {line("Датум на понуда", (x) => formatDate(x.offer_date))}
-                {line("Важи до", (x) => formatDate(x.valid_until) || "—")}
-                {line("Рок на испорака", (x) => x.delivery_time || "—")}
-                {line("Услови за плаќање", (x) => x.payment_terms || "—")}
-                {line("Превоз вклучен", (x) => (x.transport_included ? "Да" : "Не"))}
-                {group("Оценка")}
-                {line("Гаранција и квалитет", (x) => x.warranty_notes || "—")}
-                {line("Коментар од оценувањето", (x) => x.evaluation_comment || "—")}
-                {line("Причина за избор", (x) => x.selection_reason || "—")}
-                {select && quoteMeta.data ? line("Избор", (x) => (x.is_selected ? "Избрана" : (
+                )) : line(tr("Барањето нема ставки"), () => null)}
+                {group(tr("Финансии"))}
+                {line(tr("Без ДДВ"), (x) => formatMoney(x.total_without_vat))}
+                {line(tr("ДДВ"), (x) => formatMoney(x.vat))}
+                {line(tr("Вкупно со ДДВ"), (x) => <strong>{formatMoney(x.total)}</strong>, "total")}
+                {group(tr("Услови и испорака"))}
+                {line(tr("Датум на понуда"), (x) => formatDate(x.offer_date))}
+                {line(tr("Важи до"), (x) => formatDate(x.valid_until) || "—")}
+                {line(tr("Рок на испорака"), (x) => x.delivery_time || "—")}
+                {line(tr("Услови за плаќање"), (x) => x.payment_terms || "—")}
+                {line(tr("Превоз вклучен"), (x) => (x.transport_included ? tr("Да") : tr("Не")))}
+                {group(tr("Оценка"))}
+                {line(tr("Гаранција и квалитет"), (x) => x.warranty_notes || "—")}
+                {line(tr("Коментар од оценувањето"), (x) => x.evaluation_comment || "—")}
+                {line(tr("Причина за избор"), (x) => x.selection_reason || "—")}
+                {select && quoteMeta.data ? line(tr("Избор"), (x) => (x.is_selected ? tr("Избрана") : (
                   <ActionButton meta={quoteMeta.data!} action={select} row={{ id: x.id, version: x.version } as Row}
                     onDone={() => { void q.refetch(); invalidateQuotes(); invalidateRfq(); }} />
                 ))) : null}
               </tbody>
             </table>
           </div>
-          <p className="small muted">Зелено: најниска единечна цена по ставка.</p>
+          <p className="small muted">{tr("Зелено: најниска единечна цена по ставка.")}</p>
         </>
       )}
      </div>

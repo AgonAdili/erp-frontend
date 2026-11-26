@@ -1,9 +1,12 @@
 /** The navigation map: rail groups, their overview and custom screens, and which API resources they show
  * first. Every other resource the user may view lands in its group's "more" fold by its URL section. */
-import {
-  Archive, BookOpen, Building2, ChartLine, Construction, FileSignature, HardHat, Handshake, ShoppingCart, Settings,
-  Truck, Users, Wallet, Warehouse, type LucideIcon,
-} from "lucide-react";
+import { icon, type LucideIcon } from "@/components/icons";
+import { tr } from "@/i18n";
+
+/** FE sidebar sections (live sidebar structure, FE v3.0) and their CORE colour group (CORE 13 §2: the colour tells the area,
+ * the icon tells the module). Only modules this back end serves are listed (endpoints.txt). */
+export const SECTIONS = [tr("Оператива"), tr("Комерција"), tr("Финансии"), tr("Податоци и управување")] as const;
+export type Section = (typeof SECTIONS)[number];
 
 export interface NavLink {
   to: string;
@@ -18,6 +21,9 @@ export interface NavGroup {
   key: string;
   label: string;
   icon: LucideIcon;
+  section: Section;
+  /** data-module for ea-tokens.css: sets the group colour (--ea-mod) for the page, tile and tabs. */
+  module: string;
   /** First URL section(s) of the API resources this group owns. */
   segments: string[];
   links: NavLink[];
@@ -25,110 +31,115 @@ export interface NavGroup {
   primary: string[];
 }
 
-export const NAV: NavGroup[] = [
+export const NAV_RAW: NavGroup[] = [
   {
-    key: "offers", label: "Понуди", icon: FileSignature, segments: ["offers"],
+    key: "offers", label: tr("Понуди"), icon: icon("document-text-linear"), section: tr("Комерција"), module: "offers", segments: ["offers"],
     links: [
-      { to: "/offers", label: "Преглед", code: "offers.dashboard.view", overview: true },
-      { to: "/offers/approvals", label: "Одобрување понуди", code: "offers.approval.view" },
+      { to: "/offers", label: tr("Преглед"), code: "offers.dashboard.view", overview: true },
+      { to: "/offers/approvals", label: tr("Одобрување понуди"), code: "offers.approval.view" },
     ],
     primary: ["offers/requests", "offers/offers", "offers/followups", "offers/site-visits", "offers/master-price-list", "offers/price-list-versions"],
   },
   {
-    key: "workorders", label: "Работни налози", icon: HardHat, segments: ["workorders"],
+    key: "workorders", label: tr("Работни налози"), icon: icon("clipboard-list-linear"), section: tr("Оператива"), module: "work-orders", segments: ["workorders"],
     links: [
-      { to: "/workorders", label: "Преглед", code: "work_orders.dashboard.view", overview: true },
-      { to: "/workorders/resource-board", label: "Распоред на ресурси", code: "work_orders.resource_board.view" },
+      { to: "/workorders", label: tr("Преглед"), code: "work_orders.dashboard.view", overview: true },
+      { to: "/workorders/resource-board", label: tr("Распоред на ресурси"), code: "work_orders.resource_board.view" },
     ],
     primary: ["workorders/work-orders", "workorders/daily-reports"],
   },
   {
-    key: "procurement", label: "Набавка", icon: ShoppingCart, segments: ["procurement"],
-    links: [{ to: "/procurement", label: "Преглед", code: "procurement.dashboard.view", overview: true }],
+    key: "procurement", label: tr("Набавка"), icon: icon("cart-large-minimalistic-linear"), section: tr("Комерција"), module: "procurement", segments: ["procurement"],
+    links: [{ to: "/procurement", label: tr("Преглед"), code: "procurement.dashboard.view", overview: true }],
     primary: ["procurement/requests", "procurement/rfqs", "procurement/quotations", "procurement/purchase-orders",
       "procurement/goods-receipts", "procurement/invoices"],
   },
   {
-    key: "projects", label: "Проекти и буџет", icon: Construction, segments: ["projects", "budget"],
+    key: "projects", label: tr("Проекти и буџет"), icon: icon("case-linear"), section: tr("Оператива"), module: "projects", segments: ["projects", "budget"],
     links: [
-      { to: "/projects", label: "Преглед", overview: true },
-      { to: "/budget/portfolio", label: "Буџет по проекти", code: "finance.budget.view" },
+      { to: "/projects", label: tr("Преглед"), overview: true },
+      { to: "/budget/portfolio", label: tr("Буџет по проекти"), code: "finance.budget.view" },
     ],
     primary: ["projects/projects", "projects/boqs", "projects/certificates", "projects/diary-books", "projects/measurement-books",
       "budget/budgets", "budget/costs"],
   },
   {
-    key: "inventory", label: "Магацин", icon: Warehouse, segments: ["inventory", "catalog"],
+    key: "inventory", label: tr("Магацин и залихи"), icon: icon("box-linear"), section: tr("Оператива"), module: "warehouse", segments: ["inventory", "catalog"],
     links: [
-      { to: "/inventory", label: "Преглед", code: "inventory.movements.view", overview: true },
-      { to: "/inventory/stock", label: "Залиха и вреднување", code: "inventory.movements.view" },
+      { to: "/inventory", label: tr("Преглед"), code: "inventory.movements.view", overview: true },
+      { to: "/inventory/stock", label: tr("Залиха и вреднување"), code: "inventory.movements.view" },
     ],
     primary: ["inventory/documents", "inventory/movements", "catalog/items", "catalog/warehouses"],
   },
   {
-    key: "fleet", label: "Возен парк", icon: Truck, segments: ["fleet"],
+    key: "fleet", label: tr("Возен парк"), icon: icon("car-linear"), section: tr("Оператива"), module: "fleet", segments: ["fleet"],
     links: [
-      { to: "/fleet", label: "Преглед", code: "fleet.dashboard.view", overview: true },
-      { to: "/fleet/efficiency", label: "Потрошувачка наспроти норма", code: "fleet.reports.view" },
+      { to: "/fleet", label: tr("Преглед"), code: "fleet.dashboard.view", overview: true },
+      { to: "/fleet/efficiency", label: tr("Потрошувачка наспроти норма"), code: "fleet.reports.view" },
     ],
     primary: ["fleet/daily-reports", "fleet/travel-orders", "assets/vehicles", "fleet/drivers", "fleet/maintenance", "fleet/fines",
       "fleet/documents", "fleet/expenses", "fleet/wheels", "fleet/schedules"],
   },
   {
-    key: "assets", label: "Основни средства", icon: Building2, segments: ["assets"],
-    links: [{ to: "/assets", label: "Преглед", overview: true }],
+    key: "assets", label: tr("Основни средства"), icon: icon("buildings-2-linear"), section: tr("Финансии"), module: "accounting", segments: ["assets"],
+    links: [{ to: "/assets", label: tr("Преглед"), overview: true }],
     primary: ["assets/fixed-assets", "assets/depreciation-runs", "assets/transfers", "assets/disposals", "assets/stocktakes", "assets/locations"],
   },
   {
-    key: "people", label: "Луѓе", icon: Users, segments: ["hr", "people"],
+    key: "people", label: tr("Човечки ресурси"), icon: icon("users-group-rounded-linear"), section: tr("Оператива"), module: "hr", segments: ["hr", "people"],
     links: [
-      { to: "/hr", label: "Преглед", code: "hr.dashboard.view", overview: true },
-      { to: "/hr/attendance-day", label: "Присуство по ден", code: "hr.attendance.add" },
-      { to: "/hr/attendance-month", label: "Присуство по месец", code: "hr.attendance.add" },
-      { to: "/hr/leave-timeline", label: "Распоред на отсуства", code: "hr.leaves.view" },
-      { to: "/hr/kpi-month", label: "Показатели по месец", code: "hr.kpi.view" },
+      { to: "/hr", label: tr("Преглед"), code: "hr.dashboard.view", overview: true },
+      { to: "/hr/attendance-day", label: tr("Присуство по ден"), code: "hr.attendance.add" },
+      { to: "/hr/attendance-month", label: tr("Присуство по месец"), code: "hr.attendance.add" },
+      { to: "/hr/leave-timeline", label: tr("Распоред на отсуства"), code: "hr.leaves.view" },
+      { to: "/hr/kpi-month", label: tr("Показатели по месец"), code: "hr.kpi.view" },
     ],
     primary: ["people/employees", "hr/attendance", "hr/leaves", "hr/payroll", "hr/mpin", "hr/loans", "hr/bailiffs",
       "hr/disciplinary-actions", "hr/employee-documents"],
   },
   {
-    key: "finance", label: "Финансии", icon: Wallet, segments: ["finance", "payables", "receivables"],
+    key: "finance", label: tr("Финансии"), icon: icon("wallet-money-linear"), section: tr("Финансии"), module: "finance", segments: ["finance", "payables", "receivables"],
     links: [
-      { to: "/finance", label: "Преглед", code: "finance.dashboard.view", overview: true },
-      { to: "/payables", label: "Обврски кон добавувачи" },
-      { to: "/receivables", label: "Побарувања од купувачи" },
+      { to: "/finance", label: tr("Преглед"), code: "finance.dashboard.view", overview: true },
+      { to: "/payables", label: tr("Обврски кон добавувачи") },
+      { to: "/receivables", label: tr("Побарувања од купувачи") },
     ],
     primary: ["finance/cashbook", "payables/invoices", "payables/open-items", "payables/payments", "receivables/invoices",
       "receivables/open-items", "receivables/receipts", "finance/loans", "finance/forecasts"],
   },
   {
-    key: "accounting", label: "Сметководство", icon: BookOpen, segments: ["accounting"],
-    links: [{ to: "/accounting", label: "Преглед", code: "accounting.dashboard.view", overview: true }],
+    key: "accounting", label: tr("Сметководство"), icon: icon("card-linear"), section: tr("Финансии"), module: "accounting", segments: ["accounting"],
+    links: [{ to: "/accounting", label: tr("Преглед"), code: "accounting.dashboard.view", overview: true }],
     primary: ["accounting/journal-entries", "accounting/ledger", "accounting/accounts", "accounting/fiscal-periods",
       "accounting/close-tasks", "accounting/vat-entries", "accounting/tax-periods"],
   },
   {
-    key: "partners", label: "Партнери", icon: Handshake, segments: ["partners"],
-    links: [{ to: "/partners", label: "Преглед", overview: true }],
+    key: "partners", label: tr("Партнери"), icon: icon("users-group-two-rounded-linear"), section: tr("Податоци и управување"), module: "partners", segments: ["partners"],
+    links: [{ to: "/partners", label: tr("Преглед"), overview: true }],
     primary: ["partners/partners"],
   },
   {
-    key: "dms", label: "Архива", icon: Archive, segments: ["dms"],
-    links: [{ to: "/dms", label: "Преглед", overview: true }],
+    key: "dms", label: tr("Архива на документи"), icon: icon("folder-linear"), section: tr("Податоци и управување"), module: "archive", segments: ["dms"],
+    links: [{ to: "/dms", label: tr("Преглед"), overview: true }],
     primary: ["dms/center", "dms/documents", "dms/registers", "dms/ledger", "dms/classifications"],
   },
   {
-    key: "analytics", label: "Аналитика", icon: ChartLine, segments: ["analytics"],
-    links: [{ to: "/analytics", label: "Профитабилност и трошоци", code: "analytics.dashboard.view", overview: true }],
+    key: "analytics", label: tr("Анализи"), icon: icon("chart-2-linear"), section: tr("Податоци и управување"), module: "analytics", segments: ["analytics"],
+    links: [{ to: "/analytics", label: tr("Профитабилност и трошоци"), code: "analytics.dashboard.view", overview: true }],
     primary: [],
   },
   {
-    key: "admin", label: "Администрација", icon: Settings, segments: ["identity", "org", "reference", "workflow", "core"],
+    key: "admin", label: tr("Матични податоци"), icon: icon("database-linear"), section: tr("Податоци и управување"), module: "master-data", segments: ["identity", "org", "reference", "workflow", "core"],
     links: [],
     primary: ["identity/users", "identity/roles", "identity/entity-access", "org/legal-entities", "org/departments",
       "workflow/definitions", "identity/access-reviews", "identity/auth-events"],
   },
 ];
+
+const ORDER = ["projects", "workorders", "inventory", "fleet", "people", "offers", "procurement", "finance", "accounting", "assets",
+  "analytics", "partners", "dms", "admin"];
+/** The groups in FE sidebar order. "admin" stays last: it also catches resources no other group claims. */
+export const NAV: NavGroup[] = ORDER.map((k) => NAV_RAW.find((g) => g.key === k)!);
 
 /** Resources that have their own screen and are not listed in the navigation. */
 export const HIDDEN_ROUTES = new Set(["workflow/inbox", "workflow/notifications"]);

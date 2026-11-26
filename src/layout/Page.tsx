@@ -17,13 +17,16 @@ export function useCrumb() {
 export function useDocumentTitle(title: string | undefined, crumb?: string) {
   const { setCrumb } = useContext(CrumbContext);
   useEffect(() => {
-    if (title) document.title = `${title} · ${t.appName}`;
+    // CORE: tab title "Наслов — EACore"
+    if (title) document.title = `${title} — ${t.appName}`;
     setCrumb(crumb ?? "");
     return () => setCrumb("");
   }, [title, crumb, setCrumb]);
 }
 
-export function Page({ title, crumb, children, narrow }: { title?: string; crumb?: string; children: ReactNode; narrow?: boolean }) {
+/** FE page wrapper. `board` = a module overview or Home (FE .ea-board: board panel titles, numbered sections).
+ * The module colour (data-module) is set once on <main> by the shell. */
+export function Page({ title, crumb, children, narrow, board }: { title?: string; crumb?: string; children: ReactNode; narrow?: boolean; board?: boolean }) {
   useDocumentTitle(title, crumb);
-  return <div className={`page${narrow ? " narrow" : ""}`}>{children}</div>;
+  return <div className={`ea-page${board ? " ea-board" : ""}${narrow ? " is-narrow" : ""}`}>{children}</div>;
 }

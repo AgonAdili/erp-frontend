@@ -1,7 +1,7 @@
 /** Offer lines editor (v1 offer form with the calculator): rows priced by the server calculator as you type,
  * saved together (PUT …/items/), after which the server recalculates totals and approval needs. */
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2 } from "@/components/icons";
 
 import { api, ApiError } from "@/api/client";
 import type { FieldMeta, ResourceMeta, Row } from "@/api/types";
@@ -10,6 +10,7 @@ import { Alert, Badge, Button, EmptyState, IconButton, Panel, useToast } from "@
 import { t } from "@/i18n/mk";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { useInvalidateResource } from "@/meta/hooks";
+import { tr } from "@/i18n";
 
 const COLUMNS = ["service_item", "description", "unit", "formula_type", "quantity", "thickness_cm", "unit_cost",
   "unit_price", "discount_percent", "minimum_charge"];
@@ -76,7 +77,7 @@ export function OfferItems({ meta, row }: { meta: ResourceMeta; row: Row }) {
         return out;
       });
       await api.put(`${meta.endpoint}${row.id}/items/`, { items }, row.version);
-      toast("Ставките се зачувани", "success");
+      toast(tr("Ставките се зачувани"), "success");
       setDirty(false);
       invalidate();
     } catch (err) {
@@ -89,26 +90,26 @@ export function OfferItems({ meta, row }: { meta: ResourceMeta; row: Row }) {
 
   const needApproval = calc.filter((c) => c?.approval_required).length;
   return (
-    <Panel title="Ставки на понудата" sub={`${lines.length} ставки · пресметано без ДДВ ${formatMoney(total)} ден.`} flush
+    <Panel title={tr("Ставки на понудата")} sub={tr("{0} ставки · пресметано без ДДВ {1} MKD", lines.length, formatMoney(total))} flush
       actions={canEdit ? (
         <div className="row-tight">
-          <Button size="sm" icon={Plus} onClick={() => { setDirty(true); setLines((l) => [...l, { quantity: "1" }]); }}>Додај ставка</Button>
-          <Button size="sm" variant="primary" icon={Save} busy={saving} disabled={!dirty} onClick={save}>Зачувај ставки</Button>
+          <Button size="sm" icon={Plus} onClick={() => { setDirty(true); setLines((l) => [...l, { quantity: "1" }]); }}>{tr("Додај ставка")}</Button>
+          <Button size="sm" variant="primary" icon={Save} busy={saving} disabled={!dirty} onClick={save}>{tr("Зачувај ставки")}</Button>
         </div>
-      ) : !editable ? <Badge plain>заклучена</Badge> : null}>
+      ) : !editable ? <Badge plain>{tr("заклучена")}</Badge> : null}>
       <div className="stack-sm" style={{ padding: error || needApproval || dirty ? "0 16px 8px" : 0 }}>
-        {error ? <Alert tone="danger" title="Ставките не се зачувани">{error.message}</Alert> : null}
-        {needApproval ? <Alert tone="warning">{needApproval} {needApproval === 1 ? "ставка бара" : "ставки бараат"} одобрување пред испраќање.</Alert> : null}
-        {dirty ? <span className="small tone-warning">Имате незачувани промени во ставките.</span> : null}
+        {error ? <Alert tone="danger" title={tr("Ставките не се зачувани")}>{error.message}</Alert> : null}
+        {needApproval ? <Alert tone="warning">{needApproval} {needApproval === 1 ? tr("ставка бара") : tr("ставки бараат")}{" "}{tr("одобрување пред испраќање.")}</Alert> : null}
+        {dirty ? <span className="small tone-warning">{tr("Имате незачувани промени во ставките.")}</span> : null}
       </div>
-      {!lines.length ? <EmptyState compact title="Понудата нема ставки">{canEdit ? "Додајте ја првата ставка." : undefined}</EmptyState> : (
-        <div className="table-wrap rows-editor">
-          <table className="table">
+      {!lines.length ? <EmptyState compact title={tr("Понудата нема ставки")}>{canEdit ? tr("Додајте ја првата ставка.") : undefined}</EmptyState> : (
+        <div className="table-responsive table-wrap rows-editor">
+          <table className="table ea-table">
             <thead>
               <tr>
                 <th className="num" style={{ width: 36 }}>#</th>
                 {cols.map((c) => <th key={c.name} className={c.type === "decimal" ? "num" : undefined}>{c.label}</th>)}
-                <th className="num">Износ</th>
+                <th className="num">{tr("Износ")}</th>
                 {canEdit ? <th aria-label={t.actions} /> : null}
               </tr>
             </thead>
@@ -139,7 +140,7 @@ export function OfferItems({ meta, row }: { meta: ResourceMeta; row: Row }) {
               ))}
             </tbody>
             <tfoot>
-              <tr><td colSpan={cols.length + 1}>Вкупно без ДДВ</td><td className="num">{formatMoney(total)}</td>{canEdit ? <td /> : null}</tr>
+              <tr><td colSpan={cols.length + 1}>{tr("Вкупно без ДДВ")}</td><td className="num">{formatMoney(total)}</td>{canEdit ? <td /> : null}</tr>
             </tfoot>
           </table>
         </div>

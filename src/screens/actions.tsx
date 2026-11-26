@@ -9,6 +9,7 @@ import { JsonView } from "@/components/JsonView";
 import { useTrackTask } from "@/components/tasks";
 import { Alert, Button, Field, Modal, Spinner, Switch, useConfirm, useToast } from "@/components/ui";
 import { t } from "@/i18n/mk";
+import { tr } from "@/i18n";
 
 export function actionApplies(action: ActionMeta, row?: Row): boolean {
   if (!action.allowed) return false;
@@ -29,8 +30,8 @@ function actionUrl(meta: ResourceMeta, action: ActionMeta, row?: Row) {
 }
 
 const INPUT_LABELS: Record<string, string> = {
-  reason: "Причина", comment: "Коментар", note: "Белешка", payment_date: "Датум на плаќање", date: "Датум",
-  amount: "Износ", status: "Статус", source: "Извор", file: "Датотека", year: "Година", month: "Месец",
+  reason: tr("Причина"), comment: tr("Коментар"), note: tr("Белешка"), payment_date: tr("Датум на плаќање"), date: tr("Датум"),
+  amount: tr("Износ"), status: tr("Статус"), source: tr("Извор"), file: tr("Датотека"), year: tr("Година"), month: tr("Месец"),
 };
 
 function InputControl({ input, value, onChange }: { input: ActionInput; value: unknown; onChange: (v: unknown) => void }) {
@@ -38,17 +39,17 @@ function InputControl({ input, value, onChange }: { input: ActionInput; value: u
   const str = value === undefined || value === null ? "" : String(value);
   switch (input.type) {
     case "date":
-      return <input id={id} className="input" type="date" value={str} onChange={(e) => onChange(e.target.value)} />;
+      return <input id={id} className="form-control" type="date" value={str} onChange={(e) => onChange(e.target.value)} />;
     case "number":
     case "decimal":
-      return <input id={id} className="input num" inputMode="decimal" value={str} onChange={(e) => onChange(e.target.value.replace(",", "."))} />;
+      return <input id={id} className="form-control num" inputMode="decimal" value={str} onChange={(e) => onChange(e.target.value.replace(",", "."))} />;
     case "boolean":
       return <Switch id={id} checked={Boolean(value)} onChange={onChange} label={input.label ?? INPUT_LABELS[input.name] ?? input.name} />;
     case "file":
       return <FileInput value={(value as StoredFileRef) ?? null} onChange={onChange} />;
     case "choice":
       return (
-        <select id={id} className="input" value={str} onChange={(e) => onChange(e.target.value)}>
+        <select id={id} className="form-control" value={str} onChange={(e) => onChange(e.target.value)}>
           <option value="">{t.choose}</option>
           {(input.choices ?? []).map((c) => <option key={String(c.value)} value={String(c.value)}>{c.label}</option>)}
         </select>
@@ -58,9 +59,9 @@ function InputControl({ input, value, onChange }: { input: ActionInput; value: u
     case "refs":
       return <RelatedMulti related={{ endpoint: input.endpoint }} value={(value as number[]) ?? []} onChange={onChange} />;
     case "text":
-      return <textarea id={id} className="input" value={str} onChange={(e) => onChange(e.target.value)} />;
+      return <textarea id={id} className="form-control" value={str} onChange={(e) => onChange(e.target.value)} />;
     default:
-      return <input id={id} className="input" value={str} onChange={(e) => onChange(e.target.value)} />;
+      return <input id={id} className="form-control" value={str} onChange={(e) => onChange(e.target.value)} />;
   }
 }
 
@@ -175,7 +176,7 @@ export function ActionButton({
       return;
     }
     if (action.confirm || action.danger) {
-      const ok = await confirm({ title: action.label, text: action.confirm || "Дали сте сигурни?", confirmLabel: action.label, danger: action.danger });
+      const ok = await confirm({ title: action.label, text: action.confirm || tr("Дали сте сигурни?"), confirmLabel: action.label, danger: action.danger });
       if (!ok) return;
     }
     await runAction({});
@@ -200,7 +201,7 @@ export function ActionButton({
           footer={
             kind === "report" ? (
               <>
-                {inputs.length ? <Button variant="primary" busy={busy} disabled={missing.length > 0} onClick={runReport}>Прикажи извештај</Button> : null}
+                {inputs.length ? <Button variant="primary" busy={busy} disabled={missing.length > 0} onClick={runReport}>{tr("Прикажи извештај")}</Button> : null}
                 <Button onClick={() => setOpen(false)}>{t.close}</Button>
               </>
             ) : result !== undefined ? (
@@ -221,7 +222,7 @@ export function ActionButton({
             {(result === undefined || kind === "report") && inputs.length ? (
               <div className="grid-2" style={{ gap: 14 }}>
                 {inputs.map((input) => input.type === "boolean" ? (
-                  <div key={input.name} className="field" style={{ justifyContent: "flex-end" }}>
+                  <div key={input.name} className="ea-field" style={{ justifyContent: "flex-end" }}>
                     <InputControl input={input} value={values[input.name]} onChange={(val) => setValues((s) => ({ ...s, [input.name]: val }))} />
                   </div>
                 ) : (

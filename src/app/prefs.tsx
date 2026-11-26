@@ -86,10 +86,21 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // CORE: data-theme = light | dark | system on <html>; the token sheet follows the device for "system".
+    // .ea-theme-switching for one frame so colours change at once (CORE 03).
     const root = document.documentElement;
-    if (theme === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", theme);
+    root.classList.add("ea-theme-switching");
+    root.setAttribute("data-theme", theme);
     root.setAttribute("data-density", density);
+    const h = window.requestAnimationFrame(() => root.classList.remove("ea-theme-switching"));
+    return () => window.cancelAnimationFrame(h);
   }, [theme, density]);
+
+  useEffect(() => {
+    // FE sidebar: full | mini (icons only), saved per person
+    if (navCollapsed) document.documentElement.setAttribute("data-side", "mini");
+    else document.documentElement.removeAttribute("data-side");
+  }, [navCollapsed]);
 
   // the stored entity only counts while the user still has access to it
   const entities = session?.access?.entities ?? [];

@@ -1,18 +1,18 @@
-/** Cartesian charts (Recharts) in one style: hairline grid, 24px-max bars with rounded data ends, 2px lines,
- * one y-axis, a legend for two or more series, a hover tooltip with exact values, and a table view. Series
- * colours come in the validated order (--series-1…6) and follow the series, never its rank. */
-import { useId, useState, type ReactNode } from "react";
-import {
-  Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
-  type TooltipContentProps,
-} from "recharts";
-import { BarChart3, Table2 } from "lucide-react";
+/*! @license © 2026 Mia Spasovska. EACore design system (CORE) and front-end specification (FE) — author: Mia Spasovska. All rights reserved unless agreed otherwise in writing. Fingerprint EAC-MS-C226E467F1A53502. */
+/** Charts the FE way (FE/08 "Charts", components/columns.html, line.html): HTML first, no chart library. Columns from 0 on
+ * round gridlines, lines drawn over them in SVG with non-scaling strokes, labels at 12px, a tooltip on every column and
+ * the same numbers as a table one click away (CORE 07: every chart has a data table). Series colours v3: ink, taupe,
+ * blue, grey (max 4); status colours only when a caller passes one for a rule. Values reach CSS only as --v, --b, --y. */
+import { useId, useState, type CSSProperties, type ReactNode } from "react";
 
+import { BarChart3, Table2 } from "@/components/icons";
 import { formatCompact, formatMoney, formatNumber, num } from "@/lib/format";
+import { tr } from "@/i18n";
 
 export interface SeriesDef {
   key: string;
   name: string;
+  /** A CSS colour token, e.g. "var(--ea-stop)" for a series that is itself a status. */
   color?: string;
   /** Draw as a line over the bars (same axis, same unit). */
   line?: boolean;
@@ -20,37 +20,43 @@ export interface SeriesDef {
 
 export type Datum = Record<string, string | number | null | undefined> & { label: string };
 
-export const SERIES = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--series-5)", "var(--series-6)"];
+/** Series order (CORE charts v3). Kept as an export for callers that colour a legend by index. */
+export const SERIES = ["var(--ea-chart-1)", "var(--ea-chart-2)", "var(--ea-chart-3)", "var(--ea-chart-4)"];
 
-function fmt(v: unknown, unit: "money" | "number" | "percent") {
-  if (unit === "percent") return `${formatNumber(v, 1)}%`;
-  return unit === "money" ? formatMoney(v) : formatNumber(v);
+type Unit = "money" | "number" | "percent";
+
+function fmt(v: unknown, unit: Unit) {
+  if (unit === "percent") return `${formatNumber(v, 1)} %`;
+  return unit === "money" ? `${formatMoney(v)} MKD` : formatNumber(v);
 }
 
-function ChartTooltip({ active, payload, label, unit }: TooltipContentProps<number, string> & { unit: "money" | "number" | "percent" }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="chart-tooltip">
-      <div className="tt-title">{label}</div>
-      {payload.map((p) => (
-        <div className="tt-row" key={String(p.dataKey)}>
-          <span className="row-tight"><span className="swatch" style={{ background: String(p.color ?? p.fill) }} />{p.name}</span>
-          <span>{fmt(p.value, unit)}</span>
-        </div>
-      ))}
-    </div>
-  );
+function tick(v: number, unit: Unit) {
+  if (unit === "percent") return `${formatNumber(v, 0)} %`;
+  return formatCompact(v);
 }
 
-function DataTableView({ data, series, unit, title }: { data: Datum[]; series: SeriesDef[]; unit: "money" | "number" | "percent"; title: string }) {
+/** 3–5 round gridlines that include 0 (CORE 22: bars start at 0). */
+function niceScale(min: number, max: number) {
+  const lo = Math.min(0, min), hi = Math.max(0, max);
+  const span = hi - lo || 1;
+  const raw = span / 4;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? raw;
+  const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step || step;
+  const ticks: number[] = [];
+  for (let v = a; v <= b + step / 2; v += step) ticks.push(Math.round(v * 1e6) / 1e6);
+  return { a, b, ticks };
+}
+
+function DataTableView({ data, series, unit, title }: { data: Datum[]; series: SeriesDef[]; unit: Unit; title: string }) {
   return (
-    <div className="table-wrap" style={{ maxHeight: 320 }}>
-      <table className="table compact">
+    <div className="table-responsive ea-ch-table">
+      <table className="table ea-table compact">
         <caption className="sr-only">{title}</caption>
-        <thead><tr><th>{""}</th>{series.map((s) => <th key={s.key} className="num">{s.name}</th>)}</tr></thead>
+        <thead><tr><th scope="col">{tr("Период")}</th>{series.map((s) => <th key={s.key} scope="col" className="num ea-num">{s.name}</th>)}</tr></thead>
         <tbody>
           {data.map((d) => (
-            <tr key={d.label}><td>{d.label}</td>{series.map((s) => <td key={s.key} className="num">{fmt(d[s.key], unit)}</td>)}</tr>
+            <tr key={d.label}><th scope="row">{d.label}</th>{series.map((s) => <td key={s.key} className="num ea-num">{fmt(d[s.key], unit)}</td>)}</tr>
           ))}
         </tbody>
       </table>
@@ -58,13 +64,15 @@ function DataTableView({ data, series, unit, title }: { data: Datum[]; series: S
   );
 }
 
+const vars = (v: Record<string, string | number>) => v as CSSProperties;
+
 /** Columns (grouped or stacked) with optional lines on the same axis. */
 export function ColumnChart({
-  data, series, unit = "money", stacked, height = 240, title, totals = true, extra,
+  data, series, unit = "money", stacked, height = 200, title, totals = true, extra,
 }: {
   data: Datum[];
   series: SeriesDef[];
-  unit?: "money" | "number" | "percent";
+  unit?: Unit;
   stacked?: boolean;
   height?: number;
   title: string;
@@ -74,61 +82,100 @@ export function ColumnChart({
 }) {
   const [asTable, setAsTable] = useState(false);
   const id = useId();
-  const colored = series.map((s, i) => ({ ...s, color: s.color ?? SERIES[i % SERIES.length] }));
-  const bars = colored.filter((s) => !s.line);
-  const hasNegative = data.some((d) => colored.some((s) => num(d[s.key]) < 0));
-  const empty = !data.length || data.every((d) => colored.every((s) => !num(d[s.key])));
+  const coloured = series.map((s, i) => ({ ...s, cls: `is-s${(i % 4) + 1}` }));
+  const bars = coloured.filter((s) => !s.line);
+  const lines = coloured.filter((s) => s.line);
+  const empty = !data.length || data.every((d) => series.every((s) => !num(d[s.key])));
+
+  const values: number[] = [];
+  for (const d of data) {
+    if (stacked) {
+      let pos = 0, neg = 0;
+      for (const s of bars) { const v = num(d[s.key]); if (v >= 0) pos += v; else neg += v; }
+      values.push(pos, neg);
+    } else bars.forEach((s) => values.push(num(d[s.key])));
+    lines.forEach((s) => values.push(num(d[s.key])));
+  }
+  const { a, b, ticks } = niceScale(Math.min(0, ...values), Math.max(0, ...values));
+  const y = (v: number) => (v - a) / (b - a);              // 0–1 from the bottom of the plot
+  const zero = y(0);
+  const n = Math.max(data.length, 1);
+  const every = n > 14 ? Math.ceil(n / 12) : 1;            // thin the axis labels, never the bars
+  const tip = (d: Datum) => `${d.label}: ${coloured.map((s) => `${s.name} ${fmt(d[s.key], unit)}`).join(" · ")}`;
+
   return (
-    <figure className="chart" aria-labelledby={id}>
+    <figure className="ea-chart" aria-labelledby={id}>
       <figcaption id={id} className="sr-only">{title}</figcaption>
-      <div className="row" style={{ gap: 8, marginBottom: 6, alignItems: "flex-start" }}>
-        {colored.length > 1 || totals ? (
-          <div className="legend" style={{ flex: 1, marginBottom: 0 }}>
-            {colored.map((s) => (
-              <span key={s.key}>
-                {s.line ? <span aria-hidden style={{ width: 14, height: 2, background: s.color, display: "inline-block", borderRadius: 1 }} />
-                  : <span className="swatch" style={{ background: s.color }} aria-hidden />}
+      <div className="ea-chart-bar">
+        {coloured.length > 1 || totals ? (
+          <ul className="ea-legend">
+            {coloured.map((s) => (
+              <li key={s.key}>
+                <span className={`${s.line ? "ea-ln" : "ea-sw"} ${s.cls}`} style={s.color ? vars({ "--c": s.color }) : undefined} aria-hidden />
                 {s.name}
-                {totals && !s.line ? <span className="lv">{unit === "money" ? formatCompact(data.reduce((a, d) => a + num(d[s.key]), 0)) : formatNumber(data.reduce((a, d) => a + num(d[s.key]), 0))}</span> : null}
-              </span>
+                {totals && !s.line ? <b className="num">{unit === "money" ? `${formatCompact(data.reduce((acc, d) => acc + num(d[s.key]), 0))} MKD` : formatNumber(data.reduce((acc, d) => acc + num(d[s.key]), 0))}</b> : null}
+              </li>
             ))}
-          </div>
-        ) : <span className="spacer" />}
+          </ul>
+        ) : <span className="ea-board-grow" />}
         {extra}
-        <button type="button" className="btn ghost icon sm" aria-pressed={asTable} aria-label={asTable ? "Прикажи график" : "Прикажи табела"}
-          title={asTable ? "Прикажи график" : "Прикажи табела"} onClick={() => setAsTable((v) => !v)}>
+        <button type="button" className="btn btn-ghost btn-sm btn-icon" aria-pressed={asTable} aria-label={asTable ? tr("Прикажи график") : tr("Прикажи табела")}
+          data-tip={asTable ? tr("Прикажи график") : tr("Прикажи табела")} onClick={() => setAsTable((v) => !v)}>
           {asTable ? <BarChart3 aria-hidden /> : <Table2 aria-hidden />}
         </button>
       </div>
-      {asTable ? <DataTableView data={data} series={colored} unit={unit} title={title} /> : empty ? (
-        <div className="empty compact" style={{ height }}><span className="empty-text">Нема податоци за периодот.</span></div>
+      {asTable ? <DataTableView data={data} series={coloured} unit={unit} title={title} /> : empty ? (
+        <div className="ea-empty ea-ch-empty"><p>{tr("Нема податоци за периодот")}</p></div>
       ) : (
-        <div style={{ height }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 6, right: 4, bottom: 0, left: 0 }} barGap={2} barCategoryGap="22%">
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="label" tickLine={false} axisLine={{ stroke: "var(--chart-axis)" }} interval="preserveStartEnd" minTickGap={8} tickMargin={6} />
-              <YAxis tickLine={false} axisLine={false} width={56} tickFormatter={(v) => (unit === "percent" ? `${v}%` : formatCompact(v))} />
-              {hasNegative ? <ReferenceLine y={0} stroke="var(--chart-axis)" /> : null}
-              <Tooltip cursor={{ fill: "var(--surface-3)", opacity: 0.6 }} content={(p) => <ChartTooltip {...(p as TooltipContentProps<number, string>)} unit={unit} />} />
-              {bars.map((s, i) => (
-                <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} maxBarSize={24} stackId={stacked ? "a" : undefined}
-                  radius={stacked ? (i === bars.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]) : [4, 4, 0, 0]}
-                  stroke={stacked ? "var(--surface)" : undefined} strokeWidth={stacked ? 2 : 0} isAnimationActive={false} />
-              ))}
-              {colored.filter((s) => s.line).map((s) => (
-                <Line key={s.key} dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2} dot={false} type="monotone"
-                  activeDot={{ r: 4, stroke: "var(--surface)", strokeWidth: 2 }} isAnimationActive={false} />
-              ))}
-            </ComposedChart>
-          </ResponsiveContainer>
+        <div className="ea-ch" style={vars({ "--ch-h": `${height}px` })} role="img" aria-label={`${title}: ${data.map(tip).join("; ")}`}>
+          <div className="ea-ch-y" aria-hidden>{ticks.map((tv) => <span key={tv} style={vars({ "--y": y(tv).toFixed(4) })}>{tick(tv, unit)}</span>)}</div>
+          <div className="ea-ch-plot">
+            {ticks.map((tv) => <i key={tv} className={`ea-ch-grid${tv === 0 && a < 0 ? " is-zero" : ""}`} style={vars({ "--y": y(tv).toFixed(4) })} aria-hidden />)}
+            <ol className="ea-ch-bars ea-ch-cols" style={vars({ "--n": n })}>
+              {data.map((d) => {
+                let pos = zero, neg = zero;
+                return (
+                  <li key={d.label} data-tip={tip(d)} tabIndex={-1}>
+                    {stacked ? (
+                      <span className="ea-ch-cell">
+                        {bars.map((s) => {
+                          const v = num(d[s.key]); const h = Math.abs(y(v) - zero);
+                          const base = v >= 0 ? pos : neg - h;
+                          if (v >= 0) pos += h; else neg -= h;
+                          return v ? <span key={s.key} className={`ea-ch-col ${s.cls}`} style={vars({ "--b": base.toFixed(4), "--v": h.toFixed(4), ...(s.color ? { "--c": s.color } : {}) })} /> : null;
+                        })}
+                      </span>
+                    ) : bars.map((s) => {
+                      const v = num(d[s.key]); const h = Math.abs(y(v) - zero);
+                      return (
+                        <span key={s.key} className="ea-ch-cell">
+                          {v ? <span className={`ea-ch-col ${s.cls}`} style={vars({ "--b": (v >= 0 ? zero : zero - h).toFixed(4), "--v": h.toFixed(4), ...(s.color ? { "--c": s.color } : {}) })} /> : null}
+                        </span>
+                      );
+                    })}
+                  </li>
+                );
+              })}
+            </ol>
+            {lines.length ? (
+              <svg className="ea-ch-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+                {lines.map((s) => (
+                  <polyline key={s.key} className={`ea-ch-line ${s.cls}`} style={s.color ? vars({ "--c": s.color }) : undefined}
+                    points={data.map((d, i) => `${((i + 0.5) / n) * 100},${100 - y(num(d[s.key])) * 100}`).join(" ")} />
+                ))}
+              </svg>
+            ) : null}
+          </div>
+          <ol className="ea-ch-xb" style={vars({ "--n": n })} aria-hidden>
+            {data.map((d, i) => <li key={d.label}>{i % every === 0 ? d.label : ""}</li>)}
+          </ol>
         </div>
       )}
     </figure>
   );
 }
 
-/** Lines over time (2px, end dot on hover). */
-export function TrendChart(props: { data: Datum[]; series: SeriesDef[]; unit?: "money" | "number" | "percent"; height?: number; title: string; totals?: boolean }) {
+/** Lines over time (FE line: 2.5px ink, non-scaling). */
+export function TrendChart(props: { data: Datum[]; series: SeriesDef[]; unit?: Unit; height?: number; title: string; totals?: boolean }) {
   return <ColumnChart {...props} series={props.series.map((s) => ({ ...s, line: true }))} totals={props.totals ?? false} />;
 }

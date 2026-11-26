@@ -3,16 +3,17 @@
 import { ColumnChart } from "@/charts";
 import { asRows, Kpi, Kpis, Meter, StatusBand, useOverview, type Data } from "@/components/dashboard";
 import { Alert, LinkButton, Panel } from "@/components/ui";
-import { formatCompact, formatMoney, formatNumber, num } from "@/lib/format";
+import { formatWhole, formatMoney, formatNumber, num } from "@/lib/format";
 
 import { listUrl, Overview } from "./common";
+import { tr } from "@/i18n";
 
 export function AccountingOverview() {
   const q = useOverview<Data>("/accounting/ledger/dashboard/");
   return (
-    <Overview title="Сметководство" q={q} actions={<>
-      <LinkButton to="/accounting/ledger">Главна книга</LinkButton>
-      <LinkButton to="/accounting/journal-entries/new" variant="primary">Нов налог</LinkButton>
+    <Overview title={tr("Сметководство")} q={q} actions={<>
+      <LinkButton to="/accounting/ledger">{tr("Главна книга")}</LinkButton>
+      <LinkButton to="/accounting/journal-entries/new" variant="primary">{tr("Нов налог")}</LinkButton>
     </>}>
       {(d) => {
         const vat = asRows(d.vat_trend).map((r) => ({ label: String(r.label), input_vat: num(r.input_vat), output_vat: num(r.output_vat), net: num(r.net) }));
@@ -20,48 +21,48 @@ export function AccountingOverview() {
         return (
           <>
             {d.unbalanced_drafts ? (
-              <Alert tone="warning" title={`Нерамнотежни нацрт-налози: ${d.unbalanced_drafts}`}
-                action={<LinkButton size="sm" to={listUrl("accounting/journal-entries", { status: "DRAFT" })}>Прегледај</LinkButton>}>
-                Должи и побарува не се еднакви; налозите не можат да се книжат додека не се порамнат.
+              <Alert tone="warning" title={tr("Нерамнотежни нацрт-налози: {0}", d.unbalanced_drafts)}
+                action={<LinkButton size="sm" to={listUrl("accounting/journal-entries", { status: "DRAFT" })}>{tr("Прегледај")}</LinkButton>}>
+                {tr("Должи и побарува не се еднакви; налозите не можат да се книжат додека не се порамнат.")}
               </Alert>
             ) : null}
-            <StatusBand title={d.period ? `Период ${d.period.name}` : "Нема отворен период за денес"} total={tasks.total ? `затворање: ${tasks.done} од ${tasks.total} задачи` : undefined} stages={[
-              { key: "ap", label: "Влезни фактури за книжење", count: d.ap_awaiting_posting, attention: true, to: listUrl("payables/invoices", { posting_status: "NOT_POSTED" }) },
-              { key: "drafts", label: "Нацрт налози", count: d.drafts, attention: true, to: listUrl("accounting/journal-entries", { status: "DRAFT" }) },
-              { key: "unbalanced", label: "Нерамнотежни", count: d.unbalanced_drafts, danger: true, to: listUrl("accounting/journal-entries", { status: "DRAFT" }) },
-              { key: "posted", label: "Книжени овој месец", count: d.posted_this_month, done: true, to: listUrl("accounting/journal-entries", { status: "POSTED" }) },
-              { key: "close", label: "Задачи за затворање", count: tasks.total - tasks.done, attention: tasks.total > tasks.done, to: "/accounting/close-tasks",
-                sub: tasks.total ? `${tasks.done} завршени` : "нема листа" },
+            <StatusBand title={d.period ? tr("Период {0}", d.period.name) : tr("Нема отворен период за денес")} total={tasks.total ? tr("затворање: {0} од {1} задачи", tasks.done, tasks.total) : undefined} stages={[
+              { key: "ap", label: tr("Влезни фактури за книжење"), count: d.ap_awaiting_posting, attention: true, to: listUrl("payables/invoices", { posting_status: "NOT_POSTED" }) },
+              { key: "drafts", label: tr("Нацрт налози"), count: d.drafts, attention: true, to: listUrl("accounting/journal-entries", { status: "DRAFT" }) },
+              { key: "unbalanced", label: tr("Нерамнотежни"), count: d.unbalanced_drafts, danger: true, to: listUrl("accounting/journal-entries", { status: "DRAFT" }) },
+              { key: "posted", label: tr("Книжени овој месец"), count: d.posted_this_month, done: true, to: listUrl("accounting/journal-entries", { status: "POSTED" }) },
+              { key: "close", label: tr("Задачи за затворање"), count: tasks.total - tasks.done, attention: tasks.total > tasks.done, to: "/accounting/close-tasks",
+                sub: tasks.total ? tr("{0} завршени", tasks.done) : tr("нема листа") },
             ]} />
             <Kpis>
-              <Kpi label="Обврски (отворено)" value={formatCompact(d.payables.open)} unit="ден." sub={`${d.payables.overdue} задоцнети од ${d.payables.count}`} to="/payables"
+              <Kpi label={tr("Обврски (отворено)")} value={formatWhole(d.payables.open)} unit="MKD" sub={tr("{0} задоцнети од {1}", d.payables.overdue, d.payables.count)} to="/payables"
                 tone={d.payables.overdue ? "attention" : undefined} />
-              <Kpi label="Побарувања (отворено)" value={formatCompact(d.receivables.open)} unit="ден." sub={`${d.receivables.overdue} задоцнети од ${d.receivables.count}`} to="/receivables"
+              <Kpi label={tr("Побарувања (отворено)")} value={formatWhole(d.receivables.open)} unit="MKD" sub={tr("{0} задоцнети од {1}", d.receivables.overdue, d.receivables.count)} to="/receivables"
                 tone={d.receivables.overdue ? "attention" : undefined} />
-              <Kpi label="Нето позиција" value={formatCompact(d.net_position)} unit="ден." sub="побарувања минус обврски" tone={num(d.net_position) < 0 ? "alarm" : undefined} />
-              <Kpi label="ДДВ овој месец" value={formatCompact(d.vat.net)} unit="ден." sub={`излезен ${formatCompact(d.vat.output_vat)} · влезен ${formatCompact(d.vat.input_vat)}`} />
-              <Kpi label="Основни средства" value={formatCompact(d.net_book_value)} unit="ден." sub={`амортизација овој месец ${formatCompact(d.depreciation_this_month)}`} to="/assets" />
+              <Kpi label={tr("Нето позиција")} value={formatWhole(d.net_position)} unit="MKD" sub={tr("побарувања минус обврски")} tone={num(d.net_position) < 0 ? "alarm" : undefined} />
+              <Kpi label={tr("ДДВ овој месец")} value={formatWhole(d.vat.net)} unit="MKD" sub={tr("излезен {0} · влезен {1}", formatWhole(d.vat.output_vat), formatWhole(d.vat.input_vat))} />
+              <Kpi label={tr("Основни средства")} value={formatWhole(d.net_book_value)} unit="MKD" sub={tr("амортизација овој месец {0}", formatWhole(d.depreciation_this_month))} to="/assets" />
             </Kpis>
             <div className="grid-2">
-              <Panel title="ДДВ по месец" sub="Влезен и излезен ДДВ по датум на книжење; линијата е обврската">
-                <ColumnChart title="Влезен и излезен ДДВ по месец" data={vat}
-                  series={[{ key: "output_vat", name: "Излезен" }, { key: "input_vat", name: "Влезен" }, { key: "net", name: "Обврска", line: true, color: "var(--ink)" }]} />
+              <Panel title={tr("ДДВ по месец")} sub={tr("Влезен и излезен ДДВ по датум на книжење; линијата е обврската")}>
+                <ColumnChart title={tr("Влезен и излезен ДДВ по месец")} data={vat}
+                  series={[{ key: "output_vat", name: tr("Излезен") }, { key: "input_vat", name: tr("Влезен") }, { key: "net", name: tr("Обврска"), line: true, color: "var(--ea-text)" }]} />
               </Panel>
-              <Panel title="Затворање на месецот" sub={d.period ? String(d.period.name) : "Нема отворен период"}
-                actions={<LinkButton to="/accounting/fiscal-periods" size="sm">Периоди</LinkButton>}>
+              <Panel title={tr("Затворање на месецот")} sub={d.period ? String(d.period.name) : tr("Нема отворен период")}
+                actions={<LinkButton to="/accounting/fiscal-periods" size="sm">{tr("Периоди")}</LinkButton>}>
                 <div className="stack">
                   <div className="row-tight"><span className="num" style={{ fontSize: 28, fontWeight: 600 }}>{tasks.done}</span>
-                    <span className="muted">од {tasks.total} задачи завршени</span></div>
-                  <Meter value={tasks.done} max={tasks.total || 1} label="Затворање на месецот" />
+                    <span className="muted">{tr("од")}{" "}{tasks.total}{" "}{tr("задачи завршени")}</span></div>
+                  <Meter value={tasks.done} max={tasks.total || 1} label={tr("Затворање на месецот")} />
                   <dl className="fact-list">
-                    <div><dt>Обврски кон добавувачи</dt><dd className="num">{formatMoney(d.payables.open)}</dd></div>
-                    <div><dt>Побарувања од купувачи</dt><dd className="num">{formatMoney(d.receivables.open)}</dd></div>
-                    <div><dt>Книжени налози овој месец</dt><dd className="num">{formatNumber(d.posted_this_month, 0)}</dd></div>
+                    <div><dt>{tr("Обврски кон добавувачи")}</dt><dd className="num">{formatMoney(d.payables.open)}</dd></div>
+                    <div><dt>{tr("Побарувања од купувачи")}</dt><dd className="num">{formatMoney(d.receivables.open)}</dd></div>
+                    <div><dt>{tr("Книжени налози овој месец")}</dt><dd className="num">{formatNumber(d.posted_this_month, 0)}</dd></div>
                   </dl>
                   <div className="row-tight" style={{ flexWrap: "wrap" }}>
-                    <LinkButton size="sm" to="/accounting/close-tasks">Задачи</LinkButton>
-                    <LinkButton size="sm" to="/accounting/vat-entries">Книга на ДДВ</LinkButton>
-                    <LinkButton size="sm" to="/accounting/accounts">Контен план</LinkButton>
+                    <LinkButton size="sm" to="/accounting/close-tasks">{tr("Задачи")}</LinkButton>
+                    <LinkButton size="sm" to="/accounting/vat-entries">{tr("Книга на ДДВ")}</LinkButton>
+                    <LinkButton size="sm" to="/accounting/accounts">{tr("Контен план")}</LinkButton>
                   </div>
                 </div>
               </Panel>

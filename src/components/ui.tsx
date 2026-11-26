@@ -1,10 +1,12 @@
-/** Design-system components (styles in src/styles/components.css). Radix provides the accessible behaviour of
- * dialogs, menus, popovers, tooltips and tabs; sonner the toasts. */
+/*! @license © 2026 Mia Spasovska. EACore design system (CORE) and front-end specification (FE) — author: Mia Spasovska. All rights reserved unless agreed otherwise in writing. Fingerprint EAC-MS-C226E467F1A53502. */
+/** Design-system components in EACore FE markup (FE/03, 08; classes from src/styles/ea-fe.css). Radix provides only the
+ * accessible behaviour of dialogs, menus, popovers, tooltips and tabs (headless, no UI kit look); sonner the toast queue. */
 import {
   createContext,
   forwardRef,
   useCallback,
   useContext,
+  useId,
   useState,
   type ButtonHTMLAttributes,
   type ReactNode,
@@ -15,7 +17,7 @@ import { Toaster, toast as sonner } from "sonner";
 import {
   AlertTriangle, CheckCircle2, ChevronLeft, Info, Inbox, MoreHorizontal, RefreshCw, X, XCircle,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 
 import { ApiError } from "@/api/client";
 import { t } from "@/i18n/mk";
@@ -31,9 +33,14 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   icon?: LucideIcon;
 };
 
+/** FE buttons: one primary per head, outline for the rest, ghost in bars; 32px, 26px (`sm`) in tables. Pills (CORE 24). */
+const VARIANT: Record<Variant, string> = {
+  default: "btn-outline-secondary", primary: "btn-primary", ghost: "btn-ghost", danger: "btn-outline-secondary is-danger", "danger-solid": "btn-danger",
+};
+
 export function buttonClass(variant: Variant = "default", size?: "sm" | "md", extra?: string) {
-  const v = variant === "danger-solid" ? "danger solid" : variant === "default" ? "" : variant;
-  return ["btn", v, size === "sm" ? "sm" : "", extra ?? ""].filter(Boolean).join(" ");
+  const more = (extra ?? "").split(/\s+/).filter(Boolean).map((c) => (c === "icon" ? "btn-icon" : c));
+  return ["btn", VARIANT[variant], size === "sm" ? "btn-sm" : "", ...more].filter(Boolean).join(" ");
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -83,15 +90,15 @@ export function Spinner({ label = t.loading }: { label?: string }) {
 }
 
 export function Skeleton({ width = "100%", height = 12, style }: { width?: number | string; height?: number; style?: React.CSSProperties }) {
-  return <span className="skeleton" style={{ width, height, ...style }} aria-hidden />;
+  return <span className="ea-skeleton" style={{ display: "block", width, height, ...style }} aria-hidden />;
 }
 
 export function SkeletonRows({ rows = 6, cols = 5 }: { rows?: number; cols?: number }) {
   return (
     <div role="status" aria-label={t.loading} style={{ padding: "8px 16px 16px" }}>
       {Array.from({ length: rows }, (_, r) => (
-        <div key={r} style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 20, padding: "12px 0", borderBottom: "1px solid var(--rule)" }}>
-          {Array.from({ length: cols }, (_, c) => <Skeleton key={c} width={`${55 + ((r * 7 + c * 13) % 40)}%`} />)}
+        <div key={r} style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 20, padding: "12px 0", borderBottom: "1px solid var(--ea-line)" }}>
+          {Array.from({ length: cols }, (_, c) => <Skeleton key={c} width={`${55 + ((r * 7 + c * 13) % 40)} %`} />)}
         </div>
       ))}
     </div>
@@ -100,9 +107,9 @@ export function SkeletonRows({ rows = 6, cols = 5 }: { rows?: number; cols?: num
 
 export function SkeletonPanel({ height = 220 }: { height?: number }) {
   return (
-    <div className="panel" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }} aria-hidden>
-      <Skeleton width="40%" height={14} />
-      <Skeleton height={height - 60} />
+    <div className="ea-panel ea-panel-skel" aria-hidden>
+      <div className="ea-panel-head"><Skeleton width="40%" height={14} /></div>
+      <div className="ea-panel-body"><Skeleton height={height - 60} /></div>
     </div>
   );
 }
@@ -115,13 +122,13 @@ export function Field({
   label: ReactNode; required?: boolean; help?: ReactNode; error?: string; children: ReactNode; htmlFor?: string; className?: string;
 }) {
   return (
-    <div className={`field${className ? ` ${className}` : ""}`}>
-      <label htmlFor={htmlFor}>
+    <div className={`ea-field${error ? " is-invalid" : ""}${className ? ` ${className}` : ""}`}>
+      <label className="form-label" htmlFor={htmlFor}>
         {label}
-        {required ? <span className="req" aria-hidden>*</span> : null}
+        {required ? <span className="ea-req" aria-hidden> *</span> : null}
       </label>
       {children}
-      {error ? <span className="error" role="alert">{error}</span> : help ? <span className="help">{help}</span> : null}
+      {error ? <span className="ea-field-err" role="alert">{error}</span> : help ? <span className="ea-meta">{help}</span> : null}
     </div>
   );
 }
@@ -130,7 +137,7 @@ export function Switch({ checked, onChange, label, id, disabled }: {
   checked: boolean; onChange: (v: boolean) => void; label: ReactNode; id?: string; disabled?: boolean;
 }) {
   return (
-    <label className="check" htmlFor={id}>
+    <label className="ea-check" htmlFor={id}>
       <RxSwitch.Root id={id} className="switch" checked={checked} disabled={disabled} onCheckedChange={onChange}>
         <RxSwitch.Thumb className="switch-thumb" />
       </RxSwitch.Root>
@@ -143,7 +150,7 @@ export function Segmented<T extends string>({ value, onChange, options, label }:
   value: T; onChange: (v: T) => void; options: { value: T; label: ReactNode }[]; label: string;
 }) {
   return (
-    <div className="segmented" role="group" aria-label={label}>
+    <div className="ea-seg is-pick" role="group" aria-label={label}>
       {options.map((o) => (
         <button key={o.value} type="button" aria-pressed={o.value === value} onClick={() => onChange(o.value)}>{o.label}</button>
       ))}
@@ -153,12 +160,21 @@ export function Segmented<T extends string>({ value, onChange, options, label }:
 
 // ── badges ────────────────────────────────────────────────────────────────────
 
+/** The app's tone names → CORE status (Google convention: go / info / caution / stop / neutral). */
 const TONES: Record<string, string> = {
-  success: "success", warning: "warning", danger: "danger", info: "info", accent: "accent", neutral: "", secondary: "",
+  success: "go", warning: "caution", danger: "stop", info: "info", accent: "info", neutral: "neutral", secondary: "neutral",
+  go: "go", caution: "caution", stop: "stop",
 };
 
+export function toneOf(tone?: string): string {
+  return TONES[tone ?? ""] ?? "neutral";
+}
+
+/** Status = round dot + text, never colour alone (CORE 13 §3). `plain` = dot + text in a row; otherwise the outlined chip. */
 export function Badge({ children, tone, plain }: { children: ReactNode; tone?: string; plain?: boolean }) {
-  return <span className={`badge ${TONES[tone ?? ""] ?? tone ?? ""}${plain ? " plain" : ""}`}>{children}</span>;
+  const s = toneOf(tone);
+  if (plain) return <span className="ea-st"><span className={`ea-dot is-${s}`} aria-hidden />{children}</span>;
+  return <span className={`ea-chip is-${s}`}>{children}</span>;
 }
 
 const STATUS_TONE: [RegExp, string][] = [
@@ -183,19 +199,20 @@ export function StatusPill({ value, label }: { value: unknown; label?: ReactNode
 // ── alerts ────────────────────────────────────────────────────────────────────
 
 const ALERT_ICON: Record<string, LucideIcon> = { info: Info, danger: XCircle, warning: AlertTriangle, success: CheckCircle2 };
+const ALERT_TONE: Record<string, string> = { info: "info", danger: "stop", warning: "caution", success: "go" };
 
 export function Alert({ tone = "info", title, children, action }: {
   tone?: "info" | "danger" | "warning" | "success"; title?: ReactNode; children?: ReactNode; action?: ReactNode;
 }) {
   const Icon = ALERT_ICON[tone];
   return (
-    <div className={`alert ${tone}`} role={tone === "danger" ? "alert" : "status"}>
-      <Icon aria-hidden />
-      <div className="alert-body">
-        {title ? <div className="alert-title">{title}</div> : null}
-        {children}
+    <div className={`ea-alert is-${ALERT_TONE[tone]}`} role={tone === "danger" ? "alert" : "status"}>
+      <span className="ea-alert-icon"><Icon aria-hidden /></span>
+      <div className="ea-alert-text">
+        {title ? <p className="ea-alert-title">{title}</p> : null}
+        {children ? <div>{children}</div> : null}
       </div>
-      {action}
+      {action ? <div className="ea-alert-act">{action}</div> : <span />}
     </div>
   );
 }
@@ -206,11 +223,11 @@ export function EmptyState({ children, title, icon: Icon = Inbox, action, compac
   children?: ReactNode; title?: ReactNode; icon?: LucideIcon; action?: ReactNode; compact?: boolean;
 }) {
   return (
-    <div className={`empty${compact ? " compact" : ""}`}>
+    <div className={`ea-empty${compact ? " is-compact" : ""}`}>
       <Icon aria-hidden />
-      <div className="empty-title">{title ?? t.noResults}</div>
-      {children ? <div className="empty-text">{children}</div> : null}
-      {action ? <div className="empty-action">{action}</div> : null}
+      <p className="ea-empty-t">{title ?? t.noResults}</p>
+      {children ? <p className="ea-meta">{children}</p> : null}
+      {action ? <div>{action}</div> : null}
     </div>
   );
 }
@@ -250,14 +267,14 @@ export function PageHeader({ title, subtitle, back, status, actions, children }:
   actions?: ReactNode; children?: ReactNode;
 }) {
   return (
-    <header className="page-header">
-      <div className="ph-main">
-        {back ? <Link to={back.to} className="back-link"><ChevronLeft aria-hidden />{back.label}</Link> : null}
-        <div className="ph-title"><h1>{title}</h1>{status}</div>
-        {subtitle ? <div className="ph-sub">{subtitle}</div> : null}
+    <header className="ea-page-head">
+      <div className="ea-page-text">
+        {back ? <Link to={back.to} className="ea-page-parent"><ChevronLeft aria-hidden />{back.label}</Link> : null}
+        <h1 className="ea-page-title">{title}{status}</h1>
+        {subtitle ? <div className="ea-page-sub">{subtitle}</div> : null}
         {children}
       </div>
-      {actions ? <div className="ph-actions">{actions}</div> : null}
+      {actions ? <div className="ea-page-acts">{actions}</div> : null}
     </header>
   );
 }
@@ -266,18 +283,20 @@ export function Panel({ title, sub, actions, children, flush, foot, className, i
   title?: ReactNode; sub?: ReactNode; actions?: ReactNode; children: ReactNode; flush?: boolean; foot?: ReactNode;
   className?: string; id?: string;
 }) {
+  const hid = useId();
   return (
-    <section className={`panel${flush ? " flush" : ""}${className ? ` ${className}` : ""}`} id={id} aria-label={typeof title === "string" ? title : undefined}>
+    <section className={`ea-panel${flush ? " is-flush" : ""}${className ? ` ${className}` : ""}`} id={id}
+      aria-labelledby={title ? hid : undefined}>
       {title || actions ? (
-        <div className="panel-head">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {title ? <h2>{title}</h2> : null}
-            {sub ? <div className="sub">{sub}</div> : null}
+        <div className="ea-panel-head">
+          <div className="ea-panel-ht">
+            {title ? <h2 className="ea-panel-title" id={hid}>{title}</h2> : null}
+            {sub ? <span className="ea-panel-meta">{sub}</span> : null}
           </div>
-          {actions}
+          {actions ? <div className="ea-panel-acts">{actions}</div> : null}
         </div>
       ) : null}
-      <div className="panel-body">{children}</div>
+      <div className="ea-panel-body">{children}</div>
       {foot ? <div className="panel-foot">{foot}</div> : null}
     </section>
   );
@@ -355,7 +374,7 @@ export function Menu({ trigger, items, align = "end", label }: {
   return (
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger asChild>
-        {trigger ?? <button type="button" className="btn icon" aria-label={label ?? t.moreActions}><MoreHorizontal aria-hidden /></button>}
+        {trigger ?? <button type="button" className="btn btn-outline-secondary btn-icon" aria-label={label ?? t.moreActions}><MoreHorizontal aria-hidden /></button>}
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content className="menu" align={align} sideOffset={6} collisionPadding={8}>
@@ -426,11 +445,11 @@ export function Tabs<T extends string>({ tabs, value, onChange, label }: {
 }) {
   return (
     <RxTabs.Root value={value} onValueChange={(v) => onChange(v as T)} activationMode="manual">
-      <RxTabs.List className="tabs" aria-label={label}>
+      <RxTabs.List className="ea-tabs" aria-label={label}>
         {tabs.map((tab) => (
           <RxTabs.Trigger key={tab.key} value={tab.key}>
             {tab.label}
-            {tab.count !== undefined && tab.count !== null && tab.count !== "" ? <span className="count">{tab.count}</span> : null}
+            {tab.count !== undefined && tab.count !== null && tab.count !== "" ? <span className="ea-tabs-n">{tab.count}</span> : null}
           </RxTabs.Trigger>
         ))}
       </RxTabs.List>
@@ -456,8 +475,11 @@ export function ToastProvider({ children, theme = "system" }: { children: ReactN
   return (
     <ToastContext.Provider value={push}>
       {children}
-      <Toaster position="bottom-right" theme={theme} closeButton richColors={false} visibleToasts={4}
-        toastOptions={{ style: { fontFamily: "var(--font)", fontSize: "14px" } }} />
+      <Toaster position="bottom-right" theme={theme} closeButton visibleToasts={3}
+        toastOptions={{ unstyled: true, classNames: {
+          toast: "ea-toast is-info", success: "is-go", error: "is-stop", warning: "is-caution", info: "is-info",
+          title: "ea-toast-title", description: "ea-toast-desc", actionButton: "ea-toast-act", closeButton: "ea-toast-x", icon: "ea-toast-ic",
+        } }} />
     </ToastContext.Provider>
   );
 }
@@ -492,12 +514,12 @@ export function useConfirm() {
           {state.confirmLabel ?? t.confirm}
         </Button>
       </>}>
-      <div style={{ color: "var(--ink-soft)" }}>{state.text}</div>
+      <div className="ea-note">{state.text}</div>
     </Modal>
   ) : null;
   return { confirm, dialog };
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd>{children}</kbd>;
+  return <kbd className="ea-kbd">{children}</kbd>;
 }

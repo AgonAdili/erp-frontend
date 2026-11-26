@@ -7,9 +7,10 @@ import { useEntity } from "@/app/prefs";
 import { ColumnChart } from "@/charts";
 import { asRows, DataTable, HBars, Kpi, Kpis, useOverview, type Data } from "@/components/dashboard";
 import { LinkButton, Panel } from "@/components/ui";
-import { formatCompact, formatNumber, num } from "@/lib/format";
+import { formatWhole, formatNumber, num } from "@/lib/format";
 
 import { Overview } from "./common";
+import { tr } from "@/i18n";
 
 const MOVES = "/inventory/movements/";
 
@@ -19,9 +20,9 @@ export function InventoryOverview() {
   const low = useQuery({ queryKey: ["stock-levels", entity, null, true], queryFn: () => api.get<Data[]>(`${MOVES}levels/`, { legal_entity: entity, low: 1 }) });
   const valuation = useQuery({ queryKey: ["stock-valuation", entity, null, ""], queryFn: () => api.get<{ rows: Data[]; total: string }>(`${MOVES}valuation/`, { legal_entity: entity }) });
   return (
-    <Overview title="Магацин" q={q} actions={<>
-      <LinkButton to="/inventory/stock">Залиха и вреднување</LinkButton>
-      <LinkButton to="/inventory/documents/new" variant="primary">Нов документ</LinkButton>
+    <Overview title={tr("Магацин")} q={q} actions={<>
+      <LinkButton to="/inventory/stock">{tr("Залиха и вреднување")}</LinkButton>
+      <LinkButton to="/inventory/documents/new" variant="primary">{tr("Нов документ")}</LinkButton>
     </>}>
       {(d) => {
         const trend = asRows(d.trend);
@@ -31,32 +32,32 @@ export function InventoryOverview() {
         return (
           <>
             <Kpis>
-              <Kpi label="Вредност на залихата" value={valuation.data ? formatCompact(valuation.data.total) : "…"} unit="ден."
-                sub={unreliable ? `${unreliable} артикли со несигурна цена` : "по просечна набавна цена"} tone={unreliable ? "attention" : undefined} to="/inventory/stock" />
-              <Kpi label="Под минимална залиха" value={low.data ? formatNumber(lowRows.length, 0) : "…"} sub="артикли за повторна нарачка"
+              <Kpi label={tr("Вредност на залихата")} value={valuation.data ? formatWhole(valuation.data.total) : "…"} unit="MKD"
+                sub={unreliable ? tr("{0} артикли со несигурна цена", unreliable) : tr("по просечна набавна цена")} tone={unreliable ? "attention" : undefined} to="/inventory/stock" />
+              <Kpi label={tr("Под минимална залиха")} value={low.data ? formatNumber(lowRows.length, 0) : "…"} sub={tr("артикли за повторна нарачка")}
                 tone={lowRows.length ? "attention" : undefined} to="/inventory/stock" />
-              <Kpi label="Движења овој месец" value={formatNumber(d.this_month.count, 0)} sub={`${d.this_month.in} приеми · ${d.this_month.out} издавања`} />
-              <Kpi label="Примено овој месец" value={formatCompact(trend.at(-1)?.in_value)} unit="ден." trend={trend.map((r) => num(r.in_value))} />
+              <Kpi label={tr("Движења овој месец")} value={formatNumber(d.this_month.count, 0)} sub={tr("{0} приеми · {1} издавања", d.this_month.in, d.this_month.out)} />
+              <Kpi label={tr("Примено овој месец")} value={formatWhole(trend.at(-1)?.in_value)} unit="MKD" trend={trend.map((r) => num(r.in_value))} />
             </Kpis>
-            <Panel title="Примено и издадено по месец" sub="Вредност по набавна цена, последни 6 месеци">
-              <ColumnChart title="Примено и издадено по месец" data={trend.map((r) => ({ label: String(r.label), in_value: num(r.in_value), out_value: num(r.out_value) }))}
-                series={[{ key: "in_value", name: "Примено" }, { key: "out_value", name: "Издадено" }]} />
+            <Panel title={tr("Примено и издадено по месец")} sub={tr("Вредност по набавна цена, последни 6 месеци")}>
+              <ColumnChart title={tr("Примено и издадено по месец")} data={trend.map((r) => ({ label: String(r.label), in_value: num(r.in_value), out_value: num(r.out_value) }))}
+                series={[{ key: "in_value", name: tr("Примено") }, { key: "out_value", name: tr("Издадено") }]} />
             </Panel>
             <div className="grid-2">
-              <Panel title="Под минимална залиха" flush actions={<LinkButton to="/inventory/stock" size="sm">Барање за набавка</LinkButton>}>
-                <DataTable rows={lowRows.slice(0, 10)} maxHeight={360} empty="Сите артикли се над минимумот" columns={[
-                  { key: "name", label: "Артикл", to: (r) => `/catalog/items/${r.item}` },
-                  { key: "quantity", label: "Залиха", kind: "number" }, { key: "reorder_level", label: "Минимум", kind: "number" },
-                  { key: "unit", label: "Ед." }]} />
+              <Panel title={tr("Под минимална залиха")} flush actions={<LinkButton to="/inventory/stock" size="sm">{tr("Барање за набавка")}</LinkButton>}>
+                <DataTable rows={lowRows.slice(0, 10)} maxHeight={360} empty={tr("Сите артикли се над минимумот")} columns={[
+                  { key: "name", label: tr("Артикл"), to: (r) => `/catalog/items/${r.item}` },
+                  { key: "quantity", label: tr("Залиха"), kind: "number" }, { key: "reorder_level", label: tr("Минимум"), kind: "number" },
+                  { key: "unit", label: tr("Ед.") }]} />
               </Panel>
-              <Panel title="Магацини со најголем промет" sub="Вредност на движењата, последни 6 месеци">
+              <Panel title={tr("Магацини со најголем промет")} sub={tr("Вредност на движењата, последни 6 месеци")}>
                 <HBars rows={asRows(d.warehouses).map((w) => ({ key: String(w.warehouse_id), label: String(w.warehouse__name), value: w.value,
-                  to: `/catalog/warehouses/${w.warehouse_id}` }))} empty="Нема движења" />
+                  to: `/catalog/warehouses/${w.warehouse_id}` }))} empty={tr("Нема движења")} />
               </Panel>
             </div>
-            <Panel title="Највредни артикли на залиха">
+            <Panel title={tr("Највредни артикли на залиха")}>
               <HBars rows={top.map((r) => ({ key: String(r.item), label: String(r.item_name), value: r.value, to: `/catalog/items/${r.item}` }))}
-                empty={valuation.isLoading ? "Се вчитува…" : "Нема залиха"} />
+                empty={valuation.isLoading ? tr("Се вчитува…") : tr("Нема залиха")} />
             </Panel>
           </>
         );

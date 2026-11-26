@@ -1,13 +1,14 @@
 /** Inputs chosen by field metadata type, plus the related-record and file pickers. */
 import { useEffect, useId, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Paperclip, Upload, X } from "lucide-react";
+import { FileText, Paperclip, Upload, X } from "@/components/icons";
 
 import { api, type Query } from "@/api/client";
 import type { FieldMeta, Page, RelatedRef, Row } from "@/api/types";
 import { t } from "@/i18n/mk";
 
 import { Switch } from "./ui";
+import { tr } from "@/i18n";
 
 export interface StoredFileRef {
   id: number;
@@ -32,7 +33,7 @@ export function FieldInput({
   /** Extra list filters for a related picker (dependent fields). */
   filters?: Query;
 }) {
-  const cls = `input${invalid ? " invalid" : ""}`;
+  const cls = `form-control${invalid ? " invalid" : ""}`;
   const disabled = field.read_only;
   const str = value === null || value === undefined ? "" : String(value);
   const aria = { "aria-invalid": invalid || undefined };
@@ -153,7 +154,7 @@ export function RelatedSelect({
   const rows = options.data?.results ?? [];
 
   if (!endpoint) {
-    return <input id={id} className="input" value={value ?? ""} disabled={disabled}
+    return <input id={id} className="form-control" value={value ?? ""} disabled={disabled}
       onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)} />;
   }
   const pick = (row: Row | null) => {
@@ -167,7 +168,7 @@ export function RelatedSelect({
       <div className="combo-control">
         <input
           id={id}
-          className={`input${invalid ? " invalid" : ""}`}
+          className={`form-control${invalid ? " invalid" : ""}`}
           role="combobox"
           aria-expanded={open}
           aria-controls={listId}
@@ -203,8 +204,8 @@ export function RelatedSelect({
               {rowLabel(row)}
             </button>
           ))}
-          {!options.isLoading && rows.length === 0 ? <div className="hint">{search ? `Ништо за „${search}“.` : t.noResults}</div> : null}
-          {options.data && options.data.count > rows.length ? <div className="hint">Уште {options.data.count - rows.length} — пребарајте подетално.</div> : null}
+          {!options.isLoading && rows.length === 0 ? <div className="hint">{search ? tr("Ништо за „{0}“.", search) : t.noResults}</div> : null}
+          {options.data && options.data.count > rows.length ? <div className="hint">{tr("Уште")}{" "}{options.data.count - rows.length}{" "}{tr("— пребарајте подетално.")}</div> : null}
         </div>
       ) : null}
     </div>
@@ -321,7 +322,7 @@ export function FileInput({ value, onChange, disabled, image, id }: {
         </div>
       ) : typeof value === "number" ? <span className="muted">#{value}</span> : null}
       {!disabled && !file ? <DropZone id={id} onFile={(f) => void upload(f)} busy={busy} accept={image ? "image/*" : undefined} /> : null}
-      {error ? <span className="field"><span className="error">{error}</span></span> : null}
+      {error ? <span className="ea-field"><span className="error">{error}</span></span> : null}
     </div>
   );
 }

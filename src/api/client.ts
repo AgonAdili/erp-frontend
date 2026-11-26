@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 /**
  * The one way the SPA talks to the API.
  *
@@ -39,14 +40,14 @@ export class ApiError extends Error {
 }
 
 function defaultMessage(status: number): string {
-  if (status === 401) return "Сесијата истече. Најавете се повторно.";
-  if (status === 403) return "Немате дозвола за оваа акција.";
-  if (status === 404) return "Записот не е пронајден.";
-  if (status === 409) return "Записот е изменет од друг корисник. Освежете и обидете се повторно.";
-  if (status === 428) return "Потребна е верзијата на записот.";
-  if (status === 429) return "Премногу барања. Обидете се повторно подоцна.";
-  if (status >= 500) return "Грешка на серверот. Обидете се повторно.";
-  return "Барањето не успеа.";
+  if (status === 401) return tr("Сесијата истече. Најавете се повторно.");
+  if (status === 403) return tr("Немате дозвола за оваа акција.");
+  if (status === 404) return tr("Записот не е пронајден.");
+  if (status === 409) return tr("Записот е изменет од друг корисник. Освежете и обидете се повторно.");
+  if (status === 428) return tr("Потребна е верзијата на записот.");
+  if (status === 429) return tr("Премногу барања. Обидете се повторно подоцна.");
+  if (status >= 500) return tr("Грешка на серверот. Обидете се повторно.");
+  return tr("Барањето не успеа.");
 }
 
 let csrfToken = "";
